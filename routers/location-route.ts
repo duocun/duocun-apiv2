@@ -1,12 +1,11 @@
 import express, {Request, Response} from "express";
 import { DB } from "../db";
 import { Location, IGooglePlace } from "../models/location";
-import { Model, Code } from "../models/model";
-
+import { LocationController } from "../controllers/location-controller";
 export function LocationRouter(db: DB){
   const router = express.Router();
   const model = new Location(db);
-  const controller = new LocationController(db);
+  const controller = new LocationController(model, db);
 
   // yaml api
   router.get('/geocode/:address', (req, res) => { controller.getGeocodeList(req, res); });
@@ -35,54 +34,3 @@ export function LocationRouter(db: DB){
 
   return router;
 };
-
-
-export class LocationController extends Model {
-  model: Location;
-  constructor(db: DB) {
-    super(db, 'locations');
-    this.model = new Location(db);
-  }
-
-  getGeocodeList(req: Request, res: Response) {
-    const addr = req.params.address;
-
-    this.model.getGeocodes(addr).then(rs => {
-      // res.send(rs);
-      res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify({
-        code: Code.SUCCESS,
-        data: rs 
-      }));
-    });
-  }
-
-  getPlaceList(req: Request, res: Response) {
-    const keyword = req.params.input;
-    this.model.getSuggestPlaces(keyword).then((rs: IGooglePlace[]) => {
-      // res.send(rs);
-      res.send(JSON.stringify({
-        code: Code.SUCCESS,
-        data: rs 
-      }));
-    });
-  }
-
-  gv1_list(req: Request, res: Response) {
-    const accountId = req.params.accountId;
-    res.setHeader('Content-Type', 'application/json');
-    if(accountId){
-      this.model.find({accountId}).then((locations) => {
-        res.send(JSON.stringify({
-          code: Code.SUCCESS,
-          data: locations 
-        }));
-      });
-    }else{
-      res.send(JSON.stringify({
-        code: Code.FAIL,
-        data: []
-      }));
-    }
-  }
-}

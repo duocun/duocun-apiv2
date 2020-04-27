@@ -141,25 +141,6 @@ export class Transaction extends Model {
   }
 
 
-
-  // v1
-  // use in admin, $in
-  list(req: Request, res: Response) {
-    let query = null;
-    if (req.headers && req.headers.filter && typeof req.headers.filter === 'string') {
-      query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
-    }
-
-    this.find(query).then((rs: IDBTransaction[]) => {
-      res.setHeader('Content-Type', 'application/json');
-      if (rs) {
-        res.send(JSON.stringify(rs, null, 3));
-      } else {
-        res.send(JSON.stringify(null, null, 3))
-      }
-    });
-  }
-
   async doInsertOne(tr: ITransaction) {
     const fromId: string = tr.fromId; // must be account id
     const toId: string = tr.toId;     // must be account id
