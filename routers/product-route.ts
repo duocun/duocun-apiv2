@@ -85,7 +85,8 @@ class ProductController extends Model{
 
 
   av1_list(req: Request, res: Response) {
-    const {where, options} = req.query; // query:"{"where":{},"options":{"limit":10,"skip":0,"sort":[["_id",1]]}}"
+    const where: any= req.query.where; // query:"{"where":{},"options":{"limit":10,"skip":0,"sort":[["_id",1]]}}"
+    const options: any = req.query.options;
     const query = {...where, taxRate: 0};
     res.setHeader('Content-Type', 'application/json');
     this.model.find_v2(query, options).then((r: any) => {

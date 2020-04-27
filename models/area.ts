@@ -19,8 +19,8 @@ export interface IArea {
   _id: string;
   name: string;
   code: string;
-  lat: number;
-  lng: number;
+  lat?: number; // deprecated
+  lng?: number; // deprecated
   coords?: ILatLng[];
   distance?: number; // km
   rate?: number;
@@ -34,14 +34,17 @@ export class Area extends Model {
     this.distanceModel = new Distance(dbo);
   }
 
+  // deprecated
   // except downtown and appType == G
   async getNearestArea(origin: ILatLng) {
     const areas: any[] = await this.find({ status: 'active' });
     let selected: IArea = areas[0];
-    let shortest = this.distanceModel.getDirectDistance(origin, selected);
+    let selectedLatLng: any = {lat: selected.lat, lng: selected.lng};
+    let shortest = this.distanceModel.getDirectDistance(origin, selectedLatLng);
     for (let i = 1; i < areas.length; i++) {
       const area = areas[i];
-      const distance = this.distanceModel.getDirectDistance(origin, area);
+      let latLng: any = {lat: area.lat, lng: area.lng};
+      const distance = this.distanceModel.getDirectDistance(origin, latLng);
       if (shortest > distance) {
         selected = area;
         shortest = distance;
