@@ -18,14 +18,22 @@ export class Controller {
   list(req: Request, res: Response) {
     const where: any = req.query.where;
     const options: any = req.query.options;
-    this.model.find_v2(where, options).then((r: any) => {
-      res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Type', 'application/json');
+    if(where){
+      this.model.find_v2(where, options).then((r: any) => {
+        res.send(JSON.stringify({
+          code: Code.SUCCESS,
+          data: r.data,
+          count: r.count 
+        }));
+      });
+    }else{
       res.send(JSON.stringify({
-        code: Code.SUCCESS,
-        data: r.data,
-        count: r.count 
+        code: Code.FAIL,
+        data: [],
+        count: 0 
       }));
-    });
+    }
   }
 
   get(req: Request, res: Response) {

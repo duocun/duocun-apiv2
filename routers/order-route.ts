@@ -1,7 +1,8 @@
-import express from "express";
+import express, {Request, Response} from "express";
 import { DB } from "../db";
 import { Order } from "../models/order";
 import { OrderController } from "../controllers/order-controller";
+import { parseQuery } from "../middlewares/parseQuery";
 
 export function OrderRouter(db: DB) {
   const router = express.Router();
@@ -14,9 +15,8 @@ export function OrderRouter(db: DB) {
   // admin
 
   // support ?query={where, options}
-  router.get('/', (req, res) => { controller.list(req, res); });
+  router.get('/', [parseQuery], (req: Request, res: Response) => { controller.list(req, res); });
   router.get('/:id', (req, res) => { controller.get(req, res); });
-
 
   // old api
   router.get('/v2/transactions', (req, res) => { model.reqTransactions(req, res); });
