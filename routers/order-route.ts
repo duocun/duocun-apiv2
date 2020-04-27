@@ -1,19 +1,24 @@
 import express from "express";
 import { DB } from "../db";
 import { Order } from "../models/order";
-import { Request, Response } from "express";
-import { Model, Code } from "../models/model";
+import { OrderController } from "../controllers/order-controller";
 
 export function OrderRouter(db: DB) {
   const router = express.Router();
   const model = new Order(db);
-  const controller = new OrderController(db);
+  const controller = new OrderController(model, db);
 
-  // yaml
+  // grocery
   router.post('/bulk', (req, res) => { controller.placeOrders(req, res); });
 
+  // admin
 
-  // v2
+  // support ?query={where, options}
+  router.get('/', (req, res) => { controller.list(req, res); });
+  router.get('/:id', (req, res) => { controller.get(req, res); });
+
+
+  // old api
   router.get('/v2/transactions', (req, res) => { model.reqTransactions(req, res); });
   router.get('/v2/', (req, res) => { controller.listV2(req, res); });
 
@@ -41,8 +46,6 @@ export function OrderRouter(db: DB) {
   
   router.get('/trends', (req, res) => { model.getOrderTrends(req, res); });
   router.get('/qFind', (req, res) => { model.quickFind(req, res); });
-  router.get('/', (req, res) => { model.list(req, res); });
-  router.get('/:id', (req, res) => { model.get(req, res); });
 
   router.put('/updatePurchaseTag', (req, res) => { model.updatePurchaseTag(req, res) });
   router.put('/', (req, res) => { model.replace(req, res); });
@@ -69,100 +72,3 @@ export function OrderRouter(db: DB) {
   return router;
 };
 
-
-export class OrderController extends Model {
-  model: Order;
-
-  constructor(db: DB) {
-    super(db, 'orders');
-    this.model = new Order(db);
-  }
-
-  listV2(req: Request, res: Response) {
-    let query = null;
-
-    if (req.headers && req.headers.filter && typeof req.headers.filter === 'string') {
-      query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
-    }
-
-    this.model.joinFindV2(query).then((rs: any[]) => {
-      res.setHeader('Content-Type', 'application/json');
-      if (rs) {
-        res.send(JSON.stringify(rs, null, 3));
-      } else {
-        res.send(JSON.stringify(null, null, 3))
-      }
-    });
-  }
-
-  loadPage(req: Request, res: Response) {
-    const itemsPerPage = +req.params.itemsPerPage;
-    const currentPageNumber = +req.params.currentPageNumber;
-
-    let query = null;
-    let fields = null;
-    if (req.headers && req.headers.filter && typeof req.headers.filter === 'string') {
-      query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
-    }
-
-    if (req.headers && req.headers.fields && typeof req.headers.fields === 'string') {
-      fields = (req.headers && req.headers.fields) ? JSON.parse(req.headers.fields) : null;
-    }
-
-    if (query.hasOwnProperty('pickup')) {
-      query.delivered = this.model.getPickupDateTime(query['pickup']);
-      delete query.pickup;
-    }
-    let q = query ? query : {};
-
-    res.setHeader('Content-Type', 'application/json');
-
-    this.model.loadPage(query, itemsPerPage, currentPageNumber).then(arr => {
-      const len = arr.length;
-      if (arr && arr.length > 0) {
-        res.send(JSON.stringify({ total: len, orders: arr }, null, 3));
-      } else {
-        res.send(JSON.stringify({ total: len, orders: [] }, null, 3));
-      }
-    });
-  }
-
-  
-
-  // return [{_id, address, description,items, merchantName, clientPhoneNumber, price, total, tax, delivered, created}, ...]
-  loadHistory(req: Request, res: Response) {
-    const itemsPerPage = +req.params.itemsPerPage;
-    const currentPageNumber = +req.params.currentPageNumber;
-
-    let query = null;
-    // let fields = null;
-    if (req.headers && req.headers.filter && typeof req.headers.filter === 'string') {
-      query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
-    }
-
-    // if (req.headers && req.headers.fields && typeof req.headers.fields === 'string') {
-    //   fields = (req.headers && req.headers.fields) ? JSON.parse(req.headers.fields) : null;
-    // }
-
-    // let q = query ? query : {};
-    let clientId = query.clientId;
-
-    this.model.loadHistory(clientId, itemsPerPage, currentPageNumber).then(r => {
-      res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify(r, null, 3));
-    });
-  }
-
-
-
-  placeOrders(req: Request, res: Response) {
-    const orders = req.body;
-    this.model.placeOrders(orders).then((savedOrders: any[]) => {
-      res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify({
-        code: Code.SUCCESS,
-        data: savedOrders 
-      }));
-    });
-  }
-}

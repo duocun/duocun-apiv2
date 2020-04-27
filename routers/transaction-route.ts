@@ -2,19 +2,18 @@ import express, { Request, Response }  from "express";
 import { DB } from "../db";
 import { Transaction } from "../models/transaction";
 import { TransactionController } from "../controllers/transaction-controller";
-import { Model, Code } from "../models/model";
 import { parseQuery } from "../middlewares/parseQuery";
 
 export function TransactionRouter(db: DB){
   const router = express.Router();
   const model = new Transaction(db);
-  const controller = new TransactionController(db);
+  const controller = new TransactionController(model, db);
 
   // admin api
 
   // api/admin/transactions?query={where:xxx,options:{"limit":10,"skip":0,"sort":[["_id",1]]}}
   router.get('/', [parseQuery], (req: Request, res: Response) => { controller.list(req, res); });
-
+  router.get('/:id', (req, res) => { controller.get(req, res); });
 
   // old api
   router.get('/getMerchantBalance', (req, res) => { model.getMerchantBalance(req, res); });
@@ -25,8 +24,6 @@ export function TransactionRouter(db: DB){
   router.get('/salary', (req, res) => { model.getSalary(req, res); });
 
   router.get('/qFind', (req, res) => { model.quickFind(req, res); });
-  router.get('/', (req, res) => { model.list(req, res); });
-  router.get('/:id', (req, res) => { model.get(req, res); });
 
   router.post('/', (req, res) => { model.create(req, res); });
 

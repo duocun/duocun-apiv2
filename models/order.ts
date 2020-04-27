@@ -259,29 +259,6 @@ export class Order extends Model {
     });
   }
 
-  // v1
-  list(req: Request, res: Response) {
-    let query = null;
-    if (req.headers && req.headers.filter && typeof req.headers.filter === 'string') {
-      query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
-    }
-
-    let fields: string[];
-    if (req.headers && req.headers.fields && typeof req.headers.fields === 'string') {
-      fields = (req.headers && req.headers.fields) ? JSON.parse(req.headers.fields) : null;
-    }
-
-    this.joinFind(query).then(rs => {
-      const xs = this.filterArray(rs, fields);
-      res.setHeader('Content-Type', 'application/json');
-      if (rs) {
-        res.send(JSON.stringify(xs, null, 3));
-      } else {
-        res.send(JSON.stringify(null, null, 3));
-      }
-    });
-  }
-
   joinFind(query: any): Promise<IOrder[]> {
     // if (query.hasOwnProperty('pickup')) {
     //   query.delivered = this.getPickupDateTime(query['pickup']);

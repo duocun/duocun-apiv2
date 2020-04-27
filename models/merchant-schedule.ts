@@ -12,6 +12,16 @@ export class MerchantSchedule extends Model{
     this.areaModel = new Area(dbo);
   }
 
+  async getAvailables(merchantId: string, lat: number, lng: number, appType= AppType.GROCERY) {
+    const area = await this.areaModel.getMyArea({lat, lng}, AppType.GROCERY);
+    if(area){
+      const areaId = area._id.toString();
+      return await this.find({merchantId, areaId});
+    }else{
+      return null;
+    }
+  }
+
   createOrUpdate(data: any){
     const areaId = data.areaId;
     const areaCode = data.areaCode;
