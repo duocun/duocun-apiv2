@@ -3,6 +3,7 @@ import express, { Request, Response } from "express";
 import { DB } from "../db";
 import { ClientPayment } from "../models/client-payment";
 import { ClientPaymentController } from "../controllers/client-payment-controller";
+import { parseQuery } from "../middlewares/parseQuery";
 
 const SNAPPAY_BANK_ID = "5e60139810cc1f34dea85349";
 const SNAPPAY_BANK_NAME = "SnapPay Bank";
@@ -35,6 +36,13 @@ export function ClientPaymentRouter(db: DB) {
 
   // private 
   router.post('/notify', (req, res) => { controller.snappayNotify(req, res); });
+
+
+  // admin api
+  router.get('/', [parseQuery], (req: Request, res: Response) =>  { model.list(req, res); });
+  router.get('/:id', (req, res) => { model.get(req, res); });
+
+  // old api
 
   // stripe related endpoints
   // public
@@ -70,8 +78,7 @@ export function ClientPaymentRouter(db: DB) {
   // router.post('/removeGroupDiscount', (req, res) => { model.reqRemoveGroupDiscount(req, res); });
 
 
-  router.get('/', (req, res) => { model.list(req, res); });
-  router.get('/:id', (req, res) => { model.get(req, res); });
+
   // router.post('/', (req, res) => { model.createAndUpdateBalance(req, res); });
   router.put('/', (req, res) => { model.replace(req, res); });
   router.patch('/', (req, res) => { model.update(req, res); });

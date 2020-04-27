@@ -1,8 +1,8 @@
 import express, {Request, Response}from "express";
 import { DB } from "../db";
 import { Category } from "../models/category";
-import { AppType } from "../models/area";
 import { CategoryController} from "../controllers/category-controller";
+import { parseQuery } from "../middlewares/parseQuery";
 
 export function CategoryRouter(db: DB){
   const router = express.Router();
@@ -15,7 +15,7 @@ export function CategoryRouter(db: DB){
   router.get('/G/:id', (req, res) => { controller.gv1_getById(req, res); });
 
   // admin api
-  router.get('/', (req, res) => { controller.list(req, res); });
+  router.get('/', [parseQuery], (req: Request, res: Response) => { controller.list(req, res); });
   router.get('/:id', (req, res) => { controller.get(req, res); });
 
 

@@ -20,10 +20,11 @@ export function MerchantRouter(db: DB){
   // admin api
   router.get('/', [parseQuery], (req: Request, res: Response) => { controller.list(req, res); });
   router.get('/:id', (req, res) => { controller.get(req, res); });
+
   // router.post('/', (req, res) => { controller.load(req, res); });
   // router.patch('/', (req, res) => { controller.load(req, res); });
 
-  // v2
+  // old api
   router.get('/v2/myMerchants', (req, res) => { controller.gv1_getAvailableMerchants(req, res); });
   router.get('/v2/mySchedules', (req, res) => { controller.getMySchedules(req, res); })
   router.get('/getByAccountId', (req, res) => { controller.getByAccountId(req, res); });

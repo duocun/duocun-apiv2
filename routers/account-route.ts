@@ -1,13 +1,9 @@
 import express, {Request, Response} from "express";
 
 import { DB } from "../db";
-import { Account, AccountAttribute, IAccount } from "../models/account";
-import { MerchantStuff } from "../merchant-stuff";
-import { Utils } from "../utils";
-import { Config } from "../config";
-import { Model } from "../models/model";
-import { ObjectID } from "mongodb";
+import { Account } from "../models/account";
 import {AccountController} from "../controllers/account-controller";
+import { parseQuery } from "../middlewares/parseQuery";
 
 export function AccountRouter(db: DB) {
   const router = express.Router();
@@ -20,7 +16,7 @@ export function AccountRouter(db: DB) {
   router.get('/token/:id', (req, res) => { controller.gv1_getByTokenId(req, res); });
 
   // admin api
-  router.get('/', (req, res) => { controller.list(req, res); });
+  router.get('/',  [parseQuery], (req: Request, res: Response) =>  { controller.list(req, res); });
   router.get('/:id', (req, res) => { controller.get(req, res); });
 
   // v2 https://duocun.ca/api/Accounts/wechatLoginByOpenId
