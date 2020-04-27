@@ -4,6 +4,7 @@ import moment from "moment";
 import { DB } from "../db";
 import { Merchant } from "../models/merchant";
 import { Code, Model } from "../models/model";
+import { parseQuery } from "middlewares/parseQuery";
 
 
 export function MerchantRouter(db: DB){
@@ -11,11 +12,16 @@ export function MerchantRouter(db: DB){
   const model = new Merchant(db);
   const controller = new MerchantController(db);
 
-  // The order matters
+  // grocery api
   router.get('/G/deliverSchedules', (req, res) => { controller.gv1_getDeliverySchedule(req, res); });
   router.get('/G/available', (req, res) => { controller.gv1_getAvailableMerchants(req, res); });
   router.get('/G/:id', (req, res) => { controller.gv1_get(req, res); });
   router.get('/G/', (req, res) => { controller.gv1_list(req, res); });
+
+  // admin api
+  router.get('/', [parseQuery], (req: Request, res: Response) => { controller.list(req, res); });
+  // router.post('/', (req, res) => { controller.load(req, res); });
+  // router.patch('/', (req, res) => { controller.load(req, res); });
 
   // v2
   router.get('/v2/myMerchants', (req, res) => { controller.gv1_getAvailableMerchants(req, res); });
@@ -44,24 +50,18 @@ export class MerchantController extends Model {
   }
 
   list(req: Request, res: Response) {
-    let query = null;
-    if (req.headers && req.headers.filter && typeof req.headers.filter === 'string') {
-      query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
-    }
+    const query = req.query;
+    const where: any = query.where;
+    const options: any = query.options;
 
-    query = this.model.convertIdFields(query);
-
-    this.model.joinFind(query).then((rs: any[]) => {
-      // const rs: IMerchant[] = [];
-      // ms.map(m => {
-      //   rs.push(this.toBasicRspObject(m));
-      // });
+    this.model.find_v2(where, options).then((r: any) => {
       res.setHeader('Content-Type', 'application/json');
-      if (rs) {
-        res.send(JSON.stringify(rs, null, 3));
-      } else {
-        res.send(JSON.stringify(null, null, 3))
-      }
+
+      res.send(JSON.stringify({
+        code: Code.SUCCESS,
+        data: r.data,
+        count: r.count
+      }));
     });
   }
 
@@ -213,4 +213,7 @@ export class MerchantController extends Model {
       }));
     });
   }
+
+
+
 };
