@@ -1,4 +1,4 @@
-import { Collection, ObjectId, ObjectID, InsertWriteOpResult, MongoError, BulkWriteResult, BulkWriteOpResultObject, InsertOneWriteOpResult } from "mongodb";
+import { Collection, ObjectId, ObjectID, MongoError, BulkWriteOpResultObject } from "mongodb";
 import { DB } from "./db";
 import { Db } from 'mongodb';
 import moment from 'moment';
@@ -314,7 +314,7 @@ export class Entity {
         let a = body['$in'];
         const arr: any[] = [];
         a.map((id: any) => {
-          if (typeof id === "string" && id.length === 24) {
+          if (typeof id === "string") {
             arr.push(new ObjectID(id));
           } else {
             arr.push(id);
@@ -322,7 +322,7 @@ export class Entity {
         });
 
         doc['_id'] = { $in: arr };
-      } else if (typeof body === "string" && body.length === 24) {
+      } else if (typeof body === "string") {
         doc['_id'] = new ObjectID(doc._id);
       }
     }
@@ -333,7 +333,7 @@ export class Entity {
         let a = body['$in'];
         const arr: any[] = [];
         a.map((id: any) => {
-          if (typeof id === "string" && id.length === 24) {
+          if (typeof id === "string") {
             arr.push(new ObjectID(id));
           } else {
             arr.push(id);
@@ -341,27 +341,27 @@ export class Entity {
         });
 
         doc['paymentId'] = { $in: arr };
-      } else if (typeof body === "string" && body.length === 24) {
+      } else if (typeof body === "string") {
         doc['paymentId'] = new ObjectID(doc.paymentId);
       }
     }
 
     if (doc && doc.hasOwnProperty('paymentId')) {
       const paymentId = doc['paymentId'];
-      if (typeof paymentId === 'string' && paymentId.length === 24) {
+      if (typeof paymentId === 'string') {
         doc['paymentId'] = new ObjectID(paymentId);
       }
     }
 
     if (doc && doc.hasOwnProperty('categoryId')) {
       const catId = doc['categoryId'];
-      if (typeof catId === 'string' && catId.length === 24) {
+      if (typeof catId === 'string') {
         doc['categoryId'] = new ObjectID(catId);
       }
     }
     if (doc && doc.hasOwnProperty('areaId')) {
       const areaId = doc['areaId'];
-      if (typeof areaId === 'string' && areaId.length === 24) {
+      if (typeof areaId === 'string') {
         doc['areaId'] = new ObjectID(areaId);
       }
     }
@@ -372,7 +372,7 @@ export class Entity {
         let a = body['$in'];
         const arr: any[] = [];
         a.map((id: any) => {
-          if (typeof id === "string" && id.length === 24) {
+          if (typeof id === "string") {
             arr.push(new ObjectID(id));
           } else {
             arr.push(id);
@@ -380,7 +380,7 @@ export class Entity {
         });
 
         doc['merchantId'] = { $in: arr };
-      } else if (typeof body === "string" && body.length === 24) {
+      } else if (typeof body === "string") {
         doc['merchantId'] = new ObjectID(doc.merchantId);
       }
     }
@@ -391,7 +391,7 @@ export class Entity {
         let a = body['$in'];
         const arr: any[] = [];
         a.map((id: any) => {
-          if (typeof id === "string" && id.length === 24) {
+          if (typeof id === "string") {
             arr.push(new ObjectID(id));
           } else {
             arr.push(id);
@@ -399,14 +399,14 @@ export class Entity {
         });
 
         doc['merchantAccountId'] = { $in: arr };
-      } else if (typeof body === "string" && body.length === 24) {
+      } else if (typeof body === "string") {
         doc['merchantAccountId'] = new ObjectID(doc.merchantAccountId);
       }
     }
 
     if (doc && doc.hasOwnProperty('clientId')) {
       const clientId = doc['clientId'];
-      if (typeof clientId === 'string' && clientId.length === 24) {
+      if (typeof clientId === 'string') {
         doc['clientId'] = new ObjectID(clientId);
       } else if (clientId && clientId.hasOwnProperty('$in')) {
         let a = clientId['$in'];
@@ -421,7 +421,7 @@ export class Entity {
     const productIdKey = this.getProperty(doc, 'productId');
     if (productIdKey) {
       const val = doc[productIdKey];
-      if (typeof val === 'string' && val.length === 24) {
+      if (typeof val === 'string') {
         doc[productIdKey] = new ObjectID(val);
       } else if (val && val.hasOwnProperty('$in')) {
         let a = val['$in'];
@@ -435,20 +435,20 @@ export class Entity {
 
     if (doc && doc.hasOwnProperty('mallId')) {
       const mallId = doc['mallId'];
-      if (typeof mallId === 'string' && mallId.length === 24) {
+      if (typeof mallId === 'string') {
         doc['mallId'] = new ObjectID(mallId);
       }
     }
 
     if (doc && doc.hasOwnProperty('accountId')) {
       const accountId = doc['accountId'];
-      if (typeof accountId === 'string' && accountId.length === 24) {
+      if (typeof accountId === 'string') {
         doc['accountId'] = new ObjectID(accountId);
       } else if (accountId && accountId.hasOwnProperty('$in')) {
         let a = accountId['$in'];
         const arr: any[] = [];
         a.map((id: any) => {
-          if (typeof id === 'string' && id.length === 24) {
+          if (typeof id === 'string') {
             arr.push(new ObjectID(id));
           } else {
             arr.push(id); // object type
@@ -465,7 +465,7 @@ export class Entity {
         let a = body['$in'];
         const arr: any[] = [];
         a.map((id: any) => {
-          if (typeof id === "string" && id.length === 24) {
+          if (typeof id === "string") {
             arr.push(new ObjectID(id));
           } else {
             arr.push(id);
@@ -473,28 +473,28 @@ export class Entity {
         });
 
         doc['orderId'] = { $in: arr };
-      } else if (typeof body === "string" && body.length === 24) {
+      } else if (typeof body === "string") {
         doc['orderId'] = new ObjectID(body);
       }
     }
 
     if (doc && doc.hasOwnProperty('driverId')) {
       const driverId = doc['driverId'];
-      if (typeof driverId === 'string' && driverId.length === 24) {
+      if (typeof driverId === 'string') {
         doc['driverId'] = new ObjectID(driverId);
       }
     }
 
     if (doc && doc.hasOwnProperty('fromId')) {
       const fromId = doc['fromId'];
-      if (typeof fromId === 'string' && fromId.length === 24) {
+      if (typeof fromId === 'string' && ObjectId.isValid(fromId)) {
         doc['fromId'] = new ObjectID(fromId);
       }
     }
 
     if (doc && doc.hasOwnProperty('toId')) {
       const toId = doc['toId'];
-      if (typeof toId === 'string' && toId.length === 24) {
+      if (typeof toId === 'string'  && ObjectId.isValid(toId)) {
         doc['toId'] = new ObjectID(toId);
       }
     }

@@ -1,5 +1,4 @@
-import express from "express";
-import { Request, Response } from "express";
+import express, {Request, Response} from "express";
 
 import { DB } from "../db";
 import { Account, AccountAttribute, IAccount } from "../models/account";
@@ -14,7 +13,7 @@ export function AccountRouter(db: DB) {
   const controller = new AccountController(db);
   
   // grocery api
-  router.post('/login', (req, res) => { controller.login(req, res); });
+  router.post('/login', (req: Request, res: Response) => { controller.login(req, res); });
   router.get('/current', (req, res) => { controller.getCurrentAccount(req, res); });
   router.get('/token/:id', (req, res) => { controller.gv1_getByTokenId(req, res); });
   router.get('/', (req, res) => { controller.gv1_list(req, res); });

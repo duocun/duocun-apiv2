@@ -1,15 +1,22 @@
 import express, { Request, Response }  from "express";
 import { DB } from "../db";
 import { Transaction } from "../models/transaction";
+import { TransactionController } from "../controllers/transaction-controller";
 import { Model, Code } from "../models/model";
+import { parseQuery } from "../middlewares/parseQuery";
 
 export function TransactionRouter(db: DB){
   const router = express.Router();
   const model = new Transaction(db);
   const controller = new TransactionController(db);
 
-  router.get('/page/:clientId/:currentPageNumber/:itemsPerPage', (req, res) => { controller.getPage(req, res); });
+  // admin api
 
+  // api/admin/transactions?query={where:xxx,options:{"limit":10,"skip":0,"sort":[["_id",1]]}}
+  router.get('/', [parseQuery], (req: Request, res: Response) => { controller.list(req, res); });
+
+
+  // old api
   router.get('/getMerchantBalance', (req, res) => { model.getMerchantBalance(req, res); });
   router.get('/loadPage/:currentPageNumber/:itemsPerPage', (req, res) => { model.loadPage(req, res); });
   router.get('/sales', (req, res) => { model.getSales(req, res); });
@@ -41,26 +48,3 @@ export function TransactionRouter(db: DB){
 };
 
 
-export class TransactionController extends Model {
-  model: Transaction;
-  constructor(db: DB) {
-    super(db, 'transactions');
-    this.model = new Transaction(db);
-  }
-
-  getPage(req: Request, res: Response) {
-    const clientId = req.params.clientId;
-    const itemsPerPage = +req.params.itemsPerPage;
-    const currentPageNumber = +req.params.currentPageNumber;
-
-    res.setHeader('Content-Type', 'application/json');
-
-    this.model.loadPageV2(clientId, itemsPerPage, currentPageNumber).then(data => {
-      res.send(JSON.stringify({
-        code: Code.SUCCESS,
-        total: data.total,
-        data: data.transactions 
-      }));
-    });
-  }
-}

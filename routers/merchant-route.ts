@@ -4,7 +4,7 @@ import moment from "moment";
 import { DB } from "../db";
 import { Merchant } from "../models/merchant";
 import { Code, Model } from "../models/model";
-import { parseQuery } from "middlewares/parseQuery";
+import { parseQuery } from "../middlewares/parseQuery";
 
 
 export function MerchantRouter(db: DB){

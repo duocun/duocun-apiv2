@@ -7,7 +7,12 @@ export const parseQuery = (req: Request, res: Response, next:any) => {
   }
   if (query.query) {
     // req.context = { ...req.context, query: JSON.parse(<string>query.query)};
-    req.query = JSON.parse(<string>query.query);
+    try{
+      req.query = JSON.parse(<string>query.query);
+    } catch (e){
+      console.log(e);
+    }
+    
   }
   next();
 }

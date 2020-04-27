@@ -14,6 +14,8 @@ export function ProductRouter(db: DB){
   router.get('/G/', (req, res) => { controller.gv1_list(req, res); });
 
   // admin api
+
+  // api/admin/products?query={where:xxx,options:{"limit":10,"skip":0,"sort":[["_id",1]]}}
   router.get('/',[parseQuery], (req: Request, res: Response) => { controller.av1_list(req, res)});
 
 
