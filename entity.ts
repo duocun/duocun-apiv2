@@ -502,9 +502,9 @@ export class Entity {
     if (doc && doc.hasOwnProperty('$or')) {
       const items: any[] = [];
       doc['$or'].map((it: any) => {
-        if (it && it.hasOwnProperty('toId') && typeof it.toId === 'string' && it.toId.length === 24) {
+        if (it && it.hasOwnProperty('toId')  && ObjectId.isValid(it.toId)) {
           items.push({ toId: new ObjectID(it.toId) });
-        } else if (it && it.hasOwnProperty('fromId') && typeof it.fromId === 'string' && it.fromId.length === 24) {
+        } else if (it && it.hasOwnProperty('fromId')  && ObjectId.isValid(it.fromId)) {
           items.push({ fromId: new ObjectID(it.fromId) });
         }
       });
