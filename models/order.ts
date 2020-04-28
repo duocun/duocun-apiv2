@@ -192,9 +192,19 @@ export class Order extends Model {
       }
 
       if (order.driverId) {
-        const driver = driverAccounts.find((a: IAccount) => a._id.toString() === order.driverId.toString());
+        const driver = driverAccounts.find(
+          (a: IAccount) => a._id.toString() === order.driverId.toString()
+        );
         const d = driver;
-        order.driver = { _id: d._id.toString(), username: d.username, phone: d.phone };
+        if (d && d._id) {
+          order.driver = {
+            _id: d._id.toString(),
+            username: d.username,
+            phone: d.phone,
+          };
+        } else {
+          console.log("driver id not found: " + order.driverId);
+        }
       }
 
       if (order.items) {
