@@ -160,9 +160,10 @@ export class Order extends Model {
   //  client:{ _id, username, phone },
   //  merchant: { _id, name }
   //  items: [{productId, productName, price, cost, quantity}]}];
-  async joinFindV2(query: any) {
-    let q = query ? query : {};
-    const rs = await this.find(q);
+
+  async joinFindV2(where: any, options?: object) {
+    const ret: any = await this.find_v2(where, options);
+    const rs = ret.data;
     const clientAccountIds = rs.map((r: any) => r.clientId);
     const merchantAccountIds = rs.map((r: any) => r.merchantId);
     const driverAccounts = await this.accountModel.find({ type: 'driver' }, null, ['_id', 'username', 'phone']);
@@ -170,7 +171,7 @@ export class Order extends Model {
     const merchantAccounts = await this.accountModel.find({ _id: { $in: merchantAccountIds } }, null, ['_id', 'username', 'merchants']);
     const merchants = await this.merchantModel.find({});
     const ps = await this.productModel.find({});
-    rs.map((order: any) => {
+    rs.forEach((order: any) => {
       const items: any[] = [];
 
       if (order.clientId) {
@@ -198,7 +199,7 @@ export class Order extends Model {
       }
 
       if (order.items) {
-        order.items.map((it: IOrderItem) => {
+        order.items.forEach((it: IOrderItem) => {
           const product = ps.find((p: any) => p && p._id.toString() === it.productId.toString());
           if (product) {
             items.push({ ...it, productName: product.name });
@@ -208,7 +209,7 @@ export class Order extends Model {
       }
     });
 
-    return rs.map(r => ({ 
+    const data = rs.map((r: any) => ({ 
       _id: r._id,
       code: r.code,
       location: r.location,
@@ -224,19 +225,25 @@ export class Order extends Model {
       // merchantAccount: r.merchantAccount,
       driver: r.driver,
       note: r.note,
-      delivered: r.deliverd,
+      delivered: r.delivered,
       created: r.creaded
      }));
+
+     return {
+       data,
+       count: ret.count
+     }
   }
 
+  // deprecated
   // get transactions with items
   async findTransactions(query: any, fields: string[] = []) {
     const ts = await this.transactionModel.find(query, fields);
     if (fields.indexOf('items') !== -1) {
       const ids = ts.map((t: any) => t.orderId);
-      const orders = await this.joinFindV2({ _id: { $in: ids } });
+      const ret = await this.joinFindV2({ _id: { $in: ids } });
       const orderMap: any = {};
-      orders.map(order => { orderMap[order._id.toString()] = order.items; });
+      ret.data.map((order: any) => { orderMap[order._id.toString()] = order.items; });
       ts.map((t: any) => t.items = t.orderId ? orderMap[t.orderId.toString()] : []);
     }
     return this.filterArray(ts, fields);

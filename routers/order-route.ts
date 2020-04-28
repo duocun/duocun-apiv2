@@ -20,7 +20,6 @@ export function OrderRouter(db: DB) {
 
   // old api
   router.get('/v2/transactions', (req, res) => { model.reqTransactions(req, res); });
-  router.get('/v2/', (req, res) => { controller.listV2(req, res); });
 
   // Public
   // input:

@@ -46,7 +46,7 @@ export class Entity {
   }
 
 
-  find_v2(where: any, options?: object, fields?: Array<string>) {
+  find_v2(where: any, options?: object, fields?: Array<object>) {
     const query = this.convertIdFields(where);
     return new Promise((resolve, reject) => {
       this.getCollection().then(collection => {
