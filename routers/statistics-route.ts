@@ -9,7 +9,7 @@ export function StatisticsRouter(db: DB) {
     const model = new Order(db);
     const controller = new StatisticsController(model, db);
 
-    router.get('/stat', (req, res) => { controller.getStatistics(req, res); });
+    router.get('/summary', (req, res) => { controller.getStatistics(req, res); });
     router.get('/driver', (req, res) => { controller.getDriverStatistics(req, res); });
     router.get('/merchant', (req, res) => { controller.getMerchantStatistics(req, res); });
     router.get('/product', (req, res) => { controller.getProductStatistics(req, res); });

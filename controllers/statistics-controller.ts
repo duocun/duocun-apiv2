@@ -5,11 +5,12 @@ import { Request, Response } from "express";
 import { Controller, Code } from "./controller";
 
 export class StatisticsController extends Controller {
-  model: Order;
+
+  orderModel: Order;
 
   constructor(model: Order, db: DB) {
     super(model, db);
-    this.model = model;
+    this.orderModel = new Order(db);
   }
 
 
@@ -107,7 +108,7 @@ async getMerchantInfo(startDate:string,endDate:string) {
     const q = {
         deliverDate: {$gte: startDate, $lte:endDate}
     };
-    const orders = await this.model.joinFindV2(q);
+    const orders = await this.orderModel.joinFindV2(q);
     const merchantMap:any = {};
     orders.forEach(order=>{
         const merchant = order.merchant;
@@ -147,7 +148,7 @@ async getProductInfo(startDate:string,endDate:string) {
     const q = {
         deliverDate: {$gte: startDate, $lte:endDate}
     };
-    const orders = await this.model.joinFindV2(q);
+    const orders = await this.orderModel.joinFindV2(q);
     const productMap:any = {};
     orders.forEach(order=>{
         const items = order.items;
@@ -193,7 +194,7 @@ async getDriverInfo(startDate:string) {
     const q = {
         deliverDate: startDate
     };
-    const orders = await this.model.joinFindV2(q);
+    const orders = await this.orderModel.joinFindV2(q);
     const driverMap:any = {};
     orders.forEach(order=>{
         const driver = order.driver;
@@ -220,14 +221,14 @@ async getDriverInfo(startDate:string) {
                 driverMap[dId].pickUpList[mId] = {
                     merchantId: "",
                     merchantName: "",
-                    merchantProductQuantity: 0,
+                    nProducts: 0,
                 };
             }
             driverMap[dId].pickUpList[mId].merchantId = mId;
             driverMap[dId].pickUpList[mId].merchantName = merchant
               ? merchant.name
               : "N/A";
-            driverMap[dId].pickUpList[mId].merchantProductQuantity +=
+            driverMap[dId].pickUpList[mId].nProducts +=
               order.items.length;
         }
 
@@ -237,8 +238,8 @@ async getDriverInfo(startDate:string) {
     for (let dId in driverMap) {
       driverArray.push({
         driverId: driverMap[dId].driverId, //司机id
-        nOrders: driverMap[dId].totalOrderQuantity, //司机一共接了多少单（已有order中）
-        nProducts: driverMap[dId].totalProductQuantity, // 司机一共拿了多少商品
+        nOrders: driverMap[dId].nOrders, //司机一共接了多少单（已有order中）
+        nProducts: driverMap[dId].nProducts, // 司机一共拿了多少商品
         totalCost: parseFloat(driverMap[dId].totalCost.toFixed(2)), //这些商品一共值多少钱
         driverName: driverMap[dId].driverName, //司机名称
         pickUpList: driverMap[dId].pickUpList, //司机去了哪些商家（商家id，商家名，每个商家拿了多少）
@@ -253,7 +254,7 @@ async getStatisticsInfo(startDate:string,endDate:string) {
     const q = {
         deliverDate: {$gte: startDate, $lte:endDate}
     };
-    const orders = await this.model.joinFindV2(q);
+    const orders = await this.orderModel.joinFindV2(q);
     const stat = {
       nOrders: 0,
       nProducts: 0,
