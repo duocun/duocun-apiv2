@@ -45,7 +45,7 @@ export class Entity {
     return docs;
   }
 
-  find_v2(where: any, options?: object, fields?: Array<object>) {
+  async find_v2(where: any, options?: object, fields?: Array<object>) {
     const query = this.convertIdFields(where);
     const collection = await this.getCollection();
     const data:any[] = await collection.find(query, options).toArray();

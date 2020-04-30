@@ -4,6 +4,11 @@ import { Order } from "../models/order";
 import { Request, Response } from "express";
 import { Controller, Code } from "./controller";
 
+import path from 'path';
+import { getLogger } from '../lib/logger'
+const logger = getLogger(path.basename(__filename));
+
+
 export class OrderController extends Controller {
   model: Order;
 
@@ -84,23 +89,28 @@ export class OrderController extends Controller {
 
 
   // admin
-  list(req: Request, res: Response) {
+  async list(req: Request, res: Response):Promise<void> {
     const where: any = req.query.where;
     const options: any = req.query.options;
     res.setHeader('Content-Type', 'application/json');
-    if(where){
-      this.model.joinFindV2(where, options).then((r: any) => {
-        res.send(JSON.stringify({
-          code: Code.SUCCESS,
-          data: r.data,
-          count: r.count 
-        }));
-      });
-    }else{
+    let data:any[] = [];
+    let count:number = 0;
+    let code = Code.FAIL;
+    try {
+      if(where){ 
+        // TODO: no where will return error, is it a good choice?
+        const r = await this.model.joinFindV2(where, options);
+        code = Code.SUCCESS;
+        data = r.data;
+        count = r.count;
+      } 
+    } catch (error) {
+      logger.error(`list error: ${error}`);
+    } finally {
       res.send(JSON.stringify({
-        code: Code.FAIL,
-        data: [],
-        count: 0 
+        code,
+        data,
+        count
       }));
     }
   }
