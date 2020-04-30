@@ -21,15 +21,14 @@ export class Model extends Entity {
     super(dbo, tableName);
   }
 
-  async getById(id: string) {
+  async getById(id: string, options: any={}) {
     if (id && ObjectId.isValid(id)) {
-      const r = await this.findOne({ _id: id });
+      const r = await this.findOne({ _id: id }, options);
       if (r) {
         return r;
       }
-    } else {
-      return null;
     }
+    return null;
   }
 
   // to be removed

@@ -18,8 +18,8 @@ export function MerchantRouter(db: DB){
   router.get('/G/', (req, res) => { controller.gv1_list(req, res); });
 
   // admin api
-  router.get('/', [parseQuery], (req: Request, res: Response) => { controller.list(req, res); });
-  router.get('/:id', (req, res) => { controller.get(req, res); });
+  router.get('/', [parseQuery], async (req: Request, res: Response) => { await controller.list(req, res); });
+  router.get('/:id', async (req, res) => { await controller.get(req, res); });
 
   // router.post('/', (req, res) => { controller.load(req, res); });
   // router.patch('/', (req, res) => { controller.load(req, res); });
