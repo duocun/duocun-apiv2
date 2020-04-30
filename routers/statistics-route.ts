@@ -1,12 +1,12 @@
 import express, {Request, Response} from "express";
 import { DB } from "../db";
-import { Order } from "../models/order";
 import { parseQuery } from "../middlewares/parseQuery";
 import { StatisticsController } from "../controllers/statistics-controller";
+import { Statistics } from "../models/statistics";
 
 export function StatisticsRouter(db: DB) {
     const router = express.Router();
-    const model = new Order(db);
+    const model = new Statistics(db);
     const controller = new StatisticsController(model, db);
 
     router.get('/summary', (req, res) => { controller.getStatistics(req, res); });
