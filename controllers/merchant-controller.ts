@@ -3,20 +3,47 @@ import { Request, Response } from "express";
 import moment from "moment";
 import { DB } from "../db";
 import { Merchant } from "../models/merchant";
+import { Product } from "../models/product";
 import { Controller, Code } from "./controller";
+import path from 'path';
+import { getLogger } from '../lib/logger'
+const logger = getLogger(path.basename(__filename));
 
 export class MerchantController extends Controller {
   model: Merchant;
+  productModel: Product;
   constructor(model: Merchant, db: DB) {
     super(model, db);
-
     this.model = model;
+    this.productModel = new Product(db);
   }
 
-  async get(req: Request, res: Response):Promise<void> {
-    await super.get(req, res);
+  async get(req: Request, res: Response):Promise<void>  {
+    const id = req.params.id;
+    let data:any = {};
+    let code = Code.FAIL;
+    const options: any = ( req.query && req.query.options ) || {};
+    
+    try {
+      // join, model should be clear enough
+      data = await this.model.getById(id, options);
+      if ( data ) {
+        data.products = await this.productModel.list({
+          merchantId: id
+        });
+      }
+      code = Code.SUCCESS;
+    } catch (error) {
+      logger.error(`get error : ${error}`);
+    } finally {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify({
+        code: code,
+        data: data 
+      }));
+    }
   }
-
+  
   getMySchedules(req: Request, res: Response) {
     let fields: any;
     let data: any;
