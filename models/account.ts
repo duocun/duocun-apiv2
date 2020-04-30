@@ -10,6 +10,7 @@ import { EventLog } from "./event-log";
 
 import path from 'path';
 import { getLogger } from '../lib/logger'
+import { resolve } from "url";
 const logger = getLogger(path.basename(__filename));
 
 
@@ -96,6 +97,14 @@ export class Account extends Model {
     this.utils = new Utils();
   }
 
+  comparePassword(password: string, encrypted: string) {
+    return new Promise(resolve => {
+      bcrypt.compare(password, encrypted, (err, matched) => {
+        logger.error(`login error: ${err}`);
+        resolve(matched);
+      });
+    });
+  }
 
   // --------------------------------------------------------------------------------------------------
   // wechat, google or facebook can not use this request to login
@@ -106,17 +115,14 @@ export class Account extends Model {
       const account: IAccount = await this.findOne({ username });
       if (account && account.password) {
         try {
-          bcrypt.compare(password, account.password, (err, matched) => {
-            if (matched) {
-              account.password = '';
-              const cfg = new Config();
-              return jwt.sign(account._id.toString(), cfg.JWT.SECRET); // SHA256
-            } else {
-              logger.error(`login error: ${err}`);
-              return;
-            }
-          });
-
+          const matched = await this.comparePassword(password, account.password);
+          if (matched) {
+            account.password = '';
+            const cfg = new Config();
+            return jwt.sign(account._id.toString(), cfg.JWT.SECRET); // SHA256
+          } else {
+            return;
+          }
         } catch (e) {
           logger.error(`login sign token exception ${e}`);
           return;
