@@ -17,7 +17,7 @@ export function ProductRouter(db: DB) {
 
   // api/admin/products?query={where:xxx,options:{"limit":10,"skip":0,"sort":[["_id",1]]}}
   router.get('/', [parseQuery], async (req: Request, res: Response) => { await controller.list(req, res) });
-  router.get('/:id', (req, res) => { controller.get(req, res); });
+  router.get('/:id', async (req, res) => { await controller.get(req, res); });
 
   // old api
 

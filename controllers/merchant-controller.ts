@@ -13,6 +13,9 @@ export class MerchantController extends Controller {
     this.model = model;
   }
 
+  async get(req: Request, res: Response):Promise<void> {
+    await super.get(req, res);
+  }
 
   getMySchedules(req: Request, res: Response) {
     let fields: any;
@@ -67,27 +70,6 @@ export class MerchantController extends Controller {
       res.send(JSON.stringify(xs, null, 3));
     });
   }
-
-
-  get(req: Request, res: Response) {
-    const id = req.params.id;
-    let fields: any;
-    if (req.headers) {
-      if (req.headers.fields && typeof req.headers.fields === 'string') {
-        fields = JSON.parse(req.headers.fields);
-      }
-    }
-
-    this.model.findOne({ _id: id }).then((r: any) => {
-      if (r) {
-        const it = this.model.filter(r, fields);
-        res.send(JSON.stringify(it, null, 3));
-      } else {
-        res.send(JSON.stringify(null, null, 3))
-      }
-    });
-  }
-
 
   // load restaurants
   // origin --- ILocation object

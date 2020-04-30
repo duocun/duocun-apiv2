@@ -19,6 +19,14 @@ export class AccountController extends Controller {
   utils: Utils;
   cfg: Config;
 
+  FIELDS_HIDE = {
+    password: 0,
+    openId: 0,
+    cardAccountId: 0,
+    cards: 0,
+    verificationCode: 0,
+  };
+
   constructor(model: Account, db: DB) {
     super(model, db);
 
@@ -31,19 +39,19 @@ export class AccountController extends Controller {
 
   async list (req: Request, res: Response):Promise<void> { 
     // logger.debug("list override in account")
-    let options: any = req.query.options;
-    options = options || {};
+    let options: any = req.query.options || {};
     // remove sensitive field
-    options.fields = {
-      password: 0,
-      openId: 0,
-      cardAccountId: 0,
-      cards: 0,
-      verificationCode: 0,
-    }
+    options.fields = this.FIELDS_HIDE;
     req.query.options = options;
-
     await super.list(req, res);
+  }
+  async get (req: Request, res: Response):Promise<void> { 
+    // logger.debug("list override in account")
+    let options: any = ( req.query && req.query.options ) || {};
+    // remove sensitive field
+    options.fields = this.FIELDS_HIDE;
+    req.query.options = options;
+    await super.get(req, res);
   }
 
   loginByPhone(req: Request, res: Response) {
