@@ -158,24 +158,6 @@ export class Order extends Model {
     this.locationModel = new Location(dbo);
   }
 
-  updateOne(orderId: any, doc: any, options?: any): Promise<any> {
-    let query = { _id: orderId };
-    return new Promise((resolve, reject) => {
-      if (Object.keys(doc).length === 0 && doc.constructor === Object) {
-        resolve();
-      } else {
-        query = this.convertIdFields(query);
-        doc = this.convertIdFields(doc);
-
-        this.getCollection().then((c: Collection) => {
-          c.updateOne(query, { $set: doc }, options, (err, r: any) => {
-            // {n: 1, nModified: 0, ok: 1}
-            resolve(r.result);
-          });
-        });
-      }
-    });
-  }
   async createOne(order: IOrder) {
     const savedOrders: IOrder[] = [];
     const paymentId = new ObjectID().toString();
