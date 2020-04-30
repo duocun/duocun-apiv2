@@ -155,6 +155,8 @@ export class Order extends Model {
     this.locationModel = new Location(dbo);
   }
 
+
+
   // v2 return [{
   //  _id,
   //  client:{ _id, username, phone },
