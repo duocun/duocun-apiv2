@@ -12,24 +12,7 @@ export class OrderController extends Controller {
     this.model = model;
   }
 
-
-  listV2(req: Request, res: Response) {
-    let query = null;
-
-    if (req.headers && req.headers.filter && typeof req.headers.filter === 'string') {
-      query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
-    }
-
-    this.model.joinFindV2(query).then((rs: any[]) => {
-      res.setHeader('Content-Type', 'application/json');
-      if (rs) {
-        res.send(JSON.stringify(rs, null, 3));
-      } else {
-        res.send(JSON.stringify(null, null, 3))
-      }
-    });
-  }
-
+  // deprecated
   loadPage(req: Request, res: Response) {
     const itemsPerPage = +req.params.itemsPerPage;
     const currentPageNumber = +req.params.currentPageNumber;
@@ -101,6 +84,25 @@ export class OrderController extends Controller {
 
 
   // admin
-
+  list(req: Request, res: Response) {
+    const where: any = req.query.where;
+    const options: any = req.query.options;
+    res.setHeader('Content-Type', 'application/json');
+    if(where){
+      this.model.joinFindV2(where, options).then((r: any) => {
+        res.send(JSON.stringify({
+          code: Code.SUCCESS,
+          data: r.data,
+          count: r.count 
+        }));
+      });
+    }else{
+      res.send(JSON.stringify({
+        code: Code.FAIL,
+        data: [],
+        count: 0 
+      }));
+    }
+  }
 
 }
