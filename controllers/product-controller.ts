@@ -88,4 +88,44 @@ export class ProductController extends Controller {
       );
     }
   }
+
+  async update(req: Request, res: Response): Promise<void> {
+    const productId = req.query.productId;
+    const productData = req.body.data;
+    let code = Code.FAIL;
+    let data = productId;
+    if (productData instanceof Array) {
+      this.model.bulkUpdate(productData, req.body.options).then((x) => {
+        res.setHeader("Content-Type", "application/json");
+        res.send(JSON.stringify(x, null, 3)); // x --- {status: 1, msg: ''}
+      });
+    } else {
+      try {
+        if (req.body) {
+          const r = await this.model.updateOne(
+            productId,
+            productData,
+            req.body.options
+          );
+          if (r.nModified === 1 && r.ok === 1) {
+            code = Code.SUCCESS;
+            data = productId;
+          } else {
+            code = Code.FAIL;
+            data = productId;
+          }
+        }
+      } catch (error) {
+        logger.error(`update product error: ${error}`);
+      } finally {
+        res.setHeader("Content-Type", "application/json");
+        res.send(
+          JSON.stringify({
+            code: code,
+            data: data,
+          })
+        );
+      }
+    }
+  }
 }
