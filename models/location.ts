@@ -371,6 +371,7 @@ export class Location extends Model {
 
 
   toProvinceAbbr(input: string, to = 'abbr') {
+    if(!input){return ''}
     const provinces = [
       ['Alberta', 'AB'],
       ['British Columbia', 'BC'],
@@ -483,6 +484,7 @@ export class Location extends Model {
   }
 
   toStreetAbbr(streetName: string) {
+    if(!streetName){return ''}
     return streetName.replace(' Street', ' St').replace(' Avenue', ' Ave');
   }
 

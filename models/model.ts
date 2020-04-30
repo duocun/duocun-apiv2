@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { ObjectID, Collection } from "mongodb";
+import { ObjectId } from "mongodb";
 import { DB } from "../db";
 
 import { Entity } from "../entity";
@@ -16,26 +16,48 @@ export const Status = {
   INACTIVE: 'I'
 }
 
-export const Code = {
-  SUCCESS: 'success',
-  FAIL: 'fail'
-}
-
 export class Model extends Entity {
   constructor(dbo: DB, tableName: string) {
     super(dbo, tableName);
   }
 
-  async getById(id: string) {
-    if (id && ObjectID.isValid(id)) {
-      const r = await this.findOne({ _id: id });
+  async getById(id: string, options: any={}) {
+    if (id && ObjectId.isValid(id)) {
+      const r = await this.findOne({ _id: id }, options);
       if (r) {
         return r;
       }
-    } else {
-      return null;
     }
+    return null;
   }
+
+  // to be removed
+  list(req: Request, res: Response) {
+    const where: any = req.query.where;
+    const options: any = req.query.options;
+    this.find_v2(where, options).then((r: any) => {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify({
+        code: 'success',
+        data: r.data,
+        count: r.count 
+      }));
+    });
+  }
+
+  // to be removed
+  get(req: Request, res: Response) {
+    const id = req.params.id;
+    this.getById(id).then(data => {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify({
+        code: data ? 'success' : 'fail',
+        data: data 
+      }));
+    });
+  }
+
+
 
   // Wrong !
   // m --- local moment object for date, m.isUTC() must be false
@@ -66,82 +88,6 @@ export class Model extends Entity {
     });
   }
 
-  list(req: Request, res: Response) {
-    let query = {};
-    let key = null;
-    let fields: any = null;
-    if (req.headers) {
-      if (req.headers.filter && typeof req.headers.filter === 'string') {
-        query = req.headers.filter ? JSON.parse(req.headers.filter) : null;
-      }
-
-      if (req.headers.distinct && typeof req.headers.distinct === 'string') {
-        key = req.headers.distinct ? JSON.parse(req.headers.distinct) : null;
-      }
-
-      if (req.headers.fields && typeof req.headers.fields === 'string') {
-        fields = JSON.parse(req.headers.fields);
-      }
-    }
-
-    if (key && key.distinct) {
-      this.distinct(key.distinct, query).then((x: any) => {
-        res.setHeader('Content-Type', 'application/json');
-        res.send(JSON.stringify(x, null, 3));
-      });
-    } else {
-      this.find(query).then((xs: any) => {
-        res.setHeader('Content-Type', 'application/json');
-        if (fields && fields.length > 0) {
-          const rs: any[] = [];
-
-          xs.map((x: any) => {
-            const it: any = {};
-            fields.map((key: any) => {
-              it[key] = x[key];
-            });
-
-            rs.push(it);
-          });
-
-          res.send(JSON.stringify(rs, null, 3));
-        } else {
-          res.send(JSON.stringify(xs, null, 3));
-        }
-      });
-    }
-  }
-
-  get(req: Request, res: Response) {
-    const id = req.params.id;
-    let fields: any;
-    if (req.headers) {
-      if (req.headers.fields && typeof req.headers.fields === 'string') {
-        fields = JSON.parse(req.headers.fields);
-      }
-    }
-
-
-    if (id && ObjectID.isValid(id)) {
-      this.findOne({ _id: new ObjectID(id) }).then((r: any) => {
-        if (r) {
-          if (fields && fields.length > 0) {
-            const it: any = {};
-            fields.map((key: any) => {
-              it[key] = r[key];
-            });
-            res.send(JSON.stringify(it, null, 3));
-          } else {
-            res.send(JSON.stringify(r, null, 3));
-          }
-        } else {
-          res.send(JSON.stringify(null, null, 3))
-        }
-      });
-    } else {
-      res.send(JSON.stringify(null, null, 3))
-    }
-  }
 
   // join2(req: Request, res: Response) {
   //   const from = req.body.fromCollection;

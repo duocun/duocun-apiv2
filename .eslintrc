@@ -1,0 +1,12 @@
+{
+  "parserOptions": {
+    "ecmaVersion": 2016,
+    "sourceType": "module",
+    "ecmaFeatures": {
+        "jsx": true
+    }
+  },
+  "rules": {
+    "max-len": [1, 250]
+  }
+}
