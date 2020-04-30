@@ -3,9 +3,11 @@ import { DB } from "../db";
 import { Order, IOrder } from "../models/order";
 import { Request, Response } from "express";
 import { Controller, Code } from "./controller";
+import { getLogger } from "../lib/logger";
+import path from "path";
+const logger = getLogger(path.basename(__filename));
 
 export class StatisticsController extends Controller {
-
   orderModel: Order;
 
   constructor(model: Order, db: DB) {
@@ -13,167 +15,171 @@ export class StatisticsController extends Controller {
     this.orderModel = new Order(db);
   }
 
+  async getStatistics(req: Request, res: Response): Promise<void> {
+    const startDate: any = req.query.startDate;
+    const endDate: any = req.query.endDate;
+    let data: any = {};
+    let code = Code.FAIL;
+    try {
+      if (startDate && endDate) {
+        const r = await this.getStatisticsInfo(startDate, endDate);
+        code = Code.SUCCESS;
+        data = r;
+      }
+    } catch (error) {
+      logger.error(`get summary error: ${error}`);
+    } finally {
+      res.setHeader("Content-Type", "application/json");
+      res.send(
+        JSON.stringify({
+          code: code,
+          data: data,
+        })
+      );
+    }
+  }
 
-  
-getStatistics(req: Request, res: Response) {
-    const startDate:any = req.query.startDate;
-    const endDate:any = req.query.endDate;  
-    res.setHeader("Content-Type", "application/json");
-    this.getStatisticsInfo(startDate,endDate).then((stat:any)=>{
-        if(stat){
-            res.send(
-                JSON.stringify({
-                    code: Code.SUCCESS,
-                    data: stat,
-                })
-            );
-        }else{
-            res.send(
-                JSON.stringify({
-                    code: Code.FAIL,
-                    data: [],
-                })
-            );
-        }
-    })
-}   
-
-getMerchantStatistics(req: Request, res: Response) {
-    const startDate:any = req.query.startDate;
-    const endDate:any = req.query.endDate;  
-    res.setHeader("Content-Type", "application/json");
-    this.getMerchantInfo(startDate,endDate).then((stat:any)=>{
-        if(stat){
-            res.send(
-                JSON.stringify({
-                    code: Code.SUCCESS,
-                    data: stat,
-                })
-            );
-        }else{
-            res.send(
-                JSON.stringify({
-                    code: Code.FAIL,
-                    data: [],
-                })
-            );
-        }
-    })
-}
-getDriverStatistics(req: Request, res: Response) {
-    const startDate:any = req.query.startDate;
-    res.setHeader("Content-Type", "application/json");
-    this.getDriverInfo(startDate).then((stat:any)=>{
-        if(stat){
-            res.send(
-                JSON.stringify({
-                    code: Code.SUCCESS,
-                    data: stat,
-                })
-            );
-        }else{
-            res.send(
-                JSON.stringify({
-                    code: Code.FAIL,
-                    data: [],
-                })
-            );
-        }
-    })
-}
-getProductStatistics(req: Request, res: Response) {
-    const startDate:any = req.query.startDate;
-    const endDate:any = req.query.endDate;  
-    res.setHeader("Content-Type", "application/json");
-    this.getProductInfo(startDate,endDate).then((stat:any)=>{
-        if(stat){
-            res.send(
-                JSON.stringify({
-                    code: Code.SUCCESS,
-                    data: stat,
-                })
-            );
-        }else{
-            res.send(
-                JSON.stringify({
-                    code: Code.FAIL,
-                    data: [],
-                })
-            );
-        }
-    })
-}
-//return [{merchantId,merchantName,nOrders,totalPrice,totalCost}]
-async getMerchantInfo(startDate:string,endDate:string) {
+  async getMerchantStatistics(req: Request, res: Response): Promise<void> {
+    const startDate: any = req.query.startDate;
+    const endDate: any = req.query.endDate;
+    let data: any[] = [];
+    let code = Code.FAIL;
+    try {
+      if (startDate && endDate) {
+        const r = await this.getMerchantInfo(startDate, endDate);
+        code = Code.SUCCESS;
+        data = r;
+      }
+    } catch (error) {
+      logger.error(`get merchant statistic error: ${error}`);
+    } finally {
+      res.setHeader("Content-Type", "application/json");
+      res.send(
+        JSON.stringify({
+          code: code,
+          data: data,
+        })
+      );
+    }
+  }
+  async getDriverStatistics(req: Request, res: Response) {
+    const startDate: any = req.query.startDate;
+    let data: any[] = [];
+    let code = Code.FAIL;
+    try {
+      if (startDate) {
+        const r = await this.getDriverInfo(startDate);
+        code = Code.SUCCESS;
+        data = r;
+      }
+    } catch (error) {
+      logger.error(`get driver statistic error: ${error}`);
+    } finally {
+      res.setHeader("Content-Type", "application/json");
+      res.send(
+        JSON.stringify({
+          code: code,
+          data: data,
+        })
+      );
+    }
+  }
+  async getProductStatistics(req: Request, res: Response) {
+    const startDate: any = req.query.startDate;
+    const endDate: any = req.query.endDate;
+    let data: any[] = [];
+    let code = Code.FAIL;
+    try {
+      if (startDate && endDate) {
+        const r = await this.getProductInfo(startDate, endDate);
+        code = Code.SUCCESS;
+        data = r;
+      }
+    } catch (error) {
+      logger.error(`get product statistic error: ${error}`);
+    } finally {
+      res.setHeader("Content-Type", "application/json");
+      res.send(
+        JSON.stringify({
+          code: code,
+          data: data,
+        })
+      );
+    }
+  }
+  //return [{merchantId,merchantName,nOrders,totalPrice,totalCost}]
+  async getMerchantInfo(startDate: string, endDate: string) {
     const q = {
-        deliverDate: {$gte: startDate, $lte:endDate}
+      deliverDate: { $gte: startDate, $lte: endDate },
     };
-    const orders = await this.orderModel.joinFindV2(q);
-    const merchantMap:any = {};
-    orders.forEach(order=>{
-        const merchant = order.merchant;
-        const mId = merchant ? merchant._id : null;
-        if (mId !== undefined) {
-            if (!merchantMap[mId]) {
-              merchantMap[mId] = {
-                merchantId:"",
-                merchantName:"",
-                nOrders:0,
-                totalPrice:0,
-                totalCost:0,
-              };
-            }
-            merchantMap[mId].merchantId = mId;
-            merchantMap[mId].merchantName = order.merchant.name;
-            merchantMap[mId].nOrders++;
-            merchantMap[mId].totalPrice += order.price;
-            merchantMap[mId].totalCost += order.cost;
+    const dataSet = await this.orderModel.joinFindV2(q);
+    const orders = dataSet.data;
+    const merchantMap: any = {};
+    orders.forEach((order: any) => {
+      const merchant = order.merchant;
+      const mId = merchant ? merchant._id : null;
+      if (mId !== undefined) {
+        if (!merchantMap[mId]) {
+          merchantMap[mId] = {
+            merchantId: "",
+            merchantName: "",
+            nOrders: 0,
+            totalPrice: 0,
+            totalCost: 0,
+          };
         }
+        merchantMap[mId].merchantId = mId;
+        merchantMap[mId].merchantName = order.merchant.name;
+        merchantMap[mId].nOrders++;
+        merchantMap[mId].totalPrice += order.price;
+        merchantMap[mId].totalCost += order.cost;
+      }
     });
 
     const merchantArray = [];
     for (let mId in merchantMap) {
-        merchantArray.push({
-          merchantId: mId, //商家id
-          merchantName: merchantMap[mId].merchantName, //商家名
-          nOrders: merchantMap[mId].nOrders, //商家有多少单
-          totalPrice: parseFloat(merchantMap[mId].totalPrice.toFixed(2)), //总共销售额
-          totalCost: parseFloat(merchantMap[mId].totalCost.toFixed(2)), //总共成本
-        });
+      merchantArray.push({
+        merchantId: mId, //商家id
+        merchantName: merchantMap[mId].merchantName, //商家名
+        nOrders: merchantMap[mId].nOrders, //商家有多少单
+        totalPrice: parseFloat(merchantMap[mId].totalPrice.toFixed(2)), //总共销售额
+        totalCost: parseFloat(merchantMap[mId].totalCost.toFixed(2)), //总共成本
+      });
     }
-    return merchantArray;    
-}
-//return [{productId,merchantName,price,cost,quantity,totalPrice,totalCost}]
-async getProductInfo(startDate:string,endDate:string) {
+    return merchantArray;
+  }
+  //return [{productId,merchantName,price,cost,quantity,totalPrice,totalCost}]
+  async getProductInfo(startDate: string, endDate: string) {
     const q = {
-        deliverDate: {$gte: startDate, $lte:endDate}
+      deliverDate: { $gte: startDate, $lte: endDate },
     };
-    const orders = await this.orderModel.joinFindV2(q);
-    const productMap:any = {};
-    orders.forEach(order=>{
-        const items = order.items;
-        items.forEach((item: any)=>{
-            const pId = item.productId;
-            if (pId !== undefined) {
-                if (!productMap[pId]) {
-                  productMap[pId] = {
-                    prdouctName: "",
-                    merchantName: "",
-                    price: 0,
-                    cost: 0,
-                    quantity: 0,
-                    totalPrice: 0,
-                    totalCost: 0,
-                  };
-                }
-                productMap[pId].merchantName = order.merchant.name;
-                productMap[pId].price = item.price;
-                productMap[pId].cost = item.cost;
-                productMap[pId].quantity += item.quantity;
-                productMap[pId].totalPrice += item.price * item.quantity;
-                productMap[pId].totalCost += item.cost * item.quantity;
-              }
-        })
+    const dataSet = await this.orderModel.joinFindV2(q);
+    const orders = dataSet.data;
+    const productMap: any = {};
+    orders.forEach((order: any) => {
+      const items = order.items;
+      items.forEach((item: any) => {
+        const pId = item.productId;
+        if (pId !== undefined) {
+          if (!productMap[pId]) {
+            productMap[pId] = {
+              prdouctName: "",
+              merchantName: "",
+              price: 0,
+              cost: 0,
+              quantity: 0,
+              totalPrice: 0,
+              totalCost: 0,
+            };
+          }
+          productMap[pId].merchantName = order.merchant.name;
+          productMap[pId].price = item.price;
+          productMap[pId].cost = item.cost;
+          productMap[pId].quantity += item.quantity;
+          productMap[pId].totalPrice += item.price * item.quantity;
+          productMap[pId].totalCost += item.cost * item.quantity;
+        }
+      });
     });
 
     const productArray = [];
@@ -189,51 +195,50 @@ async getProductInfo(startDate:string,endDate:string) {
       });
     }
     return productArray;
-}
-async getDriverInfo(startDate:string) {
+  }
+  async getDriverInfo(startDate: string) {
     const q = {
-        deliverDate: startDate
+      deliverDate: startDate,
     };
-    const orders = await this.orderModel.joinFindV2(q);
-    const driverMap:any = {};
-    orders.forEach(order=>{
-        const driver = order.driver;
-        const dId = driver ? driver._id : undefined;
-        if (dId !== undefined) {
-            if (!driverMap[dId]) {
-              driverMap[dId] = {
-                driverId: "",
-                nOrders: 0,
-                nProducts: 0,
-                totalCost: 0,
-                driverName: "",
-                pickUpList: {},
-              };
-            }
-            driverMap[dId].driverId = dId;
-            driverMap[dId].nOrders++;
-            driverMap[dId].nProducts += order.items.length;
-            driverMap[dId].totalCost += order.cost;
-            driverMap[dId].driverName = driver ? driver.username : "N/A";
-            const merchant = order.merchant;
-            const mId = merchant ? merchant._id : null;
-            if (!driverMap[dId].pickUpList[mId]) {
-                driverMap[dId].pickUpList[mId] = {
-                    merchantId: "",
-                    merchantName: "",
-                    nProducts: 0,
-                };
-            }
-            driverMap[dId].pickUpList[mId].merchantId = mId;
-            driverMap[dId].pickUpList[mId].merchantName = merchant
-              ? merchant.name
-              : "N/A";
-            driverMap[dId].pickUpList[mId].nProducts +=
-              order.items.length;
+    const dataSet = await this.orderModel.joinFindV2(q);
+    const orders = dataSet.data;
+    const driverMap: any = {};
+    orders.forEach((order: any) => {
+      const driver = order.driver;
+      const dId = driver ? driver._id : undefined;
+      if (dId !== undefined) {
+        if (!driverMap[dId]) {
+          driverMap[dId] = {
+            driverId: "",
+            nOrders: 0,
+            nProducts: 0,
+            totalCost: 0,
+            driverName: "",
+            pickUpList: {},
+          };
         }
+        driverMap[dId].driverId = dId;
+        driverMap[dId].nOrders++;
+        driverMap[dId].nProducts += order.items.length;
+        driverMap[dId].totalCost += order.cost;
+        driverMap[dId].driverName = driver ? driver.username : "N/A";
+        const merchant = order.merchant;
+        const mId = merchant ? merchant._id : null;
+        if (!driverMap[dId].pickUpList[mId]) {
+          driverMap[dId].pickUpList[mId] = {
+            merchantId: "",
+            merchantName: "",
+            nProducts: 0,
+          };
+        }
+        driverMap[dId].pickUpList[mId].merchantId = mId;
+        driverMap[dId].pickUpList[mId].merchantName = merchant
+          ? merchant.name
+          : "N/A";
+        driverMap[dId].pickUpList[mId].nProducts += order.items.length;
+      }
+    });
 
-    })
-    
     const driverArray = [];
     for (let dId in driverMap) {
       driverArray.push({
@@ -247,21 +252,21 @@ async getDriverInfo(startDate:string) {
     }
 
     return driverArray;
-}
-//return {nOrders,nProducts,totalPrice,totalCost}
-async getStatisticsInfo(startDate:string,endDate:string) {
-
+  }
+  //return {nOrders,nProducts,totalPrice,totalCost}
+  async getStatisticsInfo(startDate: string, endDate: string) {
     const q = {
-        deliverDate: {$gte: startDate, $lte:endDate}
+      deliverDate: { $gte: startDate, $lte: endDate },
     };
-    const orders = await this.orderModel.joinFindV2(q);
+    const dataSet = await this.orderModel.joinFindV2(q);
+    const orders = dataSet.data;
     const stat = {
       nOrders: 0,
       nProducts: 0,
       totalPrice: 0,
       totalCost: 0,
     };
-    orders.forEach(order=>{
+    orders.forEach((order: any) => {
       if (orders) {
         stat.nOrders++;
         stat.nProducts += order.items.length;
@@ -269,11 +274,9 @@ async getStatisticsInfo(startDate:string,endDate:string) {
         stat.totalCost += order.cost;
       }
     });
-    
-    const totalPrice =  parseFloat(stat.totalPrice.toFixed(2)); //总收入
-    const totalCost = parseFloat(stat.totalCost.toFixed(2));//总成本
-    return {...stat,totalPrice,totalCost};
-}
 
-
+    const totalPrice = parseFloat(stat.totalPrice.toFixed(2)); //总收入
+    const totalCost = parseFloat(stat.totalCost.toFixed(2)); //总成本
+    return { ...stat, totalPrice, totalCost };
+  }
 }
