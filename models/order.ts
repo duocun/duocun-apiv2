@@ -190,21 +190,9 @@ export class Order extends Model {
     const rs = ret.data;
     const clientAccountIds = rs.map((r: any) => r.clientId);
     const merchantAccountIds = rs.map((r: any) => r.merchantId);
-    const driverAccounts = await this.accountModel.find(
-      { type: "driver" },
-      null,
-      ["_id", "username", "phone"]
-    );
-    const clientAccounts = await this.accountModel.find(
-      { _id: { $in: clientAccountIds } },
-      null,
-      ["_id", "username", "phone"]
-    );
-    const merchantAccounts = await this.accountModel.find(
-      { _id: { $in: merchantAccountIds } },
-      null,
-      ["_id", "username", "merchants"]
-    );
+    const driverAccounts = await this.accountModel.find({ type: "driver" });
+    const clientAccounts = await this.accountModel.find({ _id: { $in: clientAccountIds } });
+    const merchantAccounts = await this.accountModel.find({ _id: { $in: merchantAccountIds } });
     const merchants = await this.merchantModel.find({});
     const ps = await this.productModel.find({});
     rs.forEach((order: any) => {
