@@ -8,7 +8,9 @@ import { Config } from "../config";
 import { Model } from "../models/model";
 import { Controller, Code } from "./controller";
 import { ObjectID } from "mongodb";
-
+import path from 'path';
+import { getLogger } from '../lib/logger'
+const logger = getLogger(path.basename(__filename));
 
 export class AccountController extends Controller {
   model: Account;
@@ -25,6 +27,23 @@ export class AccountController extends Controller {
     this.merchantStuff = new MerchantStuff(db);
     this.utils = new Utils();
     this.cfg = new Config();
+  }
+
+  async list (req: Request, res: Response):Promise<void> { 
+    // logger.debug("list override in account")
+    let options: any = req.query.options;
+    options = options || {};
+    // remove sensitive field
+    options.fields = {
+      password: 0,
+      openId: 0,
+      cardAccountId: 0,
+      cards: 0,
+      verificationCode: 0,
+    }
+    req.query.options = options;
+
+    await super.list(req, res);
   }
 
   loginByPhone(req: Request, res: Response) {

@@ -45,29 +45,12 @@ export class Entity {
     return docs;
   }
 
-
-  find_v2(where: any, options?: object, fields?: Array<string>) {
+  async find_v2(where: any, options?: object, fields?: Array<string>) {
     const query = this.convertIdFields(where);
-    return new Promise((resolve, reject) => {
-      this.getCollection().then(collection => {
-        collection.find(query, options).toArray((err, data) => {
-          if (err) {
-            reject(err);
-          } else {
-            collection.countDocuments(query, (err, count) => {
-              if (err) {
-                reject(err);
-              } else {
-                resolve({
-                  data,
-                  count
-                });
-              }
-            })
-          }
-        });
-      });
-    });
+    const collection = await this.getCollection();
+    const data:any[] = await collection.find(query, options).toArray();
+    const count:number = await collection.countDocuments(query, {});
+    return {data, count};
   }
 
 
