@@ -231,28 +231,28 @@ export class Product extends Model {
     });
   }
 
+  // tools
+  // clearImage(req: Request, res: Response) {
+  //   let query = {};
+  //   let lang: any = req.headers.lang;
+  //   if (req.headers && req.headers.filter && typeof req.headers.filter === 'string') {
+  //     query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
+  //   }
 
-  clearImage(req: Request, res: Response) {
-    let query = {};
-    let lang: any = req.headers.lang;
-    if (req.headers && req.headers.filter && typeof req.headers.filter === 'string') {
-      query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
-    }
+  //   this.find({}).then((ps: IProduct[]) => {
+  //     const datas: any[] = [];
+  //     ps.map((p: IProduct) =>{
+  //       const url = (p && p.pictures && p.pictures.length >0)? p.pictures[0].url : '';
+  //       datas.push({
+  //         query: { _id: p._id },
+  //         data: { pictures:  [{url: url}]}
+  //       });
+  //     });
 
-    this.find({}).then((ps: IProduct[]) => {
-      const datas: any[] = [];
-      ps.map((p: IProduct) =>{
-        const url = (p && p.pictures && p.pictures.length >0)? p.pictures[0].url : '';
-        datas.push({
-          query: { _id: p._id },
-          data: { pictures:  [{url: url}]}
-        });
-      });
-
-      this.bulkUpdate(datas).then(() => {
-        res.setHeader('Content-Type', 'application/json');
-        res.send(JSON.stringify('success', null, 3));
-      });
-    });
-  }
+  //     this.bulkUpdate(datas).then(() => {
+  //       res.setHeader('Content-Type', 'application/json');
+  //       res.send(JSON.stringify('success', null, 3));
+  //     });
+  //   });
+  // }
 }

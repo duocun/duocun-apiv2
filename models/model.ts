@@ -16,6 +16,11 @@ export const Status = {
   INACTIVE: 'I'
 }
 
+export interface IUpdateItem{
+  query: object;
+  data: object;
+}
+
 export class Model extends Entity {
   constructor(dbo: DB, tableName: string) {
     super(dbo, tableName);
@@ -43,6 +48,31 @@ export class Model extends Entity {
       const r: any = await c.updateOne(query, { $set: doc }, options);
       return r.result;
     }
+  }
+
+  async insertOne(doc: any): Promise<any> {
+    const c: Collection = await this.getCollection();
+    doc = this.convertIdFields(doc);
+    doc.created = moment().toISOString();
+    doc.modified = moment().toISOString();
+    const result = await c.insertOne(doc); // InsertOneWriteOpResult
+    const ret = (result.ops && result.ops.length > 0) ? result.ops[0] : null;
+    return ret;
+  }
+
+  // return BulkWriteOpResultObject
+  async bulkUpdate(items: IUpdateItem[], options?: any): Promise<any> {
+    const c: Collection = await this.getCollection();
+    const clonedArray: any[] = [...items];
+    const a: any[] = [];
+
+    clonedArray.map(({query, data}) => {
+      const q = this.convertIdFields(query);
+      const doc = this.convertIdFields(data);
+      a.push({ updateOne: { filter: q, update: { $set: doc }, upsert: true } });
+    });
+
+    return await c.bulkWrite(a, options);
   }
 
   // old
