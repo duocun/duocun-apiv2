@@ -12,7 +12,8 @@ export function ProductRouter(db: DB) {
   // grocery api
   router.get('/:id', (req, res) => { controller.gv1_get(req, res); });
   router.get('/G/', (req, res) => { controller.gv1_list(req, res); });
-
+  router.put('/',(req,res) => {model.update(req, res);});
+  router.patch('/',(req,res) => {model.update(req, res);});
   // admin api
   router.put('/:id',(req,res) => {controller.update(req, res);});
   router.patch('/:id',(req,res) => {controller.update(req, res);});
@@ -26,6 +27,7 @@ export function ProductRouter(db: DB) {
   router.get('/clearImage', (req, res) => { model.clearImage(req, res); });
   router.get('/categorize', (req, res) => { model.categorize(req, res); });
   router.post('/', (req, res) => { model.create(req, res); });
+
   router.delete('/', (req, res) => { model.remove(req, res); });
 
   return router;
