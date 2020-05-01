@@ -104,6 +104,8 @@ export class Statistics {
     const orders = dataSet.data;
     const driverMap: any = {};
     orders.forEach((order: any) => {
+      const items = order.items;
+      items.forEach((item:any)=>{
       const driver = order.driver;
       const dId = driver ? driver._id : undefined;
       if (dId !== undefined) {
@@ -111,32 +113,40 @@ export class Statistics {
           driverMap[dId] = {
             driverId: "",
             nOrders: 0,
-            nProducts: 0,
             totalCost: 0,
+            phone:"",
             driverName: "",
-            pickUpList: {},
+            merchantMap: {},
           };
         }
         driverMap[dId].driverId = dId;
         driverMap[dId].nOrders++;
-        driverMap[dId].nProducts += order.items.length;
         driverMap[dId].totalCost += order.cost;
+        driverMap[dId].phone = driver.phone? driver.phone: "N/A";
         driverMap[dId].driverName = driver ? driver.username : "N/A";
         const merchant = order.merchant;
         const mId = merchant ? merchant._id : null;
-        if (!driverMap[dId].pickUpList[mId]) {
-          driverMap[dId].pickUpList[mId] = {
-            merchantId: "",
+        if (!driverMap[dId].merchantMap[mId]) {
+          driverMap[dId].merchantMap[mId] = {
             merchantName: "",
-            nProducts: 0,
+            itemMap:{},
           };
         }
-        driverMap[dId].pickUpList[mId].merchantId = mId;
-        driverMap[dId].pickUpList[mId].merchantName = merchant
+        driverMap[dId].merchantMap[mId].merchantName = merchant
           ? merchant.name
           : "N/A";
-        driverMap[dId].pickUpList[mId].nProducts += order.items.length;
+        const pId = item? item.productId.toString():null;
+        if(!driverMap[dId].merchantMap[mId].itemMap[pId]){
+          driverMap[dId].merchantMap[mId].itemMap[pId]= {
+            productName: "",
+            quantity: 0,
+          };
+        }
+        driverMap[dId].merchantMap[mId].itemMap[pId].productName = item.productName;
+        driverMap[dId].merchantMap[mId].itemMap[pId].quantity += item.quantity;
+        
       }
+    });
     });
 
     const driverArray = [];
@@ -147,7 +157,8 @@ export class Statistics {
         nProducts: driverMap[dId].nProducts, // 司机一共拿了多少商品
         totalCost: parseFloat(driverMap[dId].totalCost.toFixed(2)), //这些商品一共值多少钱
         driverName: driverMap[dId].driverName, //司机名称
-        pickUpList: driverMap[dId].pickUpList, //司机去了哪些商家（商家id，商家名，每个商家拿了多少）
+        phone: driverMap[dId].phone, //手机
+        merchantMap: driverMap[dId].merchantMap, //司机去了哪些商家（商家id，商家名，每个商家拿了多少）
       });
     }
 
