@@ -20,6 +20,7 @@ export function MerchantRouter(db: DB){
   // admin api
   router.get('/', [parseQuery], async (req: Request, res: Response) => { await controller.list(req, res); });
   router.get('/:id', async (req, res) => { await controller.get(req, res); });
+  router.post('/', async (req, res) => { await controller.create(req, res); });
 
   // router.post('/', (req, res) => { controller.load(req, res); });
   // router.patch('/', (req, res) => { controller.load(req, res); });

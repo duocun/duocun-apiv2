@@ -37,11 +37,11 @@ export class Controller {
       logger.error(`list error: ${error}`);
     } finally {
       res.setHeader('Content-Type', 'application/json'); 
-      res.send(JSON.stringify({
+      res.send({
         code: code,
         data: data,
         count: count 
-      }));
+      });
     }
   }
 
@@ -58,10 +58,10 @@ export class Controller {
       logger.error(`get error : ${error}`);
     } finally {
       res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify({
+      res.send({
         code: code,
         data: data 
-      }));
+      });
     }
   }
 }

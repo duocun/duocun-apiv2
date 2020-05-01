@@ -18,6 +18,7 @@ export function AccountRouter(db: DB) {
   // admin api
   router.get('/',  [parseQuery], async (req: Request, res: Response) =>  { await controller.list(req, res); });
   router.get('/:id', async (req: Request, res: Response) => { await controller.get(req, res); });
+  router.post('/', async (req: Request, res: Response) => { await controller.create(req, res); });
 
   // v2 https://duocun.ca/api/Accounts/wechatLoginByOpenId
   router.post('/wechatLoginByOpenId', (req, res) => { controller.wechatLoginByOpenId(req, res); });

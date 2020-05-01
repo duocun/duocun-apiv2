@@ -92,6 +92,9 @@ export class Account extends Model {
     this.utils = new Utils();
   }
 
+  ///////////////////
+  ////// keep old api
+
   jwtSign(accountId: string) {
     return jwt.sign(accountId, this.cfg.JWT.SECRET); // SHA256
   }
