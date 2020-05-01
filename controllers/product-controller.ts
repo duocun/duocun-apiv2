@@ -90,7 +90,7 @@ export class ProductController extends Controller {
   }
 
   async update(req: Request, res: Response): Promise<void> {
-    const productId = req.query.productId;
+    const productId = req.params.id;
     const productData = req.body.data;
     let code = Code.FAIL;
     let data = productId;

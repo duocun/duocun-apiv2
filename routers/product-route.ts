@@ -14,8 +14,8 @@ export function ProductRouter(db: DB) {
   router.get('/G/', (req, res) => { controller.gv1_list(req, res); });
 
   // admin api
-  router.put('/',(req,res) => {controller.update(req, res);});
-  router.patch('/',(req,res) => {controller.update(req, res);});
+  router.put('/:id',(req,res) => {controller.update(req, res);});
+  router.patch('/:id',(req,res) => {controller.update(req, res);});
   // api/admin/products?query={where:xxx,options:{"limit":10,"skip":0,"sort":[["_id",1]]}}
   router.get('/', [parseQuery], async (req: Request, res: Response) => { await controller.list(req, res) });
   router.get('/:id', async (req, res) => { await controller.get(req, res); });
