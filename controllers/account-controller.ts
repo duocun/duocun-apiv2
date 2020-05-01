@@ -34,6 +34,27 @@ export class AccountController extends Controller {
     this.cfg = new Config();
   }
 
+  async login(req: Request, res: Response):Promise<void> { 
+    const username: any = req.body.username;
+    const password: any = req.body.password;
+
+    let data: any = null;
+    let code = Code.FAIL;
+    try {
+        const tokenId = await this.model.doLogin(username, password);
+        code = Code.SUCCESS;
+        data = tokenId;
+    } catch (error) {
+      logger.error(`list error: ${error}`);
+    } finally {
+      res.setHeader('Content-Type', 'application/json'); 
+      res.send(JSON.stringify({
+        code: code,
+        data: data
+      }));
+    }
+  }
+
   /**
    * list accounts (override controller's list to hide sensitive information)
    * @param req 
@@ -120,15 +141,7 @@ export class AccountController extends Controller {
     });
   }
 
-  login(req: Request, res: Response) {
-    const username = req.body.username;
-    const password = req.body.password;
 
-    this.model.doLogin(username, password).then((tokenId: string) => {
-      res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify(tokenId, null, 3));
-    });
-  }
 
   wechatLogin(req: Request, res: Response) {
 

@@ -11,11 +11,11 @@ export function AccountRouter(db: DB) {
   const controller = new AccountController(model, db);
   
   // grocery api
-  router.post('/login', (req: Request, res: Response) => { controller.login(req, res); });
   router.get('/current', (req, res) => { controller.getCurrentAccount(req, res); });
   router.get('/token/:id', (req, res) => { controller.gv1_getByTokenId(req, res); });
-
+  
   // admin api
+  router.post('/login', (req: Request, res: Response) => { controller.login(req, res); });
   router.get('/',  [parseQuery], async (req: Request, res: Response) =>  { await controller.list(req, res); });
   router.get('/:id', async (req: Request, res: Response) => { await controller.get(req, res); });
   router.post('/', async (req: Request, res: Response) => { await controller.create(req, res); });

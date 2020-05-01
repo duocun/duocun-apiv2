@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { ObjectId } from "mongodb";
+import { ObjectId, Collection } from "mongodb";
 import { DB } from "../db";
 
 import { Entity } from "../entity";
@@ -30,6 +30,23 @@ export class Model extends Entity {
     }
     return null;
   }
+
+  async updateOne(id: any, doc: any, options?: any): Promise<any> {
+    let query = { _id: id };
+    if (Object.keys(doc).length === 0 && doc.constructor === Object) {
+      return;
+    } else {
+      query = this.convertIdFields(query);
+      doc = this.convertIdFields(doc);
+
+      const c: Collection = await this.getCollection();
+      const r: any = await c.updateOne(query, { $set: doc }, options);
+      return r.result;
+    }
+  }
+
+  // old
+
 
   // to be removed
   list(req: Request, res: Response) {

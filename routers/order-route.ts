@@ -13,6 +13,10 @@ export function OrderRouter(db: DB) {
   router.post('/bulk', (req, res) => { controller.placeOrders(req, res); });
 
   // admin
+  router.post('/', (req, res) => { controller.create(req, res); });
+  router.put('/', (req, res) => { controller.update(req, res); });
+  router.patch('/', (req, res) => { controller.update(req, res); });
+
 
   // support ?query={where, options}
   router.get('/', [parseQuery], (req: Request, res: Response) => { controller.list(req, res); });
@@ -20,7 +24,6 @@ export function OrderRouter(db: DB) {
 
   // old api
   router.get('/v2/transactions', (req, res) => { model.reqTransactions(req, res); });
-  router.get('/v2/', (req, res) => { controller.listV2(req, res); });
 
   // Public
   // input:
@@ -48,13 +51,13 @@ export function OrderRouter(db: DB) {
   router.get('/qFind', (req, res) => { model.quickFind(req, res); });
 
   router.put('/updatePurchaseTag', (req, res) => { model.updatePurchaseTag(req, res) });
-  router.put('/', (req, res) => { model.replace(req, res); });
+
   router.post('/checkStripePay', (req, res) => { model.checkStripePay(req, res); });
   router.post('/checkWechatpay', (req, res) => { model.checkWechatpay(req, res); });
 
   //
   router.post('/payOrder', (req, res) => { model.payOrder(req, res); });
-  router.post('/', (req, res) => { model.create(req, res); });
+
 
 
   // deprecated
@@ -62,7 +65,7 @@ export function OrderRouter(db: DB) {
 
   router.patch('/fixCancelledTransaction', (req, res) => { model.fixCancelledTransaction(req, res); });
   router.patch('/updateDelivered', (req, res) => { model.updateDeliveryTime(req, res); });
-  router.patch('/', (req, res) => { model.update(req, res); });
+  
   router.delete('/', (req, res) => { model.remove(req, res); });
   router.delete('/:id', (req, res) => { model.removeOrder(req, res); });
 

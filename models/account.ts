@@ -7,7 +7,12 @@ import { Config } from "../config";
 import { Utils } from "../utils";
 import moment from 'moment';
 import { EventLog } from "./event-log";
-import { ObjectID } from "mongodb";
+
+import path from 'path';
+import { getLogger } from '../lib/logger'
+import { resolve } from "url";
+const logger = getLogger(path.basename(__filename));
+
 
 const saltRounds = 10;
 
@@ -92,8 +97,45 @@ export class Account extends Model {
     this.utils = new Utils();
   }
 
-  ///////////////////
-  ////// keep old api
+  comparePassword(password: string, encrypted: string) {
+    return new Promise(resolve => {
+      bcrypt.compare(password, encrypted, (err, matched) => {
+        logger.error(`login error: ${err}`);
+        resolve(matched);
+      });
+    });
+  }
+
+  // --------------------------------------------------------------------------------------------------
+  // wechat, google or facebook can not use this request to login
+  // username --- optional, can be null, unique  username
+  // password --- mandadory field
+  async doLogin(username: string, password: string) {
+    if (username) {
+      const account: IAccount = await this.findOne({ username });
+      if (account && account.password) {
+        try {
+          const matched = await this.comparePassword(password, account.password);
+          if (matched) {
+            account.password = '';
+            const cfg = new Config();
+            return jwt.sign(account._id.toString(), cfg.JWT.SECRET); // SHA256
+          } else {
+            return;
+          }
+        } catch (e) {
+          logger.error(`login sign token exception ${e}`);
+          return;
+        }
+      } else {
+        logger.error(`login error: cannot find the user: ${username}`);
+        return;
+      }
+    } else {
+      logger.error(`login error: username is empty`);
+      return;
+    }
+  }
 
   jwtSign(accountId: string) {
     return jwt.sign(accountId, this.cfg.JWT.SECRET); // SHA256
@@ -545,39 +587,6 @@ export class Account extends Model {
     });
   }
 
-  // --------------------------------------------------------------------------------------------------
-  // wechat, google or facebook can not use this request to login
-  // username --- optional, can be null, unique  username
-  // password --- mandadory field
-  doLogin(username: string, password: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      let query = null;
-      if (username) {
-        query = { username: username };
-      }
-
-      if (query) {
-        this.findOne(query).then((r: IAccount) => {
-          if (r && r.password) {
-            bcrypt.compare(password, r.password, (err, matched) => {
-              if (matched) {
-                r.password = '';
-                const cfg = new Config();
-                const tokenId = jwt.sign(r._id.toString(), cfg.JWT.SECRET); // SHA256
-                resolve(tokenId);
-              } else {
-                resolve();
-              }
-            });
-          } else {
-            return resolve();
-          }
-        });
-      } else {
-        resolve();
-      }
-    });
-  }
 
   // return tokenId
   async wechatLoginByOpenId(accessToken: string, openId: string) {
