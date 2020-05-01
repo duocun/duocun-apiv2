@@ -161,6 +161,7 @@ export class Entity {
     return dt.split('.')[0];
   }
 
+  // deprecated
   insertOne(doc: any): Promise<any> {
     const self = this;
     return new Promise((resolve, reject) => {

@@ -137,6 +137,7 @@ export class OrderController extends Controller {
       );
     }
   }
+
   async update(req: Request, res: Response): Promise<void> {
     const orderId = req.query.orderId;
     const orderData = req.body.data;

@@ -36,27 +36,27 @@ export class Contact extends Model {
 
 
   // Tools
-  movePhoneToAccount(req: Request, res: Response) {
-    this.find({}).then(cs => {
-      this.accountModel.find({}).then(accounts => {
-        const datas: any[] = [];
+  // movePhoneToAccount(req: Request, res: Response) {
+  //   this.find({}).then(cs => {
+  //     this.accountModel.find({}).then(accounts => {
+  //       const datas: any[] = [];
 
-        cs.map((c: any) => {
-          const a = accounts.find((x: any) => x._id.toString() === c.accountId.toString());
-          if (a) {
-            datas.push({
-              query: { _id: a._id },
-              data: { phone: c.phone, verified: true, verificationCode: c.verificationCode, location: c.location }
-            });
-          }
-        });
+  //       cs.map((c: any) => {
+  //         const a = accounts.find((x: any) => x._id.toString() === c.accountId.toString());
+  //         if (a) {
+  //           datas.push({
+  //             query: { _id: a._id },
+  //             data: { phone: c.phone, verified: true, verificationCode: c.verificationCode, location: c.location }
+  //           });
+  //         }
+  //       });
 
-        this.accountModel.bulkUpdate(datas).then(() => {
-          res.setHeader('Content-Type', 'application/json');
-          res.send(JSON.stringify(1, null, 3));
-        });
-      });
-    });
+  //       this.accountModel.bulkUpdate(datas).then(() => {
+  //         res.setHeader('Content-Type', 'application/json');
+  //         res.send(JSON.stringify(1, null, 3));
+  //       });
+  //     });
+  //   });
 
-  }
+  // }
 }
