@@ -11,14 +11,14 @@ const logFormat = printf(({ level, message, timestamp }) => {
 
 const transport = new DailyRotateFile({
   filename: "duocun-api-%DATE%.log",
-  datePattern: "YYYY-MM-DD-HH",
+  datePattern: "YYYY-MM-DD",
   zippedArchive: false,
   maxSize: "20m",
   maxFiles: "14d",
 });
 
 const logger = createLogger({
-  level: "info",
+  level: "debug",
   format: combine(timestamp(), logFormat),
   defaultMeta: { service: "duocun-api" },
   transports: [
@@ -40,5 +40,25 @@ if (process.env.ENV == "dev") {
     })
   );
 }
+
+export function getLogger(moduleName: string = '') {
+  return {
+    debug: function(message:string) {
+      logger.debug(`[${moduleName}] ${message}`);
+    },
+    info: function(message:string) {
+      logger.info(`[${moduleName}] ${message}`);
+    },
+    error: function(message:string) {
+      logger.error(`[${moduleName}] ${message}`);
+    },
+    warn: function(message:string) {
+      logger.warn(`[${moduleName}] ${message}`);
+    },
+    crit: function(message:string) {
+      logger.crit(`[${moduleName}] ${message}`);
+    }
+  };
+};
 
 export default logger;

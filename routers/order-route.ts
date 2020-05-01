@@ -13,16 +13,17 @@ export function OrderRouter(db: DB) {
   router.post('/bulk', (req, res) => { controller.placeOrders(req, res); });
 
   // admin
-  router.patch('/', (req, res) => { model.update(req, res); });
-  router.put('/', (req, res) => { model.update(req, res); });
-  router.post('/', (req, res) => { model.createV2(req, res); });
+
+  router.post('/', (req, res) => { controller.create(req, res); });
+  router.put('/:id', (req, res) => { controller.update(req, res); });
+  router.patch('/:id', (req, res) => { controller.update(req, res); });
+
   // support ?query={where, options}
   router.get('/', [parseQuery], (req: Request, res: Response) => { controller.list(req, res); });
   router.get('/:id', (req, res) => { controller.get(req, res); });
 
   // old api
   router.get('/v2/transactions', (req, res) => { model.reqTransactions(req, res); });
-  router.get('/v2/', (req, res) => { controller.listV2(req, res); });
 
   // Public
   // input:

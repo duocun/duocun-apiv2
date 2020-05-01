@@ -2,6 +2,10 @@ import {Request, Response} from "express";
 import { Model } from "../models/model";
 import { DB } from "../db";
 
+import path from 'path';
+import { getLogger } from '../lib/logger'
+const logger = getLogger(path.basename(__filename));
+
 export const Code = {
   SUCCESS: 'success',
   FAIL: 'fail'
@@ -15,36 +19,49 @@ export class Controller {
     this.db = db;
   }
 
-  list(req: Request, res: Response) {
+  async list(req: Request, res: Response):Promise<void> { 
     const where: any = req.query.where;
     const options: any = req.query.options;
-    res.setHeader('Content-Type', 'application/json');
-    if(where){
-      this.model.find_v2(where, options).then((r: any) => {
-        res.send(JSON.stringify({
-          code: Code.SUCCESS,
-          data: r.data,
-          count: r.count 
-        }));
+    let data:any[] = [];
+    let count:number = 0;
+    let code = Code.FAIL;
+    try {
+      if(where){ 
+        // TODO: no where will return error, is it a good choice?
+        const r = await this.model.find_v2(where, options)
+        code = Code.SUCCESS;
+        data = r.data;
+        count = r.count;
+      } 
+    } catch (error) {
+      logger.error(`list error: ${error}`);
+    } finally {
+      res.setHeader('Content-Type', 'application/json'); 
+      res.send({
+        code: code,
+        data: data,
+        count: count 
       });
-    }else{
-      res.send(JSON.stringify({
-        code: Code.FAIL,
-        data: [],
-        count: 0 
-      }));
     }
   }
 
-  get(req: Request, res: Response) {
+  async get(req: Request, res: Response):Promise<void>  {
     const id = req.params.id;
-    this.model.getById(id).then(data => {
-      res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify({
-        code: data ? Code.SUCCESS : Code.FAIL,
-        data: data 
-      }));
-    });
-  }
+    let data:any = {};
+    let code = Code.FAIL;
+    const options: any = ( req.query && req.query.options ) || {};
 
+    try {
+      data = await this.model.getById(id, options);
+      code = Code.SUCCESS;
+    } catch (error) {
+      logger.error(`get error : ${error}`);
+    } finally {
+      res.setHeader('Content-Type', 'application/json');
+      res.send({
+        code: code,
+        data: data 
+      });
+    }
+  }
 }

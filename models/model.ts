@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { ObjectId } from "mongodb";
+import { ObjectId, Collection } from "mongodb";
 import { DB } from "../db";
 
 import { Entity } from "../entity";
@@ -21,16 +21,32 @@ export class Model extends Entity {
     super(dbo, tableName);
   }
 
-  async getById(id: string) {
+  async getById(id: string, options: any={}) {
     if (id && ObjectId.isValid(id)) {
-      const r = await this.findOne({ _id: id });
+      const r = await this.findOne({ _id: id }, options);
       if (r) {
         return r;
       }
+    }
+    return null;
+  }
+
+  async updateOne(id: any, doc: any, options?: any): Promise<any> {
+    let query = { _id: id };
+    if (Object.keys(doc).length === 0 && doc.constructor === Object) {
+      return;
     } else {
-      return null;
+      query = this.convertIdFields(query);
+      doc = this.convertIdFields(doc);
+
+      const c: Collection = await this.getCollection();
+      const r: any = await c.updateOne(query, { $set: doc }, options);
+      return r.result;
     }
   }
+
+  // old
+
 
   // to be removed
   list(req: Request, res: Response) {
@@ -116,6 +132,13 @@ export class Model extends Entity {
         res.setHeader('Content-Type', 'application/json');
         res.send(JSON.stringify(x, null, 3));
       });
+    }
+  }
+  async create_v2(doc:any) {
+    if (doc instanceof Array) {
+      return await this.insertMany(doc);
+    } else {
+      return await this.insertOne(doc);
     }
   }
 

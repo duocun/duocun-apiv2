@@ -45,29 +45,12 @@ export class Entity {
     return docs;
   }
 
-
-  find_v2(where: any, options?: object, fields?: Array<string>) {
+  async find_v2(where: any, options?: object, fields?: Array<object>) {
     const query = this.convertIdFields(where);
-    return new Promise((resolve, reject) => {
-      this.getCollection().then(collection => {
-        collection.find(query, options).toArray((err, data) => {
-          if (err) {
-            reject(err);
-          } else {
-            collection.countDocuments(query, (err, count) => {
-              if (err) {
-                reject(err);
-              } else {
-                resolve({
-                  data,
-                  count
-                });
-              }
-            })
-          }
-        });
-      });
-    });
+    const collection = await this.getCollection();
+    const data:any[] = await collection.find(query, options).toArray();
+    const count:number = await collection.countDocuments(query, {});
+    return {data, count};
   }
 
 
@@ -502,9 +485,9 @@ export class Entity {
     if (doc && doc.hasOwnProperty('$or')) {
       const items: any[] = [];
       doc['$or'].map((it: any) => {
-        if (it && it.hasOwnProperty('toId') && typeof it.toId === 'string' && it.toId.length === 24) {
+        if (it && it.hasOwnProperty('toId')  && ObjectId.isValid(it.toId)) {
           items.push({ toId: new ObjectID(it.toId) });
-        } else if (it && it.hasOwnProperty('fromId') && typeof it.fromId === 'string' && it.fromId.length === 24) {
+        } else if (it && it.hasOwnProperty('fromId')  && ObjectId.isValid(it.fromId)) {
           items.push({ fromId: new ObjectID(it.fromId) });
         }
       });
