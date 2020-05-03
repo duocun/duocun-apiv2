@@ -754,13 +754,7 @@ export class Order extends Model {
     }
   }
 
-  removeOrder(req: Request, res: Response) {
-    const orderId = req.params.id;
-    this.doRemoveOne(orderId).then((x) => {
-      res.setHeader("Content-Type", "application/json");
-      res.send(JSON.stringify(x, null, 3));
-    });
-  }
+
 
   // obsoleted
   createV1(req: Request, res: Response) {

@@ -15,7 +15,7 @@ export function OrderRouter(db: DB) {
   // admin
   router.post('/', (req, res) => { controller.create(req, res); });
   router.put('/:id', (req, res) => { controller.updateOne(req, res); });
-
+  router.delete('/:id', (req, res) => { controller.removeOrder(req, res); });
 
   router.post('/', (req, res) => { controller.create(req, res); });
   router.put('/:id', (req, res) => { controller.update(req, res); });
@@ -70,7 +70,7 @@ export function OrderRouter(db: DB) {
   router.patch('/updateDelivered', (req, res) => { model.updateDeliveryTime(req, res); });
 
   router.delete('/', (req, res) => { model.remove(req, res); });
-  router.delete('/:id', (req, res) => { model.removeOrder(req, res); });
+  
 
   // router.post('/checkGroupDiscount', (req, res) => { model.checkGroupDiscount(req, res); });
 

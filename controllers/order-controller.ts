@@ -201,4 +201,11 @@ export class OrderController extends Controller {
       );
     }
   }
+
+  async removeOrder(req: Request, res: Response) {
+    const orderId = req.params.id;
+    const x = await this.model.doRemoveOne(orderId);
+    res.setHeader("Content-Type", "application/json");
+    res.send(x);
+  }
 }

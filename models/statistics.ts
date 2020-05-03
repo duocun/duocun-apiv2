@@ -11,6 +11,9 @@ export class Statistics {
   async getMerchantInfo(startDate: string, endDate: string) {
     const q = {
       deliverDate: { $gte: startDate, $lte: endDate },
+      status: {
+        $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
+      },
     };
     const dataSet = await this.orderModel.joinFindV2(q);
     const orders = dataSet.data;
@@ -52,6 +55,9 @@ export class Statistics {
   async getProductInfo(startDate: string, endDate: string) {
     const q = {
       deliverDate: { $gte: startDate, $lte: endDate },
+      status: {
+        $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
+      },
     };
     const dataSet = await this.orderModel.joinFindV2(q);
     const orders = dataSet.data;
@@ -144,7 +150,10 @@ export class Statistics {
   // return [{productName, quantity}...]
   async getDriverStatistics(deliverDate: string){
     const q = {
-      deliverDate
+      deliverDate,
+      status: {
+        $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
+      },
     };
     const dataSet = await this.orderModel.joinFindV2(q);
     const orders = dataSet.data;
@@ -175,6 +184,9 @@ export class Statistics {
   async getStatisticsInfo(startDate: string, endDate: string) {
     const q = {
       deliverDate: { $gte: startDate, $lte: endDate },
+      status: {
+        $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
+      },
     };
     const dataSet = await this.orderModel.joinFindV2(q);
     const orders = dataSet.data;
