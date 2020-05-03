@@ -64,14 +64,13 @@ export class StatisticsController extends Controller {
     }
   }
   async getDriverStatistics(req: Request, res: Response) {
-    const startDate: any = req.query.startDate;
+    const deliverDate: any = req.query.deliverDate;
     let data: any[] = [];
     let code = Code.FAIL;
     try {
-      if (startDate) {
-        const r = await this.statModel.getDriverInfo(startDate);
+      if (deliverDate) {
         code = Code.SUCCESS;
-        data = r;
+        data = await this.statModel.getDriverStatistics(deliverDate);
       }
     } catch (error) {
       logger.error(`get driver statistic error: ${error}`);

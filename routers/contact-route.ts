@@ -7,7 +7,7 @@ export function ContactRouter(db: DB){
   const controller = new Contact(db);
 
   
-  router.get('/movePhoneToAccount', (req, res) => { controller.movePhoneToAccount(req, res); });
+  // router.get('/movePhoneToAccount', (req, res) => { controller.movePhoneToAccount(req, res); });
   router.get('/', (req, res) => { controller.list(req, res); });
   router.get('/:id', (req, res) => { controller.get(req, res); });
 

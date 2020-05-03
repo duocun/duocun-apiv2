@@ -13,6 +13,9 @@ export function OrderRouter(db: DB) {
   router.post('/bulk', (req, res) => { controller.placeOrders(req, res); });
 
   // admin
+  router.post('/', (req, res) => { controller.create(req, res); });
+  router.put('/:id', (req, res) => { controller.updateOne(req, res); });
+
 
   router.post('/', (req, res) => { controller.create(req, res); });
   router.put('/:id', (req, res) => { controller.update(req, res); });

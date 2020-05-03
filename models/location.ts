@@ -489,20 +489,20 @@ export class Location extends Model {
   }
 
   // tools
-  updateLocations(req: Request, res: Response) {
-    this.find({}).then(locations => {
-      const datas: any[] = [];
-      locations.map((loc: any) => {
-        datas.push({
-          query: { _id: loc._id },
-          data: { accountId: loc.userId }
-        });
-      });
+  // updateLocations(req: Request, res: Response) {
+  //   this.find({}).then(locations => {
+  //     const datas: any[] = [];
+  //     locations.map((loc: any) => {
+  //       datas.push({
+  //         query: { _id: loc._id },
+  //         data: { accountId: loc.userId }
+  //       });
+  //     });
 
-      this.bulkUpdate(datas).then(() => {
-        res.setHeader('Content-Type', 'application/json');
-        res.send(JSON.stringify('success', null, 3));
-      });
-    });
-  }
+  //     this.bulkUpdate(datas).then(() => {
+  //       res.setHeader('Content-Type', 'application/json');
+  //       res.send(JSON.stringify('success', null, 3));
+  //     });
+  //   });
+  // }
 }
