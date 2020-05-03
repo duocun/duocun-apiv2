@@ -153,8 +153,6 @@ export class Statistics {
       const driverId = order.driver? order.driver._id : null;
       const driverName = order.driver ? order.driver.username : 'Unassign';
       driverMap[driverId] = {driverId, driverName, orders:[]};
-
-    });
     });
 
     orders.forEach((order: any) => {

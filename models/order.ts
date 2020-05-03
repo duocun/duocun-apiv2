@@ -161,28 +161,28 @@ export class Order extends Model {
     this.eventLogModel = new EventLog(dbo);
     this.locationModel = new Location(dbo);
   }
- 
-//return: {code:x,data:orderId}
-update(req: Request, res: Response) {
-  const orderId = req.query.orderId;
-  const orderData = req.body.data;
-  if (orderData instanceof Array) {
-    this.bulkUpdate(orderData, req.body.options).then(x => {
-      res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify(x, null, 3)); // x --- {status: 1, msg: ''}
+
+  //return: {code:x,data:orderId}
+  update(req: Request, res: Response) {
+    const orderId = req.query.orderId;
+    const orderData = req.body.data;
+    if (orderData instanceof Array) {
+      this.bulkUpdate(orderData, req.body.options).then(x => {
+        res.setHeader('Content-Type', 'application/json');
+        res.send(JSON.stringify(x, null, 3)); // x --- {status: 1, msg: ''}
       });
-  } else {
+    } else {
       if (req.body) {
         this.updateOne(orderId, orderData, req.body.options).then((x: any) => {
           res.setHeader('Content-Type', 'application/json');
-          if(x.nModified===1&&x.ok===1){
+          if (x.nModified === 1 && x.ok === 1) {
             res.send(
               JSON.stringify({
                 code: Code.SUCCESS,
                 data: orderId
               })
             )
-          }else{
+          } else {
             res.send(
               JSON.stringify({
                 code: Code.FAIL,
@@ -190,19 +190,19 @@ update(req: Request, res: Response) {
               })
             )
           }
-         
+
         });
-      } 
+      }
     }
-  }  
-  
-updateOne(orderId:any, doc: any, options?: any): Promise<any> {
-  let query = {_id:orderId};
-   
-  return new Promise((resolve, reject) => {
-    if (Object.keys(doc).length === 0 && doc.constructor === Object) {
-      resolve();
-    } else {
+  }
+
+  updateOne(orderId: any, doc: any, options?: any): Promise<any> {
+    let query = { _id: orderId };
+
+    return new Promise((resolve, reject) => {
+      if (Object.keys(doc).length === 0 && doc.constructor === Object) {
+        resolve();
+      } else {
         query = this.convertIdFields(query);
         doc = this.convertIdFields(doc);
 
@@ -217,59 +217,39 @@ updateOne(orderId:any, doc: any, options?: any): Promise<any> {
 
 
 
-createV2(req: Request, res: Response) {
-  const order = req.body;
-  this.createOne(order).then(savedOrder => {
-    res.setHeader('Content-Type', 'application/json');
-    if(savedOrder){
-  
-      res.send(
-        JSON.stringify({
-          code: Code.SUCCESS,
-          data: savedOrder
-        })
-      )
-    }else{
-      res.send(
-        JSON.stringify({
-          code: Code.FAIL,
-          data: {}
-        })
-      )
-    }
-  });
-}
-async createOne(order: IOrder) {
-  const savedOrders: IOrder[] = [];
-  const paymentId = (new ObjectID()).toString();
-  let savedOrder:any = {};
-  if (order) {
-    order.paymentId = paymentId;
-    savedOrder = await this.doInsertOneV2(order);
-    savedOrders.push(savedOrder);
-    const paymentMethod = order.paymentMethod;
-    if (paymentMethod === PaymentMethod.CASH || paymentMethod === PaymentMethod.PREPAY) {
-      await this.addDebitTransactions(savedOrders);
-    } else {
-      // bank card and wechat pay will process transaction after payment gateway paid
-    }
+  createV2(req: Request, res: Response) {
+    const order = req.body;
+    this.createOne(order).then(savedOrder => {
+      res.setHeader('Content-Type', 'application/json');
+      if (savedOrder) {
+
+        res.send(
+          JSON.stringify({
+            code: Code.SUCCESS,
+            data: savedOrder
+          })
+        )
+      } else {
+        res.send(
+          JSON.stringify({
+            code: Code.FAIL,
+            data: {}
+          })
+        )
+      }
+    });
   }
-  return savedOrder;
-}
 
   async createOne(order: IOrder) {
     const savedOrders: IOrder[] = [];
-    const paymentId = new ObjectID().toString();
+    const paymentId = (new ObjectID()).toString();
     let savedOrder: any = {};
     if (order) {
       order.paymentId = paymentId;
       savedOrder = await this.doInsertOneV2(order);
       savedOrders.push(savedOrder);
       const paymentMethod = order.paymentMethod;
-      if (
-        paymentMethod === PaymentMethod.CASH ||
-        paymentMethod === PaymentMethod.PREPAY
-      ) {
+      if (paymentMethod === PaymentMethod.CASH || paymentMethod === PaymentMethod.PREPAY) {
         await this.addDebitTransactions(savedOrders);
       } else {
         // bank card and wechat pay will process transaction after payment gateway paid
@@ -1096,7 +1076,7 @@ async createOne(order: IOrder) {
         orderId: { $in: orderIds },
         actionCode: TransactionAction.PAY_DRIVER_CASH.code,
       }; // 'client pay cash' };
-      this.transactionModel.find(tQuery).then((ts: ITransaction[]) => {});
+      this.transactionModel.find(tQuery).then((ts: ITransaction[]) => { });
     });
   }
 
@@ -1362,7 +1342,7 @@ async createOne(order: IOrder) {
                         const its = orders.filter(
                           (order: IOrder) =>
                             merchants.indexOf(order.merchantId.toString()) !==
-                              -1 && moment(order.modified).isSameOrBefore(dt)
+                            -1 && moment(order.modified).isSameOrBefore(dt)
                         );
 
                         if (its && its.length > 0) {
@@ -2153,7 +2133,7 @@ async createOne(order: IOrder) {
     });
   }
 
-  getWechatPayments() {}
+  getWechatPayments() { }
 
   reqWechatPayments(req: Request, res: Response) {
     this.correctTime().then((ps) => {
