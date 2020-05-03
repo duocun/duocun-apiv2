@@ -76,29 +76,17 @@ export class Product extends Model {
     }
   }
 
-  async list(query: any) {
-    const products = await this.joinFind(query);
-    return products;
-  }
-
-  joinFind(query: any, options?: any): Promise<IProduct[]> {
-    return new Promise((resolve, reject) => {
-      this.accountModel.find({}).then(accounts => {
-        this.categoryModel.find({}).then(cs => {
-          this.merchantModel.find({}).then(ms => { // fix me, arch design issue: merchant or account ???
-            this.find(query, options).then(ps => {
-              ps.map((p: IProduct) => {
-                p.category = cs.find((c: any) => c && c._id && p && p.categoryId && c._id.toString() === p.categoryId.toString());
-                p.merchant = ms.find((m: any) => m && m._id && p && p.merchantId && m._id.toString() === p.merchantId.toString());
-                const merchant: any = p.merchant;
-                p.merchantAccount = accounts.find((a: any) => a && merchant && a._id.toString() === merchant.accountId.toString());
-              });
-              resolve(ps);
-            });
-          });
-        });
-      });
+  // joined find
+  async list(query: any, options?: any): Promise<any> {
+    const cs = await this.categoryModel.find({});
+    const ms = await this.merchantModel.find({});
+    const r = await this.find_v2(query, options);
+    const ps: IProduct[] = r.data;
+    ps.forEach((p: IProduct) => {
+      p.category = cs.find((c: any) => c._id && p.categoryId && c._id.toString() === p.categoryId.toString());
+      p.merchant = ms.find((m: any) => m._id && p.merchantId && m._id.toString() === p.merchantId.toString());
     });
+    return {count: r.count, data: ps};
   }
 
   categorize(req: Request, res: Response) {
@@ -114,19 +102,18 @@ export class Product extends Model {
     });
   }
 
-  doCategorize(query: any, lang: string) {
-    return new Promise((resolve, reject) => {
-      this.joinFind(query).then(ps => {
-        ps.map((p: IProduct) => {
-          if(lang === 'en'){
-            p.name = p.nameEN;
-          }
-        });
+  async doCategorize(query: any, lang: string) {
+    const r: any = await this.list(query);
+    const ps = r.data;
 
-        const cats = this.groupByCategory(ps, lang);
-        resolve(cats);
-      });
+    ps.forEach((p: IProduct) => {
+      if(lang === 'en'){
+        p.name = p.nameEN;
+      }
     });
+
+    const cats = this.groupByCategory(ps, lang);
+    return cats;
   }
 
   // --------------------------------------------------------------------------

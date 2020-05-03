@@ -259,6 +259,7 @@ export class Order extends Model {
     const data = rs.map((r: any) => ({
       _id: r._id,
       code: r.code,
+      type: r.type,
       location: r.location,
       address: this.locationModel.getAddrString(r.location), // deprecated
       items: r.items,

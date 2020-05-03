@@ -14,8 +14,8 @@ export function ProductRouter(db: DB) {
   router.get('/G/', (req, res) => { controller.gv1_list(req, res); });
 
   // admin api
-  router.put('/',(req,res) => {controller.update(req, res);});
-  router.patch('/',(req,res) => {controller.update(req, res);});
+  router.put('/:id',(req,res) => {controller.updateOne(req, res);});
+
   // api/admin/products?query={where:xxx,options:{"limit":10,"skip":0,"sort":[["_id",1]]}}
   router.get('/', [parseQuery], async (req: Request, res: Response) => { await controller.list(req, res) });
   router.get('/:id', async (req, res) => { await controller.get(req, res); });
@@ -23,7 +23,6 @@ export function ProductRouter(db: DB) {
   // old api
 
   router.get('/qFind', (req, res) => { model.quickFind(req, res); });
-  router.get('/clearImage', (req, res) => { model.clearImage(req, res); });
   router.get('/categorize', (req, res) => { model.categorize(req, res); });
   router.post('/', (req, res) => { model.create(req, res); });
   router.delete('/', (req, res) => { model.remove(req, res); });

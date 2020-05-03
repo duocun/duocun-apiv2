@@ -26,14 +26,20 @@ export class Controller {
     let count:number = 0;
     let code = Code.FAIL;
     try {
-      if(where){ 
+      if(where){
         // TODO: no where will return error, is it a good choice?
         const r = await this.model.find_v2(where, options)
         code = Code.SUCCESS;
         data = r.data;
         count = r.count;
-      } 
+      } else{
+        const r = await this.model.find_v2({}, options)
+        code = Code.SUCCESS;
+        data = r.data;
+        count = r.count;
+      }
     } catch (error) {
+      console.log(`list error: ${error}`);
       logger.error(`list error: ${error}`);
     } finally {
       res.setHeader('Content-Type', 'application/json'); 
@@ -62,6 +68,36 @@ export class Controller {
         code: code,
         data: data 
       }));
+    }
+  }
+
+  async updateOne(req: Request, res: Response): Promise<void> {
+    const id = req.params.id;
+    const updates = req.body.data;
+    let code = Code.FAIL;
+    let data = id;
+    try {
+      if (req.body) {
+        const r = await this.model.updateOne( 
+          id,
+          updates
+        );
+        if (r.nModified === 1 && r.ok === 1) {
+          code = Code.SUCCESS;
+          data = id; // r.upsertedId ?
+        } else {
+          code = Code.FAIL;
+          data = id;
+        }
+      }
+    } catch (error) {
+      logger.error(`updateOne error: ${error}`);
+    } finally {
+      res.setHeader("Content-Type", "application/json");
+      res.send({
+        code,
+        data,
+      });
     }
   }
 }

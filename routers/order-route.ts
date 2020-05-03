@@ -14,8 +14,7 @@ export function OrderRouter(db: DB) {
 
   // admin
   router.post('/', (req, res) => { controller.create(req, res); });
-  router.put('/', (req, res) => { controller.update(req, res); });
-  router.patch('/', (req, res) => { controller.update(req, res); });
+  router.put('/:id', (req, res) => { controller.updateOne(req, res); });
 
 
   // support ?query={where, options}

@@ -13,6 +13,34 @@ export class ProductController extends Controller {
     this.model = model;
   }
 
+  // joined list
+  async list(req: Request, res: Response) {
+    const where: any = req.query.where;
+    const options: any = req.query.options;
+    let data: any[] = [];
+    let count: number = 0;
+    let code = Code.FAIL;
+    try {
+      if(where){ 
+        // TODO: no where will return error, is it a good choice?
+        const r = await this.model.list(where, options)
+        code = Code.SUCCESS;
+        data = r.data;
+        count = r.count;
+      } 
+    } catch (error) {
+      logger.error(`list error: ${error}`);
+    } finally {
+      res.setHeader('Content-Type', 'application/json'); 
+      res.send(JSON.stringify({
+        code: code,
+        data: data,
+        count: count 
+      }));
+    }
+  }
+
+  // grocery
   async gv1_list(req: Request, res: Response) {
     const status = req.query.status;
     const merchantId = req.query.merchantId;
@@ -21,7 +49,7 @@ export class ProductController extends Controller {
     let code = Code.FAIL;
     try {
       if (query && merchantId) {
-        const r = await this.model.joinFind({ ...query, merchantId });
+        const r = await this.model.list({ ...query, merchantId });
         code = Code.SUCCESS;
         data = r;
       }
@@ -84,38 +112,6 @@ export class ProductController extends Controller {
           code: code,
           data: data,
           count: count,
-        })
-      );
-    }
-  }
-
-  async update(req: Request, res: Response): Promise<void> {
-    const productId = req.query.productId;
-    const productData = req.body.data;
-    let code = Code.FAIL;
-    let data = productId;
-    try {
-      if (req.body) {
-        const r = await this.model.updateOne(
-          productId,
-          productData
-        );
-        if (r.nModified === 1 && r.ok === 1) {
-          code = Code.SUCCESS;
-          data = productId;
-        } else {
-          code = Code.FAIL;
-          data = productId;
-        }
-      }
-    } catch (error) {
-      logger.error(`update product error: ${error}`);
-    } finally {
-      res.setHeader("Content-Type", "application/json");
-      res.send(
-        JSON.stringify({
-          code: code,
-          data: data,
         })
       );
     }

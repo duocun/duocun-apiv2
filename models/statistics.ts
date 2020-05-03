@@ -1,6 +1,6 @@
 import { DB } from "../db";
 import { Model } from "./model";
-import { Order, IOrder } from "../models/order";
+import { Order, IOrder, OrderStatus, OrderType } from "../models/order";
 
 export class Statistics {
   orderModel: Order;
@@ -96,63 +96,80 @@ export class Statistics {
     }
     return productArray;
   }
-  async getDriverInfo(startDate: string) {
+  
+  // return [{productName, quantity}...]
+  groupByProduct(orders: any[], type: string = OrderType.GROCERY) {
+    const productMap: any = {};
+    const rs = orders.filter(order => order.type === type);
+    rs.forEach(r => {
+      r.items.forEach((it: any) => {
+        const productId = it.productId;
+        const productName = it.productName;
+        productMap[productId] = { productId, productName, quantity: 0 };
+      });
+    });
+    rs.forEach(r => {
+      r.items.forEach((it: any) => {
+        productMap[it.productId].quantity += it.quantity;
+      });
+    });
+
+    return Object.keys(productMap).map(pId => productMap[pId]);
+  }
+
+
+  groupByMerchant(orders: any[], type: string = OrderType.GROCERY) {
+    const merchantMap: any = {};
+    const rs = orders.filter(order => order.type === type);
+
+    rs.forEach(r => {
+      const merchantName = r.merchant? r.merchant.name: null;
+      const merchantId = r.merchant ? r.merchant._id : null;
+      merchantMap[merchantId] = { merchantId, merchantName, orders:[] };
+    });
+
+    rs.forEach(r => {
+      const merchantId = r.merchant ? r.merchant._id : null;
+      merchantMap[merchantId].orders.push(r);
+    });
+
+    return Object.keys(merchantMap).map(mId => merchantMap[mId]);
+  }
+
+
+  isPicked(order: IOrder) {
+    return order.status === OrderStatus.LOADED || order.status === OrderStatus.DONE;
+  }
+  
+  // return [{productName, quantity}...]
+  async getDriverStatistics(deliverDate: string){
     const q = {
-      deliverDate: startDate,
+      deliverDate
     };
     const dataSet = await this.orderModel.joinFindV2(q);
     const orders = dataSet.data;
     const driverMap: any = {};
     orders.forEach((order: any) => {
-      const driver = order.driver;
-      const dId = driver ? driver._id : undefined;
-      if (dId !== undefined) {
-        if (!driverMap[dId]) {
-          driverMap[dId] = {
-            driverId: "",
-            nOrders: 0,
-            nProducts: 0,
-            totalCost: 0,
-            driverName: "",
-            pickUpList: {},
-          };
-        }
-        driverMap[dId].driverId = dId;
-        driverMap[dId].nOrders++;
-        driverMap[dId].nProducts += order.items.length;
-        driverMap[dId].totalCost += order.cost;
-        driverMap[dId].driverName = driver ? driver.username : "N/A";
-        const merchant = order.merchant;
-        const mId = merchant ? merchant._id : null;
-        if (!driverMap[dId].pickUpList[mId]) {
-          driverMap[dId].pickUpList[mId] = {
-            merchantId: "",
-            merchantName: "",
-            nProducts: 0,
-          };
-        }
-        driverMap[dId].pickUpList[mId].merchantId = mId;
-        driverMap[dId].pickUpList[mId].merchantName = merchant
-          ? merchant.name
-          : "N/A";
-        driverMap[dId].pickUpList[mId].nProducts += order.items.length;
-      }
+      const driverId = order.driver? order.driver._id : null;
+      const driverName = order.driver ? order.driver.username : 'Unassign';
+      driverMap[driverId] = {driverId, driverName, orders:[]};
     });
 
-    const driverArray = [];
-    for (let dId in driverMap) {
-      driverArray.push({
-        driverId: driverMap[dId].driverId, //司机id
-        nOrders: driverMap[dId].nOrders, //司机一共接了多少单（已有order中）
-        nProducts: driverMap[dId].nProducts, // 司机一共拿了多少商品
-        totalCost: parseFloat(driverMap[dId].totalCost.toFixed(2)), //这些商品一共值多少钱
-        driverName: driverMap[dId].driverName, //司机名称
-        pickUpList: driverMap[dId].pickUpList, //司机去了哪些商家（商家id，商家名，每个商家拿了多少）
-      });
-    }
+    orders.forEach((order: any) => {
+      const driverId = order.driver? order.driver._id : null;
+      driverMap[driverId].orders.push(order);
+    });
 
-    return driverArray;
+    Object.keys(driverMap).forEach(driverId => {
+      driverMap[driverId].merchants = this.groupByMerchant(driverMap[driverId].orders).map(group => ({
+        merchantName: group.merchantName,
+        items: this.groupByProduct(group.orders)
+      }));
+      delete driverMap[driverId].orders;
+    });
+    return driverMap;
   }
+
   //return {nOrders,nProducts,totalPrice,totalCost}
   async getStatisticsInfo(startDate: string, endDate: string) {
     const q = {
