@@ -15,12 +15,16 @@ import {
   ICellApplication,
 } from "./cell-application";
 import { Log, Action, AccountType } from "./log";
-import { createObjectCsvWriter } from "csv-writer";
-import { ObjectID, Collection } from "mongodb";
+
+import { createObjectCsvWriter } from 'csv-writer';
+import { ObjectID, Collection, BulkWriteOpResultObject } from "mongodb";
+
 import { ClientCredit } from "./client-credit";
 import fs from "fs";
 import { EventLog } from "./event-log";
 import { PaymentAction } from "./client-payment";
+import { DbStatus } from "../entity";
+import { Code } from "../controllers/controller";
 
 const CASH_ID = "5c9511bb0851a5096e044d10";
 const CASH_NAME = "Cash";
@@ -157,6 +161,101 @@ export class Order extends Model {
     this.eventLogModel = new EventLog(dbo);
     this.locationModel = new Location(dbo);
   }
+ 
+//return: {code:x,data:orderId}
+update(req: Request, res: Response) {
+  const orderId = req.query.orderId;
+  const orderData = req.body.data;
+  if (orderData instanceof Array) {
+    this.bulkUpdate(orderData, req.body.options).then(x => {
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify(x, null, 3)); // x --- {status: 1, msg: ''}
+      });
+  } else {
+      if (req.body) {
+        this.updateOne(orderId, orderData, req.body.options).then((x: any) => {
+          res.setHeader('Content-Type', 'application/json');
+          if(x.nModified===1&&x.ok===1){
+            res.send(
+              JSON.stringify({
+                code: Code.SUCCESS,
+                data: orderId
+              })
+            )
+          }else{
+            res.send(
+              JSON.stringify({
+                code: Code.FAIL,
+                data: orderId
+              })
+            )
+          }
+         
+        });
+      } 
+    }
+  }  
+  
+updateOne(orderId:any, doc: any, options?: any): Promise<any> {
+  let query = {_id:orderId};
+   
+  return new Promise((resolve, reject) => {
+    if (Object.keys(doc).length === 0 && doc.constructor === Object) {
+      resolve();
+    } else {
+        query = this.convertIdFields(query);
+        doc = this.convertIdFields(doc);
+
+        this.getCollection().then((c: Collection) => {
+          c.updateOne(query, { $set: doc }, options, (err, r: any) => { // {n: 1, nModified: 0, ok: 1}
+            resolve(r.result);
+          });
+        });
+      }
+    });
+  }
+
+
+
+createV2(req: Request, res: Response) {
+  const order = req.body;
+  this.createOne(order).then(savedOrder => {
+    res.setHeader('Content-Type', 'application/json');
+    if(savedOrder){
+  
+      res.send(
+        JSON.stringify({
+          code: Code.SUCCESS,
+          data: savedOrder
+        })
+      )
+    }else{
+      res.send(
+        JSON.stringify({
+          code: Code.FAIL,
+          data: {}
+        })
+      )
+    }
+  });
+}
+async createOne(order: IOrder) {
+  const savedOrders: IOrder[] = [];
+  const paymentId = (new ObjectID()).toString();
+  let savedOrder:any = {};
+  if (order) {
+    order.paymentId = paymentId;
+    savedOrder = await this.doInsertOneV2(order);
+    savedOrders.push(savedOrder);
+    const paymentMethod = order.paymentMethod;
+    if (paymentMethod === PaymentMethod.CASH || paymentMethod === PaymentMethod.PREPAY) {
+      await this.addDebitTransactions(savedOrders);
+    } else {
+      // bank card and wechat pay will process transaction after payment gateway paid
+    }
+  }
+  return savedOrder;
+}
 
   async createOne(order: IOrder) {
     const savedOrders: IOrder[] = [];
@@ -468,6 +567,7 @@ export class Order extends Model {
   }
 
   // admin modify order
+
   create(req: Request, res: Response) {
     const order = req.body;
     this.placeOrders([order]).then((savedOrder) => {

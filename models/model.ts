@@ -165,6 +165,13 @@ export class Model extends Entity {
       });
     }
   }
+  async create_v2(doc:any) {
+    if (doc instanceof Array) {
+      return await this.insertMany(doc);
+    } else {
+      return await this.insertOne(doc);
+    }
+  }
 
   replace(req: Request, res: Response) {
     this.replaceById(req.body.id, req.body).then((x: any) => {

@@ -153,12 +153,15 @@ export class Statistics {
       const driverId = order.driver? order.driver._id : null;
       const driverName = order.driver ? order.driver.username : 'Unassign';
       driverMap[driverId] = {driverId, driverName, orders:[]};
+
+    });
     });
 
     orders.forEach((order: any) => {
       const driverId = order.driver? order.driver._id : null;
       driverMap[driverId].orders.push(order);
     });
+
 
     Object.keys(driverMap).forEach(driverId => {
       driverMap[driverId].merchants = this.groupByMerchant(driverMap[driverId].orders).map(group => ({
