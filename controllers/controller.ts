@@ -27,6 +27,7 @@ export class Controller {
     let code = Code.FAIL;
     try {
       if(where){
+        // console.log(`query: ${where}`);
         // TODO: no where will return error, is it a good choice?
         const r = await this.model.find_v2(where, options)
         code = Code.SUCCESS;

@@ -126,7 +126,7 @@ export class OrderController extends Controller {
         count = r.count;
       }
     } catch (error) {
-      logger.error(`list error: ${error}`);
+      // logger.error(`list error: ${error}`);
     } finally {
       res.send(
         JSON.stringify({
