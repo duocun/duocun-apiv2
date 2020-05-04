@@ -204,8 +204,24 @@ export class OrderController extends Controller {
 
   async removeOrder(req: Request, res: Response) {
     const orderId = req.params.id;
-    const x = await this.model.doRemoveOne(orderId);
-    res.setHeader("Content-Type", "application/json");
-    res.send(x);
+    let code = Code.FAIL;
+    let data = {};
+    try {
+      const r = await this.model.doRemoveOne(orderId);
+      if (r) {
+        code = Code.SUCCESS;
+        data = r;
+      }
+    } catch (error) {
+      logger.error(`delete one order error: ${error}`);
+    } finally {
+      res.setHeader("Content-Type", "application/json");
+      res.send(
+        JSON.stringify({
+          code: code,
+          data: data,
+        })
+      );
+    }
   }
 }

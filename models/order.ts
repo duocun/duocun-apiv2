@@ -693,13 +693,8 @@ export class Order extends Model {
 
   async doRemoveOne(orderId: string) {
     // return new Promise((resolve, reject) => {
-    const docs = await this.find({ _id: orderId });
-    if (docs && docs.length > 0) {
-      const order = docs[0];
-      const x = await this.updateOne(
-        { _id: orderId },
-        { status: OrderStatus.DELETED }
-      );
+    const order = await this.findOne({ _id: orderId });
+    if (order) {
       // temporary order didn't update transaction until paid
       if (order.status === OrderStatus.TEMP) {
         return order;
@@ -711,42 +706,51 @@ export class Order extends Model {
         const cost = order.cost;
         const total = order.total;
         const delivered = order.delivered;
-
-        const ps = await this.productModel.find({});
-        const items: IOrderItem[] = [];
-        order.items.map((it: IOrderItem) => {
-          const product = ps.find(
-            (p: any) => p && p._id.toString() === it.productId.toString()
-          );
-          if (product) {
-            items.push({
-              productId: it.productId,
-              quantity: it.quantity,
-              price: it.price,
-              cost: it.cost,
-              product: product,
-            });
-          }
-        });
-
         const merchant = await this.merchantModel.findOne({ _id: merchantId });
-        await this.transactionModel.updateMany(
-          { orderId: orderId },
-          { status: "del" }
-        ); // This will affect balance calc
         const merchantAccountId = merchant.accountId.toString();
-        await this.transactionModel.saveTransactionsForRemoveOrder(
-          orderId,
-          merchantAccountId,
-          merchantName,
-          clientId,
-          clientName,
-          cost,
-          total,
-          delivered,
-          items
-        );
-        return order;
+
+        if(merchant && merchantAccountId){
+          await this.updateOne(
+            { _id: orderId },
+            { status: OrderStatus.DELETED }
+          );
+          
+          const ps = await this.productModel.find({});
+          const items: IOrderItem[] = [];
+          order.items.forEach((it: IOrderItem) => {
+            const product = ps.find(
+              (p: any) => p && p._id.toString() === it.productId.toString()
+            );
+            if (product) {
+              items.push({
+                productId: it.productId,
+                quantity: it.quantity,
+                price: it.price,
+                cost: it.cost,
+                product: product,
+              });
+            }
+          });
+          
+          await this.transactionModel.updateMany(
+            { orderId: orderId },
+            { status: "del" }
+          ); // This will affect balance calc
+          await this.transactionModel.saveTransactionsForRemoveOrder(
+            orderId,
+            merchantAccountId,
+            merchantName,
+            clientId,
+            clientName,
+            cost,
+            total,
+            delivered,
+            items
+          );
+          return order;
+        }else{
+          return;
+        }
       }
     } else {
       // should never be here
