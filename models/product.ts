@@ -67,57 +67,6 @@ export class Product extends Model {
     this.accountModel = new Account(dbo);
     this.merchantModel = new Merchant(dbo);
   }
-  update(req: Request, res: Response) {
-    const productId = req.query.productId;
-    const productData = req.body.data;
-    if (productData instanceof Array) {
-      this.bulkUpdate(productData, req.body.options).then(x => {
-        res.setHeader('Content-Type', 'application/json');
-        res.send(JSON.stringify(x, null, 3)); // x --- {status: 1, msg: ''}
-        });
-    } else {
-        if (req.body) {
-          this.updateOne(productId, productData, req.body.options).then((x: any) => {
-            res.setHeader('Content-Type', 'application/json');
-            if(x.nModified===1&&x.ok===1){
-              res.send(
-                JSON.stringify({
-                  code: Code.SUCCESS,
-                  data: productId
-                })
-              )
-            }else{
-              res.send(
-                JSON.stringify({
-                  code: Code.FAIL,
-                  data: productId
-                })
-              )
-            }
-           
-          });
-        } 
-      }
-    }  
-    
-  updateOne(productId:any, doc: any, options?: any): Promise<any> {
-    let query = {_id:productId};
-     
-    return new Promise((resolve, reject) => {
-      if (Object.keys(doc).length === 0 && doc.constructor === Object) {
-        resolve();
-      } else {
-          query = this.convertIdFields(query);
-          doc = this.convertIdFields(doc);
-  
-          this.getCollection().then((c: Collection) => {
-            c.updateOne(query, { $set: doc }, options, (err, r: any) => { // {n: 1, nModified: 0, ok: 1}
-              resolve(r.result);
-            });
-          });
-        }
-      });
-    }
 
   uploadPicture(req: Request, res: Response) {
     const fname = req.body.fname + '.' + req.body.ext;

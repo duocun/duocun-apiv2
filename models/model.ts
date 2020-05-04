@@ -37,8 +37,7 @@ export class Model extends Entity {
   }
 
   // this function will do upsert ?
-  async updateOne(id: any, doc: any, options?: any): Promise<any> {
-    let query = { _id: id };
+  async updateOne(query: any, doc: any, options?: any): Promise<any> {
     if (Object.keys(doc).length === 0 && doc.constructor === Object) {
       return;
     } else {

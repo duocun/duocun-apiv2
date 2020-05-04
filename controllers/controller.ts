@@ -40,7 +40,7 @@ export class Controller {
         count = r.count;
       }
     } catch (error) {
-      console.log(`list error: ${error}`);
+      // console.log(`list error: ${error}`);
       logger.error(`list error: ${error}`);
     } finally {
       res.setHeader('Content-Type', 'application/json'); 
@@ -73,22 +73,22 @@ export class Controller {
   }
 
   async updateOne(req: Request, res: Response): Promise<void> {
-    const id = req.params.id;
+    const _id = req.params.id;
     const updates = req.body.data;
     let code = Code.FAIL;
-    let data = id;
+    let data = _id;
     try {
       if (req.body) {
         const r = await this.model.updateOne( 
-          id,
+          {_id},
           updates
         );
         if (r.nModified === 1 && r.ok === 1) {
           code = Code.SUCCESS;
-          data = id; // r.upsertedId ?
+          data = _id; // r.upsertedId ?
         } else {
           code = Code.FAIL;
-          data = id;
+          data = _id;
         }
       }
     } catch (error) {

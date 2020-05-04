@@ -138,45 +138,7 @@ export class OrderController extends Controller {
     }
   }
 
-  async update(req: Request, res: Response): Promise<void> {
-    const orderId = req.params.id;
-    const orderData = req.body.data;
-    let code = Code.FAIL;
-    let data = orderId;
-    if (orderData instanceof Array) {
-      this.model.bulkUpdate(orderData, req.body.options).then((x) => {
-        res.setHeader("Content-Type", "application/json");
-        res.send(JSON.stringify(x, null, 3)); // x --- {status: 1, msg: ''}
-      });
-    } else {
-      try {
-        if (req.body) {
-          const r = await this.model.updateOne(
-            orderId,
-            orderData,
-            req.body.options
-          );
-          if (r.nModified === 1 && r.ok === 1) {
-            code = Code.SUCCESS;
-            data = orderId;
-          } else {
-            code = Code.FAIL;
-            data = orderId;
-          }
-        }
-      } catch (error) {
-        logger.error(`update order error: ${error}`);
-      } finally {
-        res.setHeader("Content-Type", "application/json");
-        res.send(
-          JSON.stringify({
-            code: code,
-            data: data,
-          })
-        );
-      }
-    }
-  }
+  
   async create(req: Request, res: Response): Promise<void> {
     const order = req.body;
     let code = Code.FAIL;
