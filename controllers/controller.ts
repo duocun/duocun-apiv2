@@ -4,6 +4,7 @@ import { DB } from "../db";
 
 import path from 'path';
 import { getLogger } from '../lib/logger'
+
 const logger = getLogger(path.basename(__filename));
 
 export const Code = {
@@ -39,16 +40,15 @@ export class Controller {
         data = r.data;
         count = r.count;
       }
-    } catch (error) {
-      console.log(`list error: ${error.message}`);
-      logger.error(`list error: ${error}`);
-    } finally {
       res.setHeader('Content-Type', 'application/json'); 
       res.send({
         code: code,
         data: data,
-        count: count 
+        count: count
       });
+    } catch (error) {
+      console.log(`list error: ${error.message}`);
+      logger.error(`list error: ${error}`);
     }
   }
 
