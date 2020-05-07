@@ -806,12 +806,10 @@ export class Order extends Model {
     );
   }
 
-  saveTransactionsForPlaceOrder(orders: any[], merchant: any) {
-    let promises = [];
+  async saveTransactionsForPlaceOrder(orders: any[], merchant: any) {
     for (let i = 0; i < orders.length; i++) {
       const order = orders[i];
-      promises.push(
-        this.transactionModel.saveTransactionsForPlaceOrder(
+      await this.transactionModel.saveTransactionsForPlaceOrder(
           order._id.toString(),
           order.type,
           merchant.accountId.toString(),
@@ -822,9 +820,8 @@ export class Order extends Model {
           order.total,
           order.delivered
         )
-      );
     }
-    return Promise.all(promises);
+    return;
   }
 
   // add transactions for placing order for duocun and merchant

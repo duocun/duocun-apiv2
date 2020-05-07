@@ -106,6 +106,109 @@ export class Transaction extends Model {
     this.eventLogModel = new EventLog(dbo);
   }
 
+
+
+  // update balance of debit and credit
+  async doInsertOne(tr: ITransaction) {
+    const fromId: string = tr.fromId; // must be account id
+    const toId: string = tr.toId;     // must be account id
+    const amount: number = +tr.amount;
+
+    try {
+      const fromAccount: IAccount = await this.accountModel.findOne({ _id: fromId });
+      const toAccount: IAccount = await this.accountModel.findOne({ _id: toId });
+
+      if (fromAccount && toAccount) {
+        tr.fromBalance = Math.round((fromAccount.balance + amount) * 100) / 100;
+        tr.toBalance = Math.round((toAccount.balance - amount) * 100) / 100;
+
+        const x = await this.insertOne(tr);
+
+        const updates = [
+          { query: { _id: fromId }, data: { balance: tr.fromBalance } },
+          { query: { _id: toId }, data: { balance: tr.toBalance } }
+        ];
+        await this.accountModel.bulkUpdate(updates);
+        return x;
+      } else {
+        return;
+      }
+    } catch (e) {
+      logger.error(`Insert transaction error: ${e}`);
+      return;
+    } finally {
+      return;
+    }
+  }
+
+  async saveTransactionsForPlaceOrder(orderId: string, orderType: string, merchantAccountId: string, merchantName: string,
+    clientId: string, clientName: string, cost: number, total: number, delivered: string): Promise<any> {
+
+    const t1: ITransaction = {
+      fromId: merchantAccountId,
+      fromName: merchantName,
+      toId: CASH_BANK_ID,
+      toName: clientName,
+      actionCode: TransactionAction.ORDER_FROM_MERCHANT.code, // 'duocun order from merchant',
+      amount: Math.round(cost * 100) / 100,
+      orderId: orderId,
+      orderType: orderType,
+      delivered: delivered,
+    };
+
+    const t2: ITransaction = {
+      fromId: CASH_BANK_ID,
+      fromName: merchantName,
+      toId: clientId,
+      toName: clientName,
+      amount: Math.round(total * 100) / 100,
+      actionCode: TransactionAction.ORDER_FROM_DUOCUN.code, // 'client order from duocun',
+      orderId: orderId,
+      orderType: orderType,
+      delivered: delivered,
+    };
+
+    await this.doInsertOne(t1);
+    // console.log(`Add transactions for order Id:${orderId}, merchant`);
+    await this.doInsertOne(t2);
+    // console.log(`Add transactions for order Id:${orderId}, client: ${clientName}, amount:${t2.amount}`);
+    return;
+  }
+
+
+  // add cancel transactions for merchant and client
+  async saveTransactionsForRemoveOrder(orderId: string, merchantAccountId: string, merchantName: string, clientId: string, clientName: string,
+    cost: number, total: number, delivered: string, items: IOrderItem[]) {
+
+    const t1: ITransaction = {
+      fromId: CASH_BANK_ID,
+      fromName: clientName,
+      toId: merchantAccountId,
+      toName: merchantName,
+      actionCode: TransactionAction.CANCEL_ORDER_FROM_MERCHANT.code, // 'duocun cancel order from merchant',
+      amount: Math.round(cost * 100) / 100,
+      orderId: orderId,
+      items: items,
+      delivered: delivered
+    };
+
+    const t2: ITransaction = {
+      fromId: clientId,
+      fromName: clientName,
+      toId: CASH_BANK_ID,
+      toName: merchantName,
+      amount: Math.round(total * 100) / 100,
+      actionCode: TransactionAction.CANCEL_ORDER_FROM_DUOCUN.code, // 'client cancel order from duocun',
+      orderId: orderId,
+      delivered: delivered
+    };
+
+    await this.doInsertOne(t1);
+    await this.doInsertOne(t2);
+    return;
+  }
+
+
   // deprecated
   // async joinFindV2(query: any, fields: string[] = []) {
   //   const ts = await this.find(query, fields);
@@ -145,112 +248,6 @@ export class Transaction extends Model {
   //     return { total: len, transactions: [] };
   //   }
   // }
-
-
-  async doInsertOne(tr: ITransaction) {
-    const fromId: string = tr.fromId; // must be account id
-    const toId: string = tr.toId;     // must be account id
-    const amount: number = +tr.amount;
-
-    try{
-      const fromAccount: IAccount = await this.accountModel.findOne({_id: fromId});
-      const toAccount: IAccount = await this.accountModel.findOne({_id: toId});
-  
-      if (fromAccount && toAccount) {
-        tr.fromBalance = Math.round((fromAccount.balance + amount) * 100) / 100;
-        tr.toBalance = Math.round((toAccount.balance - amount) * 100) / 100;
-  
-        const x = await this.insertOne(tr);
-        
-        const updates = [
-          { query: { _id: fromId }, data: { balance: tr.fromBalance } },
-          { query: { _id: toId }, data: { balance: tr.toBalance } }
-        ];
-        await this.accountModel.bulkUpdate(updates);
-        return x;
-      } else {
-        return;
-      }
-    } catch(e){
-      logger.error(`Insert transaction error: ${e}`);
-      return;
-    } finally{
-      return;
-    }
-  }
-
-
-  saveTransactionsForPlaceOrder(orderId: string, orderType: string, merchantAccountId: string, merchantName: string,
-    clientId: string, clientName: string, cost: number, total: number, delivered: string): Promise<string> {
-
-    return new Promise((resolve, reject) => {
-      const t1: ITransaction = {
-        fromId: merchantAccountId,
-        fromName: merchantName,
-        toId: CASH_BANK_ID,
-        toName: clientName,
-        actionCode: TransactionAction.ORDER_FROM_MERCHANT.code, // 'duocun order from merchant',
-        amount: Math.round(cost * 100) / 100,
-        orderId: orderId,
-        orderType: orderType,
-        delivered: delivered,
-      };
-
-      const t2: ITransaction = {
-        fromId: CASH_BANK_ID,
-        fromName: merchantName,
-        toId: clientId,
-        toName: clientName,
-        amount: Math.round(total * 100) / 100,
-        actionCode: TransactionAction.ORDER_FROM_DUOCUN.code, // 'client order from duocun',
-        orderId: orderId,
-        orderType: orderType,
-        delivered: delivered,
-      };
-
-      this.doInsertOne(t1).then((x) => {
-        this.doInsertOne(t2).then((y) => {
-          resolve();
-        });
-      });
-    });
-  }
-
-
-  saveTransactionsForRemoveOrder(orderId: string, merchantAccountId: string, merchantName: string, clientId: string, clientName: string,
-    cost: number, total: number, delivered: string, items: IOrderItem[]) {
-
-    return new Promise((resolve, reject) => {
-      const t1: ITransaction = {
-        fromId: CASH_BANK_ID,
-        fromName: clientName,
-        toId: merchantAccountId,
-        toName: merchantName,
-        actionCode: TransactionAction.CANCEL_ORDER_FROM_MERCHANT.code, // 'duocun cancel order from merchant',
-        amount: Math.round(cost * 100) / 100,
-        orderId: orderId,
-        items: items,
-        delivered: delivered
-      };
-
-      const t2: ITransaction = {
-        fromId: clientId,
-        fromName: clientName,
-        toId: CASH_BANK_ID,
-        toName: merchantName,
-        amount: Math.round(total * 100) / 100,
-        actionCode: TransactionAction.CANCEL_ORDER_FROM_DUOCUN.code, // 'client cancel order from duocun',
-        orderId: orderId,
-        delivered: delivered
-      };
-
-      this.doInsertOne(t1).then((x) => {
-        this.doInsertOne(t2).then((y) => {
-          resolve();
-        });
-      });
-    });
-  }
 
   doGetSales() {
     const q = {
