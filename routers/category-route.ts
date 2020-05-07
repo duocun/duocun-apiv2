@@ -13,11 +13,10 @@ export function CategoryRouter(db: DB){
   router.get('/G/root', (req, res) => { controller.gv1_list(req, res); });
   router.get('/G/', (req, res) => { controller.gv1_list(req, res); });
   router.get('/G/:id', (req, res) => { controller.gv1_getById(req, res); });
-
-  // admin api
+    // admin api
   router.get('/', [parseQuery], (req: Request, res: Response) => { controller.list(req, res); });
+  router.get('/category-tree', (req: Request, res: Response) => { controller.getCategoryTree(req, res) });
   router.get('/:id', (req, res) => { controller.get(req, res); });
-
 
   // old api
   // router.get('/', (req, res) => { model.list(req, res); });

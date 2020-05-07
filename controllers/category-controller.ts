@@ -1,8 +1,8 @@
 import {Request, Response}from "express";
 import { DB } from "../db";
-import { Category } from "../models/category";
+import { Category, CategoryInterface } from "../models/category";
 import { Controller, Code } from "./controller";
-
+import { treefy } from "../helpers/category-helper";
 export class CategoryController extends Controller{
   model: Category;
   constructor(model: Category, db: DB) {
@@ -35,4 +35,15 @@ export class CategoryController extends Controller{
       }));
     });
   }
+
+  getCategoryTree(req: Request, res: Response) {
+    this.model.find({ status: "A" }).then((categories: Array<CategoryInterface>) => {
+      res.json({
+        code: Code.SUCCESS,
+        data: treefy(categories)
+      });
+    })
+  }
+
+  
 };
