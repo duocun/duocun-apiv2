@@ -2,7 +2,8 @@ import { MongoClient, Db } from 'mongodb';
 
 export class DB {
 
-  private db: any; // connected db
+  private db: Db | undefined; // connected db
+  private mongoClient: MongoClient | undefined;
 
   constructor() {
 
@@ -18,6 +19,7 @@ export class DB {
 
     return new Promise((resolve, reject) => {
       MongoClient.connect(connectionStr, options).then((connectClient: MongoClient) => {
+        this.mongoClient = connectClient;
         const d: Db = connectClient.db(cfg.NAME);
         this.db = d;
         // console.log('mongodb connected ...');
@@ -30,8 +32,19 @@ export class DB {
   }
 
   getDb(){
-    return this.db;
+    return <Db> this.db;
   }
+
+  getMongoClient() {
+    return this.mongoClient;
+  }
+
+  close(): void {
+    if (this.mongoClient) {
+      this.mongoClient.close();
+    }
+  }
+
 }
 
 // let _db : any;
