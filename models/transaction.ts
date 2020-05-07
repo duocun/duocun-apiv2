@@ -150,7 +150,7 @@ export class Transaction extends Model {
   async doInsertOne(tr: ITransaction) {
     const fromId: string = tr.fromId; // must be account id
     const toId: string = tr.toId;     // must be account id
-    const amount: number = tr.amount;
+    const amount: number = +tr.amount;
 
     try{
       const fromAccount: IAccount = await this.accountModel.findOne({_id: fromId});
@@ -176,21 +176,6 @@ export class Transaction extends Model {
       return;
     } finally{
       return;
-    }
-  }
-
-  create(req: Request, res: Response) {
-    if (req.body instanceof Array) {
-      this.insertMany(req.body).then((rs: any[]) => {
-        res.setHeader('Content-Type', 'application/json');
-        res.send(JSON.stringify(rs, null, 3));
-      });
-    } else {
-      const tr = req.body;
-      this.doInsertOne(tr).then(savedTr => {
-        res.setHeader('Content-Type', 'application/json');
-        res.send(JSON.stringify(savedTr, null, 3));
-      });
     }
   }
 

@@ -306,7 +306,7 @@ export class Entity {
         });
 
         doc['_id'] = { $in: arr };
-      } else if (typeof body === "string") {
+      } else if (typeof body === "string" && ObjectId.isValid(doc._id) && ObjectId.isValid(doc._id)) {
         doc['_id'] = new ObjectID(doc._id);
       }
     }
@@ -317,7 +317,7 @@ export class Entity {
         let a = body['$in'];
         const arr: any[] = [];
         a.map((id: any) => {
-          if (typeof id === "string") {
+          if (typeof id === "string" && ObjectId.isValid(id)) {
             arr.push(new ObjectID(id));
           } else {
             arr.push(id);
@@ -325,27 +325,27 @@ export class Entity {
         });
 
         doc['paymentId'] = { $in: arr };
-      } else if (typeof body === "string") {
+      } else if (typeof body === "string" && ObjectId.isValid(doc.paymentId)) {
         doc['paymentId'] = new ObjectID(doc.paymentId);
       }
     }
 
     if (doc && doc.hasOwnProperty('paymentId')) {
       const paymentId = doc['paymentId'];
-      if (typeof paymentId === 'string') {
+      if (typeof paymentId === 'string' && ObjectId.isValid(paymentId)) {
         doc['paymentId'] = new ObjectID(paymentId);
       }
     }
 
     if (doc && doc.hasOwnProperty('categoryId')) {
       const catId = doc['categoryId'];
-      if (typeof catId === 'string') {
+      if (typeof catId === 'string' && ObjectId.isValid(catId)) {
         doc['categoryId'] = new ObjectID(catId);
       }
     }
     if (doc && doc.hasOwnProperty('areaId')) {
       const areaId = doc['areaId'];
-      if (typeof areaId === 'string') {
+      if (typeof areaId === 'string' && ObjectId.isValid(areaId)) {
         doc['areaId'] = new ObjectID(areaId);
       }
     }
@@ -356,7 +356,7 @@ export class Entity {
         let a = body['$in'];
         const arr: any[] = [];
         a.map((id: any) => {
-          if (typeof id === "string") {
+          if (typeof id === "string" && ObjectId.isValid(id)) {
             arr.push(new ObjectID(id));
           } else {
             arr.push(id);
@@ -364,7 +364,7 @@ export class Entity {
         });
 
         doc['merchantId'] = { $in: arr };
-      } else if (typeof body === "string") {
+      } else if (typeof body === "string" && ObjectId.isValid(doc.merchantId)) {
         doc['merchantId'] = new ObjectID(doc.merchantId);
       }
     }
@@ -375,7 +375,7 @@ export class Entity {
         let a = body['$in'];
         const arr: any[] = [];
         a.map((id: any) => {
-          if (typeof id === "string") {
+          if (typeof id === "string" && ObjectId.isValid(id)) {
             arr.push(new ObjectID(id));
           } else {
             arr.push(id);
@@ -485,7 +485,7 @@ export class Entity {
 
     if (doc && doc.hasOwnProperty('$or')) {
       const items: any[] = [];
-      doc['$or'].map((it: any) => {
+      doc['$or'].forEach((it: any) => {
         if (it && it.hasOwnProperty('toId')  && ObjectId.isValid(it.toId)) {
           items.push({ toId: new ObjectID(it.toId) });
         } else if (it && it.hasOwnProperty('fromId')  && ObjectId.isValid(it.fromId)) {

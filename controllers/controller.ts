@@ -40,7 +40,7 @@ export class Controller {
         count = r.count;
       }
     } catch (error) {
-      // console.log(`list error: ${error}`);
+      console.log(`list error: ${error.message}`);
       logger.error(`list error: ${error}`);
     } finally {
       res.setHeader('Content-Type', 'application/json'); 
