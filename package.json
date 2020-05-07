@@ -12,7 +12,7 @@
     "lint": "eslint .",
     "copy": "",
     "start": "npm run copy && node ./dist/server.js",
-    "test": "mocha -r ts-node/register server/tests/**/*-spec.ts",
+    "test": "mocha -r ts-node/register tests/**/*-spec.ts",
     "coverage": "nyc -r lcov -e .ts -x \"*.test.ts\" npm run test",
     "posttest": "npm run lint",
     "prod": "npm run build && npm run start"
