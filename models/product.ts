@@ -43,7 +43,7 @@ export interface IProduct {
   categoryId: string;
 
   openDays?: number[];
-
+  taxRate?: number;
   pictures: IPicture[];
   dow?: string[];
   order?: number;
@@ -51,7 +51,13 @@ export interface IProduct {
 
   created?: string;
   modified?: string;
-
+  stock?: {
+    enabled: boolean;
+    allowNegative: boolean;
+    quantity: number;
+    outOfStockMsg: string;
+    outOfStockMsgEN: string;
+  },
   merchant?: IMerchant;
   category?: ICategory;
   merchantAccount?: IAccount; // join account table from find()

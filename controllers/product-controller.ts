@@ -4,6 +4,8 @@ import { Product } from "../models/product";
 import { Controller, Code } from "./controller";
 import path from "path";
 import { getLogger } from "../lib/logger";
+import { getDefaultProduct } from "../helpers/product-helper";
+import { ObjectId } from "mongodb";
 const logger = getLogger(path.basename(__filename));
 
 export class ProductController extends Controller {
@@ -37,6 +39,64 @@ export class ProductController extends Controller {
         data: data,
         count: count 
       }));
+    }
+  }
+
+  async save(req: Request, res: Response) {
+    const id = req.params.id;
+    let doc = getDefaultProduct();
+    if (id && id !== "new") {
+      doc = await this.model.findOne({ _id: id });
+      if (!doc) {
+        return res.json({
+          code: Code.FAIL,
+          message: 'product not found'
+        });
+      }
+    }
+    try {
+      doc = this.fillDocFromRequest(doc, req);
+    } catch (e) {
+      if (e.getMessage() === "invalid_id") {
+        return res.json({
+          code: Code.FAIL,
+          message: e.getMessage()
+        });
+      }
+    }
+    const collection = await this.model.getCollection();
+    if (!id || id === "new") {
+      const result = await collection.insertOne(doc);
+      if (result.result.ok) {
+        res.send({
+          code: Code.SUCCESS,
+          data: {
+            ...doc,
+            _id: result.ops[0]._id
+          }
+        });
+      } else {
+        res.send({
+          code: Code.FAIL,
+          message: 'save_failed'
+        });
+      }
+    } else {
+      const oid = new ObjectId(id);
+      const result = await collection.updateOne({_id: oid}, {$set: doc}, {upsert: true});
+      if (result.result.ok) {
+        collection.findOne({_id: oid}).then(data => {
+          res.send({
+            code: Code.SUCCESS,
+            data
+          });
+        });
+      } else {
+        res.send({
+          code: Code.FAIL,
+          message: 'save_failed'
+        });
+      }
     }
   }
 
@@ -115,5 +175,41 @@ export class ProductController extends Controller {
         })
       );
     }
+  }
+
+  fillDocFromRequest(doc: any, req: Request) {
+    delete(doc._id);
+    doc.name = req.body.name || "";
+    doc.nameEN = req.body.nameEN || "";
+    doc.description = req.body.description || "";
+    doc.descriptionEN = req.body.descriptionEN || "";
+    doc.price = parseFloat(req.body.price);
+    doc.cost = parseFloat(req.body.cost);
+    if (req.body.dow) {
+      doc.dow = req.body.dow;
+    }
+    if (req.body.pictures) {
+      doc.pictures = req.body.pictures;
+    }
+    if (req.body.order) {
+      doc.order = req.body.order;
+    }
+    if (req.body.featured) {
+      doc.featured = req.body.featured;
+    }
+    try {
+      if (req.body.merchantId) {
+        doc.merchantId = new ObjectId(req.body.merchantId);
+      }
+      if (req.body.categoryId) {
+        doc.categoryId = new ObjectId(req.body.categoryId);
+      }
+    } catch(e) {
+      throw new Error("invalid_id");
+    }
+    doc.stock = req.body.stock;
+    doc.attributes = req.body.attributes || [];
+    doc.combinations = req.body.combinations || [];
+    return doc;
   }
 }
