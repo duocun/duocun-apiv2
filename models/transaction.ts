@@ -22,7 +22,7 @@ const TD_BANK_ID = '5c95019e0851a5096e044d0c';
 const TD_BANK_NAME = 'TD Bank';
 const SNAPPAY_BANK_ID = '5e60139810cc1f34dea85349';
 const SNAPPAY_BANK_NAME = 'SnapPay Bank';
-
+const EXPENSE_ID = '5c9504f00851a5096e044d0d';
 
 export const TransactionAction = {
   DECLINE_CREDIT_CARD: { code: 'DC', name: 'decline credit card payment' },
@@ -73,6 +73,10 @@ export interface ITransaction {
   fromBalance?: number;
   toBalance?: number;
 
+  staffId?: string;   // account _id, for salary
+  staffName?: string; // account name for salary
+  modifyBy?: string;  // account _id
+
   delivered?: string;
   created?: string;
   modified?: string;
@@ -107,11 +111,10 @@ export class Transaction extends Model {
   }
 
 
-
   // update balance of debit and credit
   async doInsertOne(tr: ITransaction) {
     const fromId: string = tr.fromId; // must be account id
-    const toId: string = tr.toId;     // must be account id
+    const toId: string = tr.actionCode === TransactionAction.PAY_SALARY.code ? EXPENSE_ID : tr.toId;     // must be account id
     const amount: number = +tr.amount;
 
     try {
@@ -121,6 +124,9 @@ export class Transaction extends Model {
       if (fromAccount && toAccount) {
         tr.fromBalance = Math.round((fromAccount.balance + amount) * 100) / 100;
         tr.toBalance = Math.round((toAccount.balance - amount) * 100) / 100;
+
+        tr.fromName = fromAccount.username;
+        tr.toName = toAccount.username;
 
         const x = await this.insertOne(tr);
 
