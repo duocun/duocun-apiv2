@@ -15,6 +15,7 @@ export function ProductRouter(db: DB) {
   router.put('/',(req,res) => {model.update(req, res);});
   router.patch('/',(req,res) => {model.update(req, res);});
   // admin api
+  router.post('/:id', (req, res) => { controller.save(req, res); });
   router.put('/:id',(req,res) => {controller.updateOne(req, res);});
 
   // api/admin/products?query={where:xxx,options:{"limit":10,"skip":0,"sort":[["_id",1]]}}
