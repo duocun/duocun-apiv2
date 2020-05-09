@@ -6,13 +6,18 @@ import path from "path";
 import { getLogger } from "../lib/logger";
 import { getDefaultProduct } from "../helpers/product-helper";
 import { ObjectId } from "mongodb";
+import moment from "moment";
+import { Order, OrderStatus } from "../models/order";
+
 const logger = getLogger(path.basename(__filename));
 
 export class ProductController extends Controller {
   model: Product;
+  orderModel: Order;
   constructor(model: Product, db: DB) {
     super(model, db);
     this.model = model;
+    this.orderModel = new Order(db);
   }
 
   // joined list
@@ -175,6 +180,40 @@ export class ProductController extends Controller {
         })
       );
     }
+  }
+
+  async delivery(req: Request, res: Response) {
+    let productId: any = req.params.id;
+    try {
+      productId = new ObjectId(productId);
+    } catch (e) {
+      return res.json({
+        code: Code.FAIL,
+        msg: "invalid_id"
+      });
+    }
+    let todayString = moment().format("YYYY-MM-DDT00:00:00.000Z");
+    const collection  = await this.orderModel.getCollection();
+    const orders = await collection.find({
+      delivered: { $gte: todayString },
+      status: { 
+        $nin: [
+          OrderStatus.BAD,
+          OrderStatus.DELETED,
+          OrderStatus.DONE
+        ] 
+      },
+      items: {
+        $elemMatch: {
+          productId
+        }
+      }
+    }).toArray();
+    res.json({
+      code: Code.SUCCESS,
+      todayString,
+      data: orders
+    });
   }
 
   fillDocFromRequest(doc: any, req: Request) {
