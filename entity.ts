@@ -324,6 +324,8 @@ export class Entity {
           items.push({ toId: new ObjectID(it.toId) });
         } else if (it && it.hasOwnProperty('fromId') && ObjectId.isValid(it.fromId)) {
           items.push({ fromId: new ObjectID(it.fromId) });
+        } else if (it && it.hasOwnProperty('staffId') && ObjectId.isValid(it.staffId)) {
+          items.push({ staffId: new ObjectID(it.staffId) });
         }
       });
       doc['$or'] = items;
@@ -429,6 +431,7 @@ export class Entity {
     });
   }
 
+  // deprecated
   deleteById(id: string): Promise<any> {
     return new Promise((resolve, reject) => {
       this.getCollection().then((c: Collection) => {

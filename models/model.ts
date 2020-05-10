@@ -60,6 +60,12 @@ export class Model extends Entity {
     return ret;
   }
 
+  async deleteOne(query: any, options?: object): Promise<any> {
+    const c: Collection = await this.getCollection();
+    const q = this.convertIdFields(query);
+    return await c.deleteOne(q, options); // DeleteWriteOpResultObject {ok, n}
+  }
+
   // return BulkWriteOpResultObject
   async bulkUpdate(items: IUpdateItem[], options?: any): Promise<any> {
     const c: Collection = await this.getCollection();
