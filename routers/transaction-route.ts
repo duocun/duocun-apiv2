@@ -15,7 +15,9 @@ export function TransactionRouter(db: DB) {
   router.get('/', [parseQuery], (req: Request, res: Response) => { controller.list(req, res); });
   router.get('/:id', (req, res) => { controller.get(req, res); });
   router.post('/', async (req: Request, res: Response) => { await controller.create(req, res); });
-
+  router.put('/:id', async (req: Request, res: Response) => { await controller.updateOneAndRecalculate(req, res); });
+  router.delete('/:id', async (req: Request, res: Response) => { await controller.deleteOneAndRecalculate(req, res); });
+  
   // /?accountId=xxx
   router.put('/', async (req: Request, res: Response) => { await controller.recalculate(req, res) });
 
@@ -36,10 +38,10 @@ export function TransactionRouter(db: DB) {
   router.patch('/updateBalances', (req, res) => { model.updateBalances(req, res); });
   // router.patch('/fixCancelTransactions', (req, res) => { model.fixCancelTransactions(req, res); });
   // router.patch('/changeAccount', (req, res) => { model.changeAccount(req, res); });
-  router.patch('/', (req, res) => { model.update(req, res); });
+  
 
 
-  router.delete('/:id', (req, res) => { model.removeOne(req, res); });
+  
   router.delete('/', (req, res) => { model.remove(req, res); });
 
   return router;

@@ -1,6 +1,6 @@
 import { DB } from "../db";
 import { Model } from "./model";
-import { ObjectID, ObjectId } from "mongodb";
+import { ObjectID, ObjectId, Collection } from "mongodb";
 import { Request, Response } from "express";
 import { Account, IAccount } from "./account";
 import moment from 'moment';
@@ -214,6 +214,59 @@ export class Transaction extends Model {
     return;
   }
 
+  async updateOneAndRecalculate(query: any, doc: any, options?: any): Promise<any> {
+    const fromId = doc.fromId;
+    const toId = doc.toId;
+    let r;
+    if (doc.actionCode === TransactionAction.PAY_SALARY.code) {
+      const staffId = doc.staffId;
+      if (fromId && toId && staffId) {
+        r = await this.updateOne(query, doc, options);
+        await this.updateBalanceByAccountIdV2(fromId);
+        await this.updateBalanceByAccountIdV2(toId);
+        await this.updateBalanceByAccountIdV2(staffId);
+        return r; // {nModified, ok}
+      } else {
+        return;
+      }
+    } else {
+      if (fromId && toId) {
+        r = await this.updateOne(query, doc, options);
+        await this.updateBalanceByAccountIdV2(fromId);
+        await this.updateBalanceByAccountIdV2(toId);
+        return r;
+      } else {
+        return;
+      }
+    }
+  }
+
+  async deleteOneAndRecalculate(query: any, doc: any, options?: any): Promise<any> {
+    const fromId = doc.fromId;
+    const toId = doc.toId;
+    let r;
+    if (doc.actionCode === TransactionAction.PAY_SALARY.code) {
+      const staffId = doc.staffId;
+      if (fromId && toId && staffId) {
+        r = await this.deleteOne(query, options);
+        await this.updateBalanceByAccountIdV2(fromId);
+        await this.updateBalanceByAccountIdV2(toId);
+        await this.updateBalanceByAccountIdV2(staffId);
+        return r; // {nModified, ok}
+      } else {
+        return;
+      }
+    } else {
+      if (fromId && toId) {
+        r = await this.deleteOne(query, options);
+        await this.updateBalanceByAccountIdV2(fromId);
+        await this.updateBalanceByAccountIdV2(toId);
+        return r;
+      } else {
+        return;
+      }
+    }
+  }
 
   // deprecated
   // async joinFindV2(query: any, fields: string[] = []) {
@@ -633,6 +686,7 @@ export class Transaction extends Model {
     return accountIds.length;
   }
 
+  // only use for bulk operation
   // const trs = transactions.filter(t => t.fromId.toString() === accountId || t.toId.toString() === accountId);
   async updateBalanceByAccountId(accountId: string, trs: ITransaction[]) {
     if (trs && trs.length > 0) {
@@ -640,7 +694,7 @@ export class Transaction extends Model {
       const list = trs;
 
       const datas: any[] = [];
-      list.map((t: ITransaction) => {
+      list.forEach((t: ITransaction) => {
         const oId: any = t._id;
         if (t.fromId.toString() === accountId) {
           balance += t.amount;
@@ -668,6 +722,44 @@ export class Transaction extends Model {
     }
   }
 
+  async updateBalanceByAccountIdV2(accountId: string) {
+    const q = { '$or': [{ fromId: accountId }, { toId: accountId }] };
+    const trs = await this.find(q);
+
+    if (trs && trs.length > 0) {
+      let balance = 0;
+      let list = this.sortTransactions(trs);
+
+      const datas: any[] = [];
+      list.forEach((t: ITransaction) => {
+        const oId: any = t._id;
+        if (t.fromId.toString() === accountId) {
+          balance += t.amount;
+          datas.push({
+            query: { _id: oId.toString() },
+            data: {
+              fromBalance: Math.round(balance * 100) / 100
+            }
+          });
+        } else if (t.toId.toString() === accountId) {
+          balance -= t.amount;
+          datas.push({
+            query: { _id: oId.toString() },
+            data: {
+              toBalance: Math.round(balance * 100) / 100,
+            }
+          });
+        }
+      });
+
+      balance = Math.round(balance * 100) / 100;
+      await this.bulkUpdate(datas);
+      await this.accountModel.updateOne({ _id: accountId }, { balance: balance });
+      return;
+    } else {
+      return;
+    }
+  }
 
   // Tools v2
   sortTransactions(trs: any[]) {
