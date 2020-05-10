@@ -65,15 +65,11 @@ export class TransactionController extends Controller {
 
   async deleteOneAndRecalculate(req: Request, res: Response): Promise<void> {
     const _id = req.params.id;
-    const updates = req.body;
     let code = Code.FAIL;
     let data = _id;
     try {
       if (req.body) {
-        const r = await this.model.deleteOneAndRecalculate( 
-          {_id},
-          updates
-        );
+        const r = await this.model.deleteOneAndRecalculate({_id});
         if (r && r.ok === 1) {
           code = Code.SUCCESS;
           data = _id; // r.upsertedId ?

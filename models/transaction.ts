@@ -215,8 +215,8 @@ export class Transaction extends Model {
   }
 
   async updateOneAndRecalculate(query: any, doc: any, options?: any): Promise<any> {
-    const fromId = doc.fromId;
-    const toId = doc.toId;
+    const fromId = doc.fromId.toString();
+    const toId = doc.toId.toString();
     let r;
     if (doc.actionCode === TransactionAction.PAY_SALARY.code) {
       const staffId = doc.staffId;
@@ -241,30 +241,35 @@ export class Transaction extends Model {
     }
   }
 
-  async deleteOneAndRecalculate(query: any, doc: any, options?: any): Promise<any> {
-    const fromId = doc.fromId;
-    const toId = doc.toId;
+  async deleteOneAndRecalculate(query: any, options?: any): Promise<any> {
+    const doc = await this.findOne(query);
     let r;
-    if (doc.actionCode === TransactionAction.PAY_SALARY.code) {
-      const staffId = doc.staffId;
+    if (doc && doc.actionCode === TransactionAction.PAY_SALARY.code) {
+      const fromId = doc.fromId.toString();
+      const toId = doc.toId.toString();
+      const staffId = doc.staffId.toString();
       if (fromId && toId && staffId) {
         r = await this.deleteOne(query, options);
         await this.updateBalanceByAccountIdV2(fromId);
         await this.updateBalanceByAccountIdV2(toId);
         await this.updateBalanceByAccountIdV2(staffId);
-        return r; // {nModified, ok}
+        return r.result; // {n, ok}
       } else {
         return;
       }
-    } else {
+    } else if(doc){
+      const fromId = doc.fromId.toString();
+      const toId = doc.toId.toString();
       if (fromId && toId) {
         r = await this.deleteOne(query, options);
         await this.updateBalanceByAccountIdV2(fromId);
         await this.updateBalanceByAccountIdV2(toId);
-        return r;
+        return r.result; // {n, ok}
       } else {
         return;
       }
+    } else {
+      return;
     }
   }
 
@@ -733,7 +738,7 @@ export class Transaction extends Model {
       const datas: any[] = [];
       list.forEach((t: ITransaction) => {
         const oId: any = t._id;
-        if (t.fromId.toString() === accountId) {
+        if (t.fromId.toString() === accountId.toString()) {
           balance += t.amount;
           datas.push({
             query: { _id: oId.toString() },
@@ -741,7 +746,7 @@ export class Transaction extends Model {
               fromBalance: Math.round(balance * 100) / 100
             }
           });
-        } else if (t.toId.toString() === accountId) {
+        } else if (t.toId.toString() === accountId.toString()) {
           balance -= t.amount;
           datas.push({
             query: { _id: oId.toString() },
