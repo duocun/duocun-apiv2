@@ -60,6 +60,12 @@ export class Model extends Entity {
     return ret;
   }
 
+  async deleteOne(query: any, options?: object): Promise<any> {
+    const c: Collection = await this.getCollection();
+    const q = this.convertIdFields(query);
+    return await c.deleteOne(q, options); // DeleteWriteOpResultObject {ok, n}
+  }
+
   // return BulkWriteOpResultObject
   async bulkUpdate(items: IUpdateItem[], options?: any): Promise<any> {
     const c: Collection = await this.getCollection();
@@ -73,6 +79,24 @@ export class Model extends Entity {
     });
 
     return await c.bulkWrite(a, options);
+  }
+
+  async getFailedWechatPay(){
+    const r = await this.find_v2({created:{$gte: '2020-05-08T00:00:00.000Z'}, type:{$in:['snappay req', 'snappay notify']}});
+    const rMap: any = {};
+    r.data.forEach(e => {
+      const s = e.message.split(',')[0];
+      const paymentId = s.split(':')[1];
+      rMap[paymentId] = {paymentId, count: 0};
+    });
+
+    r.data.forEach(e => {
+      const s = e.message.split(',')[0];
+      const paymentId = s.split(':')[1];
+      rMap[paymentId].count++;
+    });
+
+    return Object.keys(rMap).filter(k => rMap[k].count === 1);
   }
 
   // old
