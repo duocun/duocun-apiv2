@@ -55,8 +55,8 @@ export interface IProduct {
     enabled: boolean;
     allowNegative: boolean;
     quantity: number;
-    outOfStockMsg: string;
-    outOfStockMsgEN: string;
+    outofstockMessage: string;
+    outofstockMessageEN: string;
   },
   merchant?: IMerchant;
   category?: ICategory;
