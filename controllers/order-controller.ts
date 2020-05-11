@@ -186,4 +186,10 @@ export class OrderController extends Controller {
       );
     }
   }
+
+  async getBadOrder(req: Request, res: Response){
+    let rs: any[] = await this.model.getBadOrder();
+    res.setHeader('Content-Type', 'application/json');
+    res.send(rs);
+  }
 }

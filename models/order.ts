@@ -2211,4 +2211,10 @@ export class Order extends Model {
         // ]
       });
   }
+
+  async getBadOrder(){
+    const pIds = await this.eventLogModel.getFailedWechatPay();
+    const r = await this.find_v2({paymentId: {$in: pIds}});
+    return r.data.map((k:any) => ({code: k.code, created:k.created, deliverDate: k.deliverDate}));
+  }
 }
