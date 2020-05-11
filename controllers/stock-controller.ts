@@ -63,6 +63,7 @@ export class StockController extends Controller {
         allowNegative: false,
         outofstockMessage: "",
         outofstockMessageEN: "",
+        warningThreshold: 0,
         quantity: 0
       };
     }
