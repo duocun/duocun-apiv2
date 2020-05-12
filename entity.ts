@@ -326,6 +326,8 @@ export class Entity {
           items.push({ fromId: new ObjectID(it.fromId) });
         } else if (it && it.hasOwnProperty('staffId') && ObjectId.isValid(it.staffId)) {
           items.push({ staffId: new ObjectID(it.staffId) });
+        } else {
+          items.push(it);
         }
       });
       doc['$or'] = items;
@@ -354,7 +356,6 @@ export class Entity {
       });
       doc['ownerIds'] = ids;
     }
-
     return doc;
   }
 
