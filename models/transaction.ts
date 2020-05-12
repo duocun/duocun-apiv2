@@ -217,11 +217,13 @@ export class Transaction extends Model {
   async updateOneAndRecalculate(query: any, doc: any, options?: any): Promise<any> {
     const fromId = doc.fromId.toString();
     const toId = doc.toId.toString();
+    const amount = Math.round(+doc.amount * 100)/100;
+    const data = {...doc, amount};
     let r;
     if (doc.actionCode === TransactionAction.PAY_SALARY.code) {
       const staffId = doc.staffId;
       if (fromId && toId && staffId) {
-        r = await this.updateOne(query, doc, options);
+        r = await this.updateOne(query, data, options);
         await this.updateBalanceByAccountIdV2(fromId);
         await this.updateBalanceByAccountIdV2(toId);
         await this.updateBalanceByAccountIdV2(staffId);
@@ -231,7 +233,7 @@ export class Transaction extends Model {
       }
     } else {
       if (fromId && toId) {
-        r = await this.updateOne(query, doc, options);
+        r = await this.updateOne(query, data, options);
         await this.updateBalanceByAccountIdV2(fromId);
         await this.updateBalanceByAccountIdV2(toId);
         return r;
