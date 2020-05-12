@@ -41,4 +41,14 @@ export class MerchantScheduleController extends Controller {
     }));
   }
 
+  // tools
+  async generateSchedules(req: Request, res: Response) {
+    const merchantId: any = req.params.id;
+    const schedules = await this.model.createSchedules(merchantId);
+    res.setHeader('Content-Type', 'application/json');
+    res.send({
+      code: Code.SUCCESS,
+      data: schedules 
+    });
+  }
 }
