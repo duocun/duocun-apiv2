@@ -1,13 +1,10 @@
-import express, {Request, Response} from "express";
-
+import {Request, Response} from "express";
 import { DB } from "../db";
 import { Account, AccountAttribute, IAccount } from "../models/account";
 import { MerchantStuff } from "../merchant-stuff";
 import { Utils } from "../utils";
 import { Config } from "../config";
-import { Model } from "../models/model";
 import { Controller, Code } from "./controller";
-import { ObjectID } from "mongodb";
 import path from 'path';
 import { getLogger } from '../lib/logger'
 const logger = getLogger(path.basename(__filename));
@@ -58,8 +55,11 @@ export class AccountController extends Controller {
     }
   }
 
-
-
+  /**
+   * list accounts (override controller's list to hide sensitive information)
+   * @param req 
+   * @param res 
+   */
   async list (req: Request, res: Response):Promise<void> { 
     // logger.debug("list override in account")
     let options: any = req.query.options || {};
@@ -68,6 +68,11 @@ export class AccountController extends Controller {
     req.query.options = options;
     await super.list(req, res);
   }
+  /**
+   * get account (override controller's to hide sensitive information )
+   * @param req 
+   * @param res 
+   */
   async get (req: Request, res: Response):Promise<void> { 
     // logger.debug("list override in account")
     let options: any = ( req.query && req.query.options ) || {};
@@ -76,6 +81,55 @@ export class AccountController extends Controller {
     req.query.options = options;
     await super.get(req, res);
   }
+  /**
+   * Create a user
+   * @param req 
+   * @param res 
+   */
+  async create (req: Request, res: Response):Promise<void> {
+    let code = Code.FAIL;
+    let data:any = null;
+    try {
+      const body: any = req.body || {};
+      const { username, type, phone } = body;
+      let { attributes } = body;
+      attributes = attributes || {};
+      
+      // check parameters
+      if(!username || !type) {
+        throw "fields [username, type] are required";
+      }
+      // check account duplicate 
+      const checkUser = await this.model.find_v2({username});
+      if ( checkUser.count > 0) {
+        // TODO: name can be duplicated?
+        throw "username already exists";
+      }
+      if ( ["merchant", "system", "client", "driver", "freight"].indexOf(type) < 0 ) {
+        throw "type not allowed";
+      }
+      // OK, save
+      const _doc = {
+        username, type, phone, attributes,
+        // fixed part
+        verified: true, 
+        balance: 0,
+        realm: "",
+        sex: 0,
+        openId: ""
+      }
+      const { _id } = await this.model.create_v2(_doc);
+      data = { _id };
+      code = Code.SUCCESS;
+    } catch ( err ) {
+      logger.error(`create error: ${err}`);
+      data = `${err}`;
+    } finally {
+      res.send({data, code});
+    }
+  }
+
+  //Keep Old API //////////////////////////////
 
   loginByPhone(req: Request, res: Response) {
     const phone = req.body.phone;
@@ -214,19 +268,11 @@ export class AccountController extends Controller {
   //   });
   // }
 
-  getCurrentAccount(req: Request, res: Response) {
+  async getCurrentAccount(req: Request, res: Response) {
     const tokenId: any = req.query.tokenId;
-
-    let fields: string[];
-    if (req.headers && req.headers.fields && typeof req.headers.fields === 'string') {
-      fields = (req.headers && req.headers.fields) ? JSON.parse(req.headers.fields) : null;
-    }
-
-    this.model.getAccountByToken(tokenId).then(account => {
-      const r = this.model.filter(account, fields);
-      res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify(r, null, 3));
-    });
+    const account = await this.model.getAccountByToken(tokenId);
+    res.setHeader('Content-Type', 'application/json');
+    res.send(account);
   }
 
   signup(req: Request, res: Response) {
@@ -263,7 +309,7 @@ export class AccountController extends Controller {
 
 
   // id
-  gv1_getByTokenId(req: Request, res: Response) {
+  getByTokenId(req: Request, res: Response) {
     const tokenId: any = req.params.id;
     this.model.getAccountByToken(tokenId).then(account => {
       res.setHeader('Content-Type', 'application/json');

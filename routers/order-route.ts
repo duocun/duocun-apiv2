@@ -13,11 +13,15 @@ export function OrderRouter(db: DB) {
   router.post('/bulk', (req, res) => { controller.placeOrders(req, res); });
 
   // admin
-  router.post('/', (req, res) => { model.create(req, res); });
-  router.put('/', (req, res) => { model.update(req, res); });
-  router.patch('/', (req, res) => { model.update(req, res); });
+  router.get('/bad', (req, res) => { controller.getBadOrder(req, res); });
+  
+  router.post('/', (req, res) => { controller.create(req, res); });
+  router.put('/:id', (req, res) => { controller.updateOne(req, res); });
+  router.delete('/:id', (req, res) => { controller.removeOrder(req, res); });
 
-
+  router.post('/', (req, res) => { controller.create(req, res); });
+  router.put('/:id', (req, res) => { controller.updateOne(req, res); });
+  
   // support ?query={where, options}
   router.get('/', [parseQuery], (req: Request, res: Response) => { controller.list(req, res); });
   router.get('/:id', (req, res) => { controller.get(req, res); });
@@ -65,9 +69,9 @@ export function OrderRouter(db: DB) {
 
   router.patch('/fixCancelledTransaction', (req, res) => { model.fixCancelledTransaction(req, res); });
   router.patch('/updateDelivered', (req, res) => { model.updateDeliveryTime(req, res); });
-  
+
   router.delete('/', (req, res) => { model.remove(req, res); });
-  router.delete('/:id', (req, res) => { model.removeOrder(req, res); });
+  
 
   // router.post('/checkGroupDiscount', (req, res) => { model.checkGroupDiscount(req, res); });
 

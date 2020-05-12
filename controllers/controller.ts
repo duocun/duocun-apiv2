@@ -4,6 +4,7 @@ import { DB } from "../db";
 
 import path from 'path';
 import { getLogger } from '../lib/logger'
+
 const logger = getLogger(path.basename(__filename));
 
 export const Code = {
@@ -26,22 +27,28 @@ export class Controller {
     let count:number = 0;
     let code = Code.FAIL;
     try {
-      if(where){ 
+      if(where){
+        // console.log(`query: ${where}`);
         // TODO: no where will return error, is it a good choice?
         const r = await this.model.find_v2(where, options)
         code = Code.SUCCESS;
         data = r.data;
         count = r.count;
-      } 
-    } catch (error) {
-      logger.error(`list error: ${error}`);
-    } finally {
+      } else{
+        const r = await this.model.find_v2({}, options)
+        code = Code.SUCCESS;
+        data = r.data;
+        count = r.count;
+      }
       res.setHeader('Content-Type', 'application/json'); 
-      res.send(JSON.stringify({
+      res.send({
         code: code,
         data: data,
-        count: count 
-      }));
+        count: count
+      });
+    } catch (error) {
+      console.log(`list error: ${error.message}`);
+      logger.error(`list error: ${error}`);
     }
   }
 
@@ -58,10 +65,41 @@ export class Controller {
       logger.error(`get error : ${error}`);
     } finally {
       res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify({
+      res.send({
         code: code,
         data: data 
-      }));
+      });
     }
   }
+
+  async updateOne(req: Request, res: Response): Promise<void> {
+    const _id = req.params.id;
+    const updates = req.body.data;
+    let code = Code.FAIL;
+    let data = _id;
+    try {
+      if (req.body) {
+        const r = await this.model.updateOne( 
+          {_id},
+          updates
+        );
+        if (r.nModified === 1 && r.ok === 1) {
+          code = Code.SUCCESS;
+          data = _id; // r.upsertedId ?
+        } else {
+          code = Code.FAIL;
+          data = _id;
+        }
+      }
+    } catch (error) {
+      logger.error(`updateOne error: ${error}`);
+    } finally {
+      res.setHeader("Content-Type", "application/json");
+      res.send({
+        code,
+        data,
+      });
+    }
+  }
+
 }

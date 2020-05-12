@@ -48,9 +48,9 @@ export class Entity {
   async find_v2(where: any, options?: object, fields?: Array<object>) {
     const query = this.convertIdFields(where);
     const collection = await this.getCollection();
-    const data:any[] = await collection.find(query, options).toArray();
-    const count:number = await collection.countDocuments(query, {});
-    return {data, count};
+    const data: any[] = await collection.find(query, options).toArray();
+    const count: number = await collection.countDocuments(query, {});
+    return { data, count };
   }
 
 
@@ -161,6 +161,7 @@ export class Entity {
     return dt.split('.')[0];
   }
 
+  // deprecated
   insertOne(doc: any): Promise<any> {
     const self = this;
     return new Promise((resolve, reject) => {
@@ -271,224 +272,60 @@ export class Entity {
     });
   }
 
-  getProperty(doc: any, p: string) {
-    let k = null;
-    if (doc) {
-      const keys = Object.keys(doc);
-      keys.map(key => {
-        if (key) {
-          if (key.indexOf(p) !== -1) {
-            k = key;
-            return k;
+
+  convertIdField(doc: any, fieldName: string) {
+    if (doc && doc.hasOwnProperty(fieldName)) {
+      const body = doc[fieldName];
+
+      if (body && body.hasOwnProperty('$in')) {
+        let a = body['$in'];
+        const arr: any[] = [];
+        a.map((id: any) => {
+          if (typeof id === "string" && ObjectId.isValid(id)) {
+            arr.push(new ObjectID(id));
+          } else {
+            arr.push(id);
           }
-        }
-      });
-      return k;
-    } else {
-      return k;
-    }
+        });
+
+        doc[fieldName] = { $in: arr };
+      } else if (typeof body === "string" && ObjectId.isValid(body)) {
+        doc[fieldName] = new ObjectID(body);
+      }
+    } 
+
+    return doc;
   }
+
 
   // only support query _id, not id
   convertIdFields(doc: any) {
-    if (doc && doc.hasOwnProperty('_id')) {
-      let body = doc._id;
-      if (body && body.hasOwnProperty('$in')) {
-        let a = body['$in'];
-        const arr: any[] = [];
-        a.map((id: any) => {
-          if (typeof id === "string") {
-            arr.push(new ObjectID(id));
-          } else {
-            arr.push(id);
-          }
-        });
-
-        doc['_id'] = { $in: arr };
-      } else if (typeof body === "string") {
-        doc['_id'] = new ObjectID(doc._id);
-      }
-    }
-
-    if (doc && doc.hasOwnProperty('paymentId')) {
-      let body = doc.paymentId;
-      if (body && body.hasOwnProperty('$in')) {
-        let a = body['$in'];
-        const arr: any[] = [];
-        a.map((id: any) => {
-          if (typeof id === "string") {
-            arr.push(new ObjectID(id));
-          } else {
-            arr.push(id);
-          }
-        });
-
-        doc['paymentId'] = { $in: arr };
-      } else if (typeof body === "string") {
-        doc['paymentId'] = new ObjectID(doc.paymentId);
-      }
-    }
-
-    if (doc && doc.hasOwnProperty('paymentId')) {
-      const paymentId = doc['paymentId'];
-      if (typeof paymentId === 'string') {
-        doc['paymentId'] = new ObjectID(paymentId);
-      }
-    }
-
-    if (doc && doc.hasOwnProperty('categoryId')) {
-      const catId = doc['categoryId'];
-      if (typeof catId === 'string') {
-        doc['categoryId'] = new ObjectID(catId);
-      }
-    }
-    if (doc && doc.hasOwnProperty('areaId')) {
-      const areaId = doc['areaId'];
-      if (typeof areaId === 'string') {
-        doc['areaId'] = new ObjectID(areaId);
-      }
-    }
-
-    if (doc && doc.hasOwnProperty('merchantId')) {
-      let body = doc.merchantId;
-      if (body && body.hasOwnProperty('$in')) {
-        let a = body['$in'];
-        const arr: any[] = [];
-        a.map((id: any) => {
-          if (typeof id === "string") {
-            arr.push(new ObjectID(id));
-          } else {
-            arr.push(id);
-          }
-        });
-
-        doc['merchantId'] = { $in: arr };
-      } else if (typeof body === "string") {
-        doc['merchantId'] = new ObjectID(doc.merchantId);
-      }
-    }
-
-    if (doc && doc.hasOwnProperty('merchantAccountId')) {
-      let body = doc.merchantAccountId;
-      if (body && body.hasOwnProperty('$in')) {
-        let a = body['$in'];
-        const arr: any[] = [];
-        a.map((id: any) => {
-          if (typeof id === "string") {
-            arr.push(new ObjectID(id));
-          } else {
-            arr.push(id);
-          }
-        });
-
-        doc['merchantAccountId'] = { $in: arr };
-      } else if (typeof body === "string") {
-        doc['merchantAccountId'] = new ObjectID(doc.merchantAccountId);
-      }
-    }
-
-    if (doc && doc.hasOwnProperty('clientId')) {
-      const clientId = doc['clientId'];
-      if (typeof clientId === 'string') {
-        doc['clientId'] = new ObjectID(clientId);
-      } else if (clientId && clientId.hasOwnProperty('$in')) {
-        let a = clientId['$in'];
-        const arr: any[] = [];
-        a.map((id: string) => {
-          arr.push(new ObjectID(id));
-        });
-        doc.clientId = { $in: arr };
-      }
-    }
-
-    const productIdKey = this.getProperty(doc, 'productId');
-    if (productIdKey) {
-      const val = doc[productIdKey];
-      if (typeof val === 'string') {
-        doc[productIdKey] = new ObjectID(val);
-      } else if (val && val.hasOwnProperty('$in')) {
-        let a = val['$in'];
-        const arr: any[] = [];
-        a.map((id: string) => {
-          arr.push(new ObjectID(id));
-        });
-        doc[productIdKey] = { $in: arr };
-      }
-    }
-
-    if (doc && doc.hasOwnProperty('mallId')) {
-      const mallId = doc['mallId'];
-      if (typeof mallId === 'string') {
-        doc['mallId'] = new ObjectID(mallId);
-      }
-    }
-
-    if (doc && doc.hasOwnProperty('accountId')) {
-      const accountId = doc['accountId'];
-      if (typeof accountId === 'string') {
-        doc['accountId'] = new ObjectID(accountId);
-      } else if (accountId && accountId.hasOwnProperty('$in')) {
-        let a = accountId['$in'];
-        const arr: any[] = [];
-        a.map((id: any) => {
-          if (typeof id === 'string') {
-            arr.push(new ObjectID(id));
-          } else {
-            arr.push(id); // object type
-          }
-        });
-        doc.accountId = { $in: arr };
-      }
-    }
-
-    if (doc && doc.hasOwnProperty('orderId')) {
-      const body = doc['orderId'];
-
-      if (body && body.hasOwnProperty('$in')) {
-        let a = body['$in'];
-        const arr: any[] = [];
-        a.map((id: any) => {
-          if (typeof id === "string") {
-            arr.push(new ObjectID(id));
-          } else {
-            arr.push(id);
-          }
-        });
-
-        doc['orderId'] = { $in: arr };
-      } else if (typeof body === "string") {
-        doc['orderId'] = new ObjectID(body);
-      }
-    }
-
-    if (doc && doc.hasOwnProperty('driverId')) {
-      const driverId = doc['driverId'];
-      if (typeof driverId === 'string') {
-        doc['driverId'] = new ObjectID(driverId);
-      }
-    }
-
-    if (doc && doc.hasOwnProperty('fromId')) {
-      const fromId = doc['fromId'];
-      if (typeof fromId === 'string' && ObjectId.isValid(fromId)) {
-        doc['fromId'] = new ObjectID(fromId);
-      }
-    }
-
-    if (doc && doc.hasOwnProperty('toId')) {
-      const toId = doc['toId'];
-      if (typeof toId === 'string'  && ObjectId.isValid(toId)) {
-        doc['toId'] = new ObjectID(toId);
-      }
-    }
+    doc = this.convertIdField(doc, '_id');
+    doc = this.convertIdField(doc, 'areaId');
+    doc = this.convertIdField(doc, 'paymentId');
+    doc = this.convertIdField(doc, 'categoryId');
+    doc = this.convertIdField(doc, 'merchantId');
+    doc = this.convertIdField(doc, 'merchantAccountId');
+    doc = this.convertIdField(doc, 'clientId');
+    doc = this.convertIdField(doc, 'productId');
+    doc = this.convertIdField(doc, 'mallId');
+    doc = this.convertIdField(doc, 'accountId');
+    doc = this.convertIdField(doc, 'orderId');
+    doc = this.convertIdField(doc, 'driverId');
+    doc = this.convertIdField(doc, 'staffId');
+    doc = this.convertIdField(doc, 'modifyBy');
+    doc = this.convertIdField(doc, 'fromId');
+    doc = this.convertIdField(doc, 'toId');
 
     if (doc && doc.hasOwnProperty('$or')) {
       const items: any[] = [];
-      doc['$or'].map((it: any) => {
-        if (it && it.hasOwnProperty('toId')  && ObjectId.isValid(it.toId)) {
+      doc['$or'].forEach((it: any) => {
+        if (it && it.hasOwnProperty('toId') && ObjectId.isValid(it.toId)) {
           items.push({ toId: new ObjectID(it.toId) });
-        } else if (it && it.hasOwnProperty('fromId')  && ObjectId.isValid(it.fromId)) {
+        } else if (it && it.hasOwnProperty('fromId') && ObjectId.isValid(it.fromId)) {
           items.push({ fromId: new ObjectID(it.fromId) });
+        } else if (it && it.hasOwnProperty('staffId') && ObjectId.isValid(it.staffId)) {
+          items.push({ staffId: new ObjectID(it.staffId) });
         }
       });
       doc['$or'] = items;
@@ -498,13 +335,14 @@ export class Entity {
       doc['items'].map((it: any) => {
         if (it && it.hasOwnProperty('productId')) {
           const productId = it.productId;
-          if (typeof productId === 'string' && productId.length === 24) {
+          if (typeof productId === 'string' && ObjectId.isValid(productId)) {
             it.productId = new ObjectID(productId);
           }
         }
       });
     }
 
+    // deprecated
     if (doc && doc.hasOwnProperty('ownerIds')) {
       const ids: ObjectID[] = [];
       doc['ownerIds'].map((id: any) => {
@@ -593,6 +431,7 @@ export class Entity {
     });
   }
 
+  // deprecated
   deleteById(id: string): Promise<any> {
     return new Promise((resolve, reject) => {
       this.getCollection().then((c: Collection) => {

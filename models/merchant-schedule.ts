@@ -12,6 +12,49 @@ export class MerchantSchedule extends Model{
     this.areaModel = new Area(dbo);
   }
 
+  async createSchedules(merchantId: string){
+    const areaMap: any = {
+      'C': {dows:[2,4,6], time:'10:00'},
+      'R': {dows:[1,3,5], time:'10:00'},
+      'SC': {dows:[6], time:'10:00'},
+      'NM': {dows:[1,5], time:'10:00'},
+      'KC': {dows:[3], time:'10:00'},
+      'ST': {dows:[4], time:'10:00'},
+      'V': {dows:[5], time:'10:00'},
+      'WY': {dows:[6], time:'10:00'},
+      'DT': {dows:[2,6], time:'10:00'},
+      'NN': {dows:[1], time:'10:00'},
+      'OA': {dows:[3,6], time:'10:00'},
+      'MI': {dows:[3,6], time:'10:00'},
+      'ET': {dows:[6], time:'10:00'},
+      'AO': {dows:[5], time:'10:00'},
+    }
+    const areas = await this.areaModel.find({appType: 'G'});
+    // const schedules = await this.find({merchantId, areaCodes})
+    for(let i=0; i<areas.length; i++){
+      const area = areas[i];
+      const schedule = areaMap[area.code];
+      const rules = schedule.dows.map((dow: any) => ({
+        pickup: {
+          dow: dow.toString(),
+          time: '10:00'
+        },
+        delivered: {
+          dow: dow.toString(),
+          time: '10:00'
+        }
+      }));
+      const areaId = area._id.toString();
+      const areaCode = area.code;
+      const data = {merchantId, areaId, areaCode, rules, status:'A'};
+      const r = await this.find_v2({merchantId, areaId});
+      if(r.count === 0){
+        await this.insertOne(data);
+      }
+    }
+    return await this.find({merchantId});
+  }
+
   async getAvailables(merchantId: string, lat: number, lng: number, appType= AppType.GROCERY) {
     const area = await this.areaModel.getMyArea({lat, lng}, AppType.GROCERY);
     if(area){

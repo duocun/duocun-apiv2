@@ -1,6 +1,6 @@
 import { DB } from "../db";
 import { Model } from "./model";
-import { ObjectID, ObjectId } from "mongodb";
+import { ObjectID, ObjectId, Collection } from "mongodb";
 import { Request, Response } from "express";
 import { Account, IAccount } from "./account";
 import moment from 'moment';
@@ -11,13 +11,18 @@ import { ResponseStatus } from "./client-payment";
 import fs from 'fs';
 import { AccountType } from "./log";
 
+import path from 'path';
+import { getLogger } from '../lib/logger';
+const logger = getLogger(path.basename(__filename));
+
+
 const CASH_BANK_ID = '5c9511bb0851a5096e044d10';
 const CASH_BANK_NAME = 'Cash Bank';
 const TD_BANK_ID = '5c95019e0851a5096e044d0c';
 const TD_BANK_NAME = 'TD Bank';
 const SNAPPAY_BANK_ID = '5e60139810cc1f34dea85349';
 const SNAPPAY_BANK_NAME = 'SnapPay Bank';
-
+const EXPENSE_ID = '5c9504f00851a5096e044d0d';
 
 export const TransactionAction = {
   DECLINE_CREDIT_CARD: { code: 'DC', name: 'decline credit card payment' },
@@ -68,6 +73,10 @@ export interface ITransaction {
   fromBalance?: number;
   toBalance?: number;
 
+  staffId?: string;   // account _id, for salary
+  staffName?: string; // account name for salary
+  modifyBy?: string;  // account _id
+
   delivered?: string;
   created?: string;
   modified?: string;
@@ -101,159 +110,208 @@ export class Transaction extends Model {
     this.eventLogModel = new EventLog(dbo);
   }
 
-  // v2
-  async joinFindV2(query: any, fields: string[] = []) {
-    const ts = await this.find(query, fields);
-    // if (fields.indexOf('items') !== -1) {
-    // const ids = ts.map((t: any) => t.orderId);
-    // const orders = await this.orderModel.joinFindV2({ _id: { $in: ids } }, ['_id', 'items']);
-    // const orderMap: any = {};
-    // orders.map(order => { orderMap[order._id.toString()] = order.items; });
-    // ts.map((t: any) => t.items = orderMap[t.orderId.toString()]);
-    // // }
-    return ts;
-  }
 
-  async loadPageV2(clientId: string, itemsPerPage: number, currentPageNumber: number) {
-    const query = { $or: [{ fromId: clientId }, { toId: clientId }], amount: { $ne: 0 } };
+  // update balance of debit and credit
+  async doInsertOne(tr: ITransaction) {
+    const fromId: string = tr.fromId; // must be account id
+    const toId: string = tr.actionCode === TransactionAction.PAY_SALARY.code ? EXPENSE_ID : tr.toId;     // must be account id
+    const amount: number = +tr.amount;
 
-    const rs = await this.find(query);
-    const arrSorted = rs.sort((a: any, b: any) => {
-      const aMoment = moment(a.created);
-      const bMoment = moment(b.created); // .set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
-      if (aMoment.isAfter(bMoment)) {
-        return -1;
+    try {
+      const fromAccount: IAccount = await this.accountModel.findOne({ _id: fromId });
+      const toAccount: IAccount = await this.accountModel.findOne({ _id: toId });
+
+      if (fromAccount && toAccount) {
+        tr.fromBalance = Math.round((fromAccount.balance + amount) * 100) / 100;
+        tr.toBalance = Math.round((toAccount.balance - amount) * 100) / 100;
+
+        tr.fromName = fromAccount.username;
+        tr.toName = toAccount.username;
+
+        const x = await this.insertOne(tr);
+
+        const updates = [
+          { query: { _id: fromId }, data: { balance: tr.fromBalance } },
+          { query: { _id: toId }, data: { balance: tr.toBalance } }
+        ];
+        await this.accountModel.bulkUpdate(updates);
+        return x;
       } else {
-        return 1;
+        return;
       }
-    });
-
-    const start = (currentPageNumber - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
-    const len = arrSorted.length;
-    const arr = arrSorted.slice(start, end);
-
-    if (arr && arr.length > 0) {
-      return { total: len, transactions: arr };
-    } else {
-      return { total: len, transactions: [] };
+    } catch (e) {
+      logger.error(`Insert transaction error: ${e}`);
+      return;
+    } finally {
+      return;
     }
   }
 
+  async saveTransactionsForPlaceOrder(orderId: string, orderType: string, merchantAccountId: string, merchantName: string,
+    clientId: string, clientName: string, cost: number, total: number, delivered: string): Promise<any> {
 
-  async doInsertOne(tr: ITransaction) {
-    const fromId: string = tr.fromId; // must be account id
-    const toId: string = tr.toId;     // must be account id
-    const amount: number = tr.amount;
-    const accountQuery = { _id: { $in: [fromId, toId] } };
-    const accounts = await this.accountModel.find(accountQuery);
-    const fromAccount: any = accounts.find(x => x._id.toString() === fromId);
-    const toAccount: any = accounts.find(x => x._id.toString() === toId);
+    const t1: ITransaction = {
+      fromId: merchantAccountId,
+      fromName: merchantName,
+      toId: CASH_BANK_ID,
+      toName: clientName,
+      actionCode: TransactionAction.ORDER_FROM_MERCHANT.code, // 'duocun order from merchant',
+      amount: Math.round(cost * 100) / 100,
+      orderId: orderId,
+      orderType: orderType,
+      delivered: delivered,
+    };
 
-    if (fromAccount && toAccount) {
-      tr.fromBalance = Math.round((fromAccount.balance + amount) * 100) / 100;
-      tr.toBalance = Math.round((toAccount.balance - amount) * 100) / 100;
+    const t2: ITransaction = {
+      fromId: CASH_BANK_ID,
+      fromName: merchantName,
+      toId: clientId,
+      toName: clientName,
+      amount: Math.round(total * 100) / 100,
+      actionCode: TransactionAction.ORDER_FROM_DUOCUN.code, // 'client order from duocun',
+      orderId: orderId,
+      orderType: orderType,
+      delivered: delivered,
+    };
 
-      const x = await this.insertOne(tr);
-      const updates = [
-        { query: { _id: fromId }, data: { balance: tr.fromBalance } },
-        { query: { _id: toId }, data: { balance: tr.toBalance } }
-      ];
+    await this.doInsertOne(t1);
+    // console.log(`Add transactions for order Id:${orderId}, merchant`);
+    await this.doInsertOne(t2);
+    // console.log(`Add transactions for order Id:${orderId}, client: ${clientName}, amount:${t2.amount}`);
+    return;
+  }
 
-      await this.accountModel.bulkUpdate(updates);
-      return x;
+
+  // add cancel transactions for merchant and client
+  async saveTransactionsForRemoveOrder(orderId: string, merchantAccountId: string, merchantName: string, clientId: string, clientName: string,
+    cost: number, total: number, delivered: string, items: IOrderItem[]) {
+
+    const t1: ITransaction = {
+      fromId: CASH_BANK_ID,
+      fromName: clientName,
+      toId: merchantAccountId,
+      toName: merchantName,
+      actionCode: TransactionAction.CANCEL_ORDER_FROM_MERCHANT.code, // 'duocun cancel order from merchant',
+      amount: Math.round(cost * 100) / 100,
+      orderId: orderId,
+      items: items,
+      delivered: delivered
+    };
+
+    const t2: ITransaction = {
+      fromId: clientId,
+      fromName: clientName,
+      toId: CASH_BANK_ID,
+      toName: merchantName,
+      amount: Math.round(total * 100) / 100,
+      actionCode: TransactionAction.CANCEL_ORDER_FROM_DUOCUN.code, // 'client cancel order from duocun',
+      orderId: orderId,
+      delivered: delivered
+    };
+
+    await this.doInsertOne(t1);
+    await this.doInsertOne(t2);
+    return;
+  }
+
+  async updateOneAndRecalculate(query: any, doc: any, options?: any): Promise<any> {
+    const fromId = doc.fromId.toString();
+    const toId = doc.toId.toString();
+    let r;
+    if (doc.actionCode === TransactionAction.PAY_SALARY.code) {
+      const staffId = doc.staffId;
+      if (fromId && toId && staffId) {
+        r = await this.updateOne(query, doc, options);
+        await this.updateBalanceByAccountIdV2(fromId);
+        await this.updateBalanceByAccountIdV2(toId);
+        await this.updateBalanceByAccountIdV2(staffId);
+        return r; // {nModified, ok}
+      } else {
+        return;
+      }
+    } else {
+      if (fromId && toId) {
+        r = await this.updateOne(query, doc, options);
+        await this.updateBalanceByAccountIdV2(fromId);
+        await this.updateBalanceByAccountIdV2(toId);
+        return r;
+      } else {
+        return;
+      }
+    }
+  }
+
+  async deleteOneAndRecalculate(query: any, options?: any): Promise<any> {
+    const doc = await this.findOne(query);
+    let r;
+    if (doc && doc.actionCode === TransactionAction.PAY_SALARY.code) {
+      const fromId = doc.fromId.toString();
+      const toId = doc.toId.toString();
+      const staffId = doc.staffId.toString();
+      if (fromId && toId && staffId) {
+        r = await this.deleteOne(query, options);
+        await this.updateBalanceByAccountIdV2(fromId);
+        await this.updateBalanceByAccountIdV2(toId);
+        await this.updateBalanceByAccountIdV2(staffId);
+        return r.result; // {n, ok}
+      } else {
+        return;
+      }
+    } else if(doc){
+      const fromId = doc.fromId.toString();
+      const toId = doc.toId.toString();
+      if (fromId && toId) {
+        r = await this.deleteOne(query, options);
+        await this.updateBalanceByAccountIdV2(fromId);
+        await this.updateBalanceByAccountIdV2(toId);
+        return r.result; // {n, ok}
+      } else {
+        return;
+      }
     } else {
       return;
     }
   }
 
-  create(req: Request, res: Response) {
-    if (req.body instanceof Array) {
-      this.insertMany(req.body).then((rs: any[]) => {
-        res.setHeader('Content-Type', 'application/json');
-        res.send(JSON.stringify(rs, null, 3));
-      });
-    } else {
-      const tr = req.body;
-      this.doInsertOne(tr).then(savedTr => {
-        res.setHeader('Content-Type', 'application/json');
-        res.send(JSON.stringify(savedTr, null, 3));
-      });
-    }
-  }
+  // deprecated
+  // async joinFindV2(query: any, fields: string[] = []) {
+  //   const ts = await this.find(query, fields);
+  //   // if (fields.indexOf('items') !== -1) {
+  //   // const ids = ts.map((t: any) => t.orderId);
+  //   // const orders = await this.orderModel.joinFindV2({ _id: { $in: ids } }, ['_id', 'items']);
+  //   // const orderMap: any = {};
+  //   // orders.map(order => { orderMap[order._id.toString()] = order.items; });
+  //   // ts.map((t: any) => t.items = orderMap[t.orderId.toString()]);
+  //   // // }
+  //   return ts;
+  // }
 
+  // deprecated
+  // async loadPageV2(clientId: string, itemsPerPage: number, currentPageNumber: number) {
+  //   const query = { $or: [{ fromId: clientId }, { toId: clientId }], amount: { $ne: 0 } };
 
-  saveTransactionsForPlaceOrder(orderId: string, orderType: string, merchantAccountId: string, merchantName: string,
-    clientId: string, clientName: string, cost: number, total: number, delivered: string): Promise<string> {
+  //   const rs = await this.find(query);
+  //   const arrSorted = rs.sort((a: any, b: any) => {
+  //     const aMoment = moment(a.created);
+  //     const bMoment = moment(b.created); // .set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
+  //     if (aMoment.isAfter(bMoment)) {
+  //       return -1;
+  //     } else {
+  //       return 1;
+  //     }
+  //   });
 
-    return new Promise((resolve, reject) => {
-      const t1: ITransaction = {
-        fromId: merchantAccountId,
-        fromName: merchantName,
-        toId: CASH_BANK_ID,
-        toName: clientName,
-        actionCode: TransactionAction.ORDER_FROM_MERCHANT.code, // 'duocun order from merchant',
-        amount: Math.round(cost * 100) / 100,
-        orderId: orderId,
-        orderType: orderType,
-        delivered: delivered,
-      };
+  //   const start = (currentPageNumber - 1) * itemsPerPage;
+  //   const end = start + itemsPerPage;
+  //   const len = arrSorted.length;
+  //   const arr = arrSorted.slice(start, end);
 
-      const t2: ITransaction = {
-        fromId: CASH_BANK_ID,
-        fromName: merchantName,
-        toId: clientId,
-        toName: clientName,
-        amount: Math.round(total * 100) / 100,
-        actionCode: TransactionAction.ORDER_FROM_DUOCUN.code, // 'client order from duocun',
-        orderId: orderId,
-        orderType: orderType,
-        delivered: delivered,
-      };
-
-      this.doInsertOne(t1).then((x) => {
-        this.doInsertOne(t2).then((y) => {
-          resolve();
-        });
-      });
-    });
-  }
-
-
-  saveTransactionsForRemoveOrder(orderId: string, merchantAccountId: string, merchantName: string, clientId: string, clientName: string,
-    cost: number, total: number, delivered: string, items: IOrderItem[]) {
-
-    return new Promise((resolve, reject) => {
-      const t1: ITransaction = {
-        fromId: CASH_BANK_ID,
-        fromName: clientName,
-        toId: merchantAccountId,
-        toName: merchantName,
-        actionCode: TransactionAction.CANCEL_ORDER_FROM_MERCHANT.code, // 'duocun cancel order from merchant',
-        amount: Math.round(cost * 100) / 100,
-        orderId: orderId,
-        items: items,
-        delivered: delivered
-      };
-
-      const t2: ITransaction = {
-        fromId: clientId,
-        fromName: clientName,
-        toId: CASH_BANK_ID,
-        toName: merchantName,
-        amount: Math.round(total * 100) / 100,
-        actionCode: TransactionAction.CANCEL_ORDER_FROM_DUOCUN.code, // 'client cancel order from duocun',
-        orderId: orderId,
-        delivered: delivered
-      };
-
-      this.doInsertOne(t1).then((x) => {
-        this.doInsertOne(t2).then((y) => {
-          resolve();
-        });
-      });
-    });
-  }
+  //   if (arr && arr.length > 0) {
+  //     return { total: len, transactions: arr };
+  //   } else {
+  //     return { total: len, transactions: [] };
+  //   }
+  // }
 
   doGetSales() {
     const q = {
@@ -633,6 +691,7 @@ export class Transaction extends Model {
     return accountIds.length;
   }
 
+  // only use for bulk operation
   // const trs = transactions.filter(t => t.fromId.toString() === accountId || t.toId.toString() === accountId);
   async updateBalanceByAccountId(accountId: string, trs: ITransaction[]) {
     if (trs && trs.length > 0) {
@@ -640,7 +699,7 @@ export class Transaction extends Model {
       const list = trs;
 
       const datas: any[] = [];
-      list.map((t: ITransaction) => {
+      list.forEach((t: ITransaction) => {
         const oId: any = t._id;
         if (t.fromId.toString() === accountId) {
           balance += t.amount;
@@ -668,6 +727,44 @@ export class Transaction extends Model {
     }
   }
 
+  async updateBalanceByAccountIdV2(accountId: string) {
+    const q = { '$or': [{ fromId: accountId }, { toId: accountId }] };
+    const trs = await this.find(q);
+
+    if (trs && trs.length > 0) {
+      let balance = 0;
+      let list = this.sortTransactions(trs);
+
+      const datas: any[] = [];
+      list.forEach((t: ITransaction) => {
+        const oId: any = t._id;
+        if (t.fromId.toString() === accountId.toString()) {
+          balance += t.amount;
+          datas.push({
+            query: { _id: oId.toString() },
+            data: {
+              fromBalance: Math.round(balance * 100) / 100
+            }
+          });
+        } else if (t.toId.toString() === accountId.toString()) {
+          balance -= t.amount;
+          datas.push({
+            query: { _id: oId.toString() },
+            data: {
+              toBalance: Math.round(balance * 100) / 100,
+            }
+          });
+        }
+      });
+
+      balance = Math.round(balance * 100) / 100;
+      await this.bulkUpdate(datas);
+      await this.accountModel.updateOne({ _id: accountId }, { balance: balance });
+      return;
+    } else {
+      return;
+    }
+  }
 
   // Tools v2
   sortTransactions(trs: any[]) {

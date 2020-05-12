@@ -22,6 +22,7 @@ import { Socket } from "./socket";
 import { AccountRouter } from "./routers/account-route";
 import { CategoryRouter } from "./routers/category-route";
 import { ProductRouter } from "./routers/product-route";
+import { StockRouter } from "./routers/stock-route";
 import { OrderRouter } from "./routers/order-route";
 import { DistanceRouter } from "./routers/distance-route";
 import { MerchantPaymentRouter } from "./routers/merchant-payment-route";
@@ -203,6 +204,7 @@ dbo.init(cfg.DATABASE).then((dbClient) => {
   app.use(ROUTE_PREFIX + "/orders", OrderRouter(dbo));
   app.use(ROUTE_PREFIX + "/categories", CategoryRouter(dbo));
   app.use(ROUTE_PREFIX + "/products", ProductRouter(dbo));
+  app.use(ROUTE_PREFIX + "/productStock", StockRouter(dbo));
   app.use(ROUTE_PREFIX + "/statistics", StatisticsRouter(dbo));
   app.use(ROUTE_PREFIX + "/Restaurants", MerchantRouter(dbo)); // deprecated
   app.use(ROUTE_PREFIX + "/Areas", AreaRouter(dbo));

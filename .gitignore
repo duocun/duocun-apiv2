@@ -11,6 +11,7 @@
 *.tgz
 *.xml
 *.log
+*-audit.json
 .DS_Store
 .idea
 .env
@@ -22,7 +23,4 @@ npm-debug.log
 /server/datasources.development.json
 /dist
 /uploads
-client/dist
 /package-lock.json
-client/package-lock.json
-client/src/environments

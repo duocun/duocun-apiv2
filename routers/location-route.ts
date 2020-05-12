@@ -29,7 +29,7 @@ export function LocationRouter(db: DB){
   router.post('/', (req, res) => { model.create(req, res); });
 
 
-  router.put('/updateLocations', (req, res) => { model.updateLocations(req, res)});
+  // router.put('/updateLocations', (req, res) => { model.updateLocations(req, res)});
   router.put('/', (req, res) => { model.replace(req, res); });
   router.patch('/', (req, res) => { model.update(req, res); });
   router.delete('/', (req, res) => { model.remove(req, res); });

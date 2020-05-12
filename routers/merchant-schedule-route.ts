@@ -18,6 +18,7 @@ export function MerchantScheduleRouter(db: DB){
   router.get('/available', (req, res) => { controller.getAvailableSchedules(req, res); });
   router.get('/',[parseQuery], (req: Request, res: Response) =>  { controller.list(req, res); });
   router.get('/:id', (req, res) => { controller.get(req, res); });
+  router.post('/:id', (req, res) => { controller.generateSchedules(req, res); });
 
   // old api
   router.patch('/cu', (req, res) => { controller.createOrUpdate(req, res); });

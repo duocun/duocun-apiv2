@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { ObjectId } from "mongodb";
+import { ObjectId, Collection } from "mongodb";
 import { DB } from "../db";
 
 import { Entity } from "../entity";
@@ -16,6 +16,11 @@ export const Status = {
   INACTIVE: 'I'
 }
 
+export interface IUpdateItem{
+  query: object;
+  data: object;
+}
+
 export class Model extends Entity {
   constructor(dbo: DB, tableName: string) {
     super(dbo, tableName);
@@ -30,6 +35,72 @@ export class Model extends Entity {
     }
     return null;
   }
+
+  // this function will do upsert ?
+  async updateOne(query: any, doc: any, options?: any): Promise<any> {
+    if (Object.keys(doc).length === 0 && doc.constructor === Object) {
+      return;
+    } else {
+      query = this.convertIdFields(query);
+      doc = this.convertIdFields(doc);
+
+      const c: Collection = await this.getCollection();
+      const r: any = await c.updateOne(query, { $set: doc }, options);
+      return r.result;
+    }
+  }
+
+  async insertOne(doc: any): Promise<any> {
+    const c: Collection = await this.getCollection();
+    doc = this.convertIdFields(doc);
+    doc.created = moment().toISOString();
+    doc.modified = moment().toISOString();
+    const result = await c.insertOne(doc); // InsertOneWriteOpResult
+    const ret = (result.ops && result.ops.length > 0) ? result.ops[0] : null;
+    return ret;
+  }
+
+  async deleteOne(query: any, options?: object): Promise<any> {
+    const c: Collection = await this.getCollection();
+    const q = this.convertIdFields(query);
+    return await c.deleteOne(q, options); // DeleteWriteOpResultObject {ok, n}
+  }
+
+  // return BulkWriteOpResultObject
+  async bulkUpdate(items: IUpdateItem[], options?: any): Promise<any> {
+    const c: Collection = await this.getCollection();
+    const clonedArray: any[] = [...items];
+    const a: any[] = [];
+
+    clonedArray.map(({query, data}) => {
+      const q = this.convertIdFields(query);
+      const doc = this.convertIdFields(data);
+      a.push({ updateOne: { filter: q, update: { $set: doc }, upsert: true } });
+    });
+
+    return await c.bulkWrite(a, options);
+  }
+
+  async getFailedWechatPay(){
+    const r = await this.find_v2({created:{$gte: '2020-05-08T00:00:00.000Z'}, type:{$in:['snappay req', 'snappay notify']}});
+    const rMap: any = {};
+    r.data.forEach(e => {
+      const s = e.message.split(',')[0];
+      const paymentId = s.split(':')[1];
+      rMap[paymentId] = {paymentId, count: 0};
+    });
+
+    r.data.forEach(e => {
+      const s = e.message.split(',')[0];
+      const paymentId = s.split(':')[1];
+      rMap[paymentId].count++;
+    });
+
+    return Object.keys(rMap).filter(k => rMap[k].count === 1);
+  }
+
+  // old
+
 
   // to be removed
   list(req: Request, res: Response) {
@@ -115,6 +186,13 @@ export class Model extends Entity {
         res.setHeader('Content-Type', 'application/json');
         res.send(JSON.stringify(x, null, 3));
       });
+    }
+  }
+  async create_v2(doc:any) {
+    if (doc instanceof Array) {
+      return await this.insertMany(doc);
+    } else {
+      return await this.insertOne(doc);
     }
   }
 
