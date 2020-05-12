@@ -39,7 +39,7 @@ export class MerchantSchedule extends Model{
           dow: dow.toString(),
           time: '10:00'
         },
-        delivered: {
+        deliver: {
           dow: dow.toString(),
           time: '10:00'
         }
