@@ -53,7 +53,9 @@ export class Model extends Entity {
   async insertOne(doc: any): Promise<any> {
     const c: Collection = await this.getCollection();
     doc = this.convertIdFields(doc);
-    doc.created = moment().toISOString();
+    if(!doc.created){
+      doc.created = moment().toISOString();
+    }
     doc.modified = moment().toISOString();
     const result = await c.insertOne(doc); // InsertOneWriteOpResult
     const ret = (result.ops && result.ops.length > 0) ? result.ops[0] : null;
