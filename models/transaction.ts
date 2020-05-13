@@ -52,6 +52,7 @@ export const TransactionAction = {
   BUY_EQUIPMENT: { code: 'BE', name: 'buy equipment' },
   BUY_ADVERTISEMENT: { code: 'BA', name: 'buy advertisement' },
   OTHER_EXPENSE: { code: 'OE', name: 'other expense' },
+  DISCOUNT: { code: 'D', name: 'discount' },
   TEST: { code: 'TEST', name: 'test' }
 };
 
