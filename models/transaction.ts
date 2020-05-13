@@ -116,7 +116,7 @@ export class Transaction extends Model {
   async doInsertOne(tr: ITransaction) {
     const fromId: string = tr.fromId; // must be account id
     const toId: string = tr.actionCode === TransactionAction.PAY_SALARY.code ? EXPENSE_ID : tr.toId;     // must be account id
-    const amount: number = +tr.amount;
+    const amount: number = Math.round((+tr.amount) * 100)/100;
 
     try {
       const fromAccount: IAccount = await this.accountModel.findOne({ _id: fromId });
@@ -218,7 +218,7 @@ export class Transaction extends Model {
   async updateOneAndRecalculate(query: any, doc: any, options?: any): Promise<any> {
     const fromId = doc.fromId.toString();
     const toId = doc.toId.toString();
-    const amount = Math.round(+doc.amount * 100)/100;
+    const amount = Math.round((+doc.amount) * 100)/100;
     const data = {...doc, amount};
     let r;
     if (doc.actionCode === TransactionAction.PAY_SALARY.code) {
@@ -741,8 +741,9 @@ export class Transaction extends Model {
       const datas: any[] = [];
       list.forEach((t: ITransaction) => {
         const oId: any = t._id;
+
         if (t.fromId.toString() === accountId.toString()) {
-          balance += t.amount;
+          balance += (+t.amount);
           datas.push({
             query: { _id: oId.toString() },
             data: {
@@ -750,7 +751,7 @@ export class Transaction extends Model {
             }
           });
         } else if (t.toId.toString() === accountId.toString()) {
-          balance -= t.amount;
+          balance -= (+t.amount);
           datas.push({
             query: { _id: oId.toString() },
             data: {
