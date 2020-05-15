@@ -51,7 +51,6 @@ export function OrderRouter(db: DB) {
   router.get('/statisticsByClient', (req, res) => { model.reqStatisticsByClient(req, res); });
   router.get('/latestViewed', (req, res) => { model.reqLatestViewed(req, res); });
   
-  router.get('/trends', (req, res) => { model.getOrderTrends(req, res); });
   router.get('/qFind', (req, res) => { model.quickFind(req, res); });
 
   router.put('/updatePurchaseTag', (req, res) => { model.updatePurchaseTag(req, res) });

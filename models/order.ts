@@ -25,6 +25,7 @@ import { EventLog } from "./event-log";
 import { PaymentAction } from "./client-payment";
 import { DbStatus } from "../entity";
 import { Code } from "../controllers/controller";
+import { DateTime } from './date-time';
 
 const CASH_ID = "5c9511bb0851a5096e044d10";
 const CASH_NAME = "Cash";
@@ -692,12 +693,12 @@ export class Order extends Model {
         const merchant = await this.merchantModel.findOne({ _id: merchantId });
         const merchantAccountId = merchant.accountId.toString();
 
-        if(merchant && merchantAccountId){
+        if (merchant && merchantAccountId) {
           await this.updateOne(
             { _id: orderId },
             { status: OrderStatus.DELETED }
           );
-          
+
           const ps = await this.productModel.find({});
           const items: IOrderItem[] = [];
           order.items.forEach((it: IOrderItem) => {
@@ -714,7 +715,7 @@ export class Order extends Model {
               });
             }
           });
-          
+
           await this.transactionModel.updateMany(
             { orderId: orderId },
             { status: "del" }
@@ -731,7 +732,7 @@ export class Order extends Model {
             items
           );
           return order;
-        }else{
+        } else {
           return;
         }
       }
@@ -810,16 +811,16 @@ export class Order extends Model {
     for (let i = 0; i < orders.length; i++) {
       const order = orders[i];
       await this.transactionModel.saveTransactionsForPlaceOrder(
-          order._id.toString(),
-          order.type,
-          merchant.accountId.toString(),
-          merchant.name,
-          order.clientId.toString(),
-          order.clientName,
-          order.cost,
-          order.total,
-          order.delivered
-        )
+        order._id.toString(),
+        order.type,
+        merchant.accountId.toString(),
+        merchant.name,
+        order.clientId.toString(),
+        order.clientName,
+        order.cost,
+        order.total,
+        order.delivered
+      )
     }
     return;
   }
@@ -983,50 +984,39 @@ export class Order extends Model {
     });
   }
 
-  groupBySameDay(items: any[], key: string) {
-    const groups: any = {};
-    items.map((it) => {
-      const date = moment(it[key]).set({
-        hour: 0,
-        minute: 0,
-        second: 0,
-        millisecond: 0,
-      });
-      const dt = Object.keys(groups).find((x) => moment(x).isSame(date, "day"));
-
-      if (dt) {
-        groups[dt].push(it);
-      } else {
-        groups[date.toISOString()] = [it];
-      }
+  getSalesMap(orders: any[], fieldName: string) {
+    const dateMap: any = {};
+    const dt: DateTime = new DateTime();
+    orders.forEach((order) => {
+      const date = dt.getMomentFromUtc(order[fieldName]).format('YYYY-MM-DD');
+      dateMap[date] = { total: 0, price: 0, cost: 0, nOrders: 0, nProducts: 0 };
     });
 
-    return groups;
-  }
+    orders.forEach((order) => {
+      const date = dt.getMomentFromUtc(order[fieldName]).format('YYYY-MM-DD');
+      const obj = dateMap[date];
 
-  getOrderTrends(req: Request, res: Response) {
-    const query = {
-      // delivered: { $gt: moment('2019-06-01').toDate() },
-      status: {
-        $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
-      },
-    };
+      obj.total += (+order.total);
+      obj.price += (+order.price);
+      obj.cost += (+order.cost);
+      obj.nOrders += 1;
 
-    this.find(query).then((orders) => {
-      const group = this.groupBySameDay(orders, "delivered");
-      const keys = Object.keys(group);
-      const vals: any[] = [];
-      keys.map((key) => {
-        vals.push(group[key] ? group[key].length : 0);
+      order.items.forEach((item: IOrderItem) => {
+        obj.nProducts += item.quantity;
       });
-
-      // this.barChartLabels = keys;
-      // this.barChartData = [{ data: vals, label: '订单数' }];
-
-      res.setHeader("Content-Type", "application/json");
-      res.send(JSON.stringify({ keys: keys, vals: vals }, null, 3));
     });
+
+    Object.keys(dateMap).forEach(k => {
+      const obj = dateMap[k];
+      obj.total = Math.round(obj.total * 100) / 100;
+      obj.price = Math.round(obj.price * 100) / 100;
+      obj.cost = Math.round(obj.cost * 100) / 100;
+    });
+
+    return dateMap;
   }
+
+
 
   // date --- '2019-11-15'
   getSummary(type: string, date: string) {
@@ -2212,15 +2202,15 @@ export class Order extends Model {
       });
   }
 
-  async getBadOrder(){
+  async getBadOrder() {
     const pIds = await this.eventLogModel.getFailedWechatPay();
-    const r = await this.find_v2({paymentId: {$in: pIds}});
+    const r = await this.find_v2({ paymentId: { $in: pIds } });
     // const rs = r.data.map((k:any) => ({code: k.code, created:k.created, status: k.status, deliverDate: k.deliverDate}));
     const a = r.data.filter(p => p.deliverDate > '2020-05-10' && p.status !== 'T');
 
-    for(let i=0; i<a.length; i++){
+    for (let i = 0; i < a.length; i++) {
       const _id = a[i]._id;
-      await this.updateOne({_id}, {status:'T'});
+      await this.updateOne({ _id }, { status: 'T' });
     }
     return a;
   }

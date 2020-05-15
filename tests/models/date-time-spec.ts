@@ -4,8 +4,8 @@ import { expect } from 'chai';
 // import { Config } from "../../config";
 // import { ILocation } from "../../models/distance";
 
-describe('getMomentFromLocal', () => {
-  it('should format date to Local date', () => {
+describe('date-time', () => {
+  it('getMomentFromLocal should format date to Local date', () => {
     const dt = new DateTime();
     const datas = [
       { s: '2019-11-03T13:52:59', ret: '2019-11-03T13:52:59' },
@@ -17,7 +17,18 @@ describe('getMomentFromLocal', () => {
     });
   });
 
+  it('getMomentFromUtc should format date to Local date', () => {
+    const dt = new DateTime();
+    const datas = [
+      { s: '2019-11-03T13:52:59', ret: '2019-11-03T08:52:59' },
+    ];
 
+    datas.map(d => {
+      const m = dt.getMomentFromUtc(d.s);
+      expect(m.format('YYYY-MM-DDTHH:mm:ss')).to.equal(d.ret);
+    });
+  });
+  
   it('getLatest should be 03-25', () => {
     const dt = new DateTime();
     const myDateTime = '2020-03-25T23:58:00';
