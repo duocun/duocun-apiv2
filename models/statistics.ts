@@ -2,11 +2,28 @@ import { DB } from "../db";
 import { Model } from "./model";
 import { Order, IOrder, OrderStatus, OrderType } from "../models/order";
 
-export class Statistics {
+export class Statistics extends Model{
   orderModel: Order;
   constructor(db: DB) {
+    super(db, 'statistics');
     this.orderModel = new Order(db);
   }
+  async getById(id: string){
+    return;
+  }
+  // get sales, cost, nOrders and nProducts
+  async getSalesMap(startDate: string, endDate?: string){
+    const query = {
+      status: {
+        $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
+      },
+      delivered: {$gte: startDate}
+    };
+
+    const orders = await this.orderModel.find(query);
+    return this.orderModel.getSalesMap(orders, "delivered");
+  }
+
   //return [{merchantId,merchantName,nOrders,totalPrice,totalCost}]
   async getMerchantInfo(startDate: string, endDate: string) {
     const q = {
