@@ -17,11 +17,11 @@ export class Statistics extends Model{
       status: {
         $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
       },
-      delivered: {$gte: startDate}
+      created: {$gte: startDate}
     };
 
     const orders = await this.orderModel.find(query);
-    return this.orderModel.getSalesMap(orders, "delivered");
+    return this.orderModel.getSalesMap(orders, "created");
   }
 
   //return [{merchantId,merchantName,nOrders,totalPrice,totalCost}]
