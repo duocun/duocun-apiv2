@@ -22,5 +22,4 @@ node_modules
 npm-debug.log
 /server/datasources.development.json
 /dist
-/uploads
 /package-lock.json
