@@ -17,7 +17,8 @@ export function TransactionRouter(db: DB) {
   router.post('/', async (req: Request, res: Response) => { await controller.create(req, res); });
   router.put('/:id', async (req: Request, res: Response) => { await controller.updateOneAndRecalculate(req, res); });
   router.delete('/:id', async (req: Request, res: Response) => { await controller.deleteOneAndRecalculate(req, res); });
-  
+  router.get('/revenue', [parseQuery], (req: Request, res: Response) => { controller.exportRevenue(req, res); });
+
   // /?accountId=xxx
   router.put('/', async (req: Request, res: Response) => { await controller.recalculate(req, res) });
 

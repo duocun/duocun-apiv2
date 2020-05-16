@@ -13,6 +13,7 @@ import { AccountType } from "./log";
 
 import path from 'path';
 import { getLogger } from '../lib/logger';
+import { DateTime } from "./date-time";
 const logger = getLogger(path.basename(__filename));
 
 
@@ -124,8 +125,7 @@ export class Transaction extends Model {
 
       if (fromAccount && toAccount) {
         tr.fromBalance = Math.round((fromAccount.balance + amount) * 100) / 100;
-        tr.toBalance = Math.round((toAccount.balance - amount) * 100) / 100;
-
+        tr.toBalance = Math.round((toAccount.balance - amount) * 100) / 100
         tr.fromName = fromAccount.username;
         tr.toName = toAccount.username;
 
@@ -276,6 +276,49 @@ export class Transaction extends Model {
     }
   }
 
+  async exportRevenue(where: any, options?: any): Promise<any> {
+    const trs = await this.find(where);
+    const dt = new DateTime();
+    let index = 1;
+    trs.forEach(tr => {
+      const total = Math.round(tr.amount * 100)/100;
+      const revenue = Math.round(tr.amount * 87) / 100;
+      const tax = Math.round(tr.amount * 13) / 100;
+      const date = dt.getMomentFromUtc(tr.created).format('YYYY-MM-DD');
+      
+      // const invoiceId = '' + 
+      // return { date, revenue, tax, total };
+    });
+
+    // let r;
+    // if (doc && doc.actionCode === TransactionAction.PAY_SALARY.code) {
+    //   const fromId = doc.fromId.toString();
+    //   const toId = doc.toId.toString();
+    //   const staffId = doc.staffId.toString();
+    //   if (fromId && toId && staffId) {
+    //     r = await this.deleteOne(query, options);
+    //     await this.updateBalanceByAccountIdV2(fromId);
+    //     await this.updateBalanceByAccountIdV2(toId);
+    //     await this.updateBalanceByAccountIdV2(staffId);
+    //     return r.result; // {n, ok}
+    //   } else {
+    //     return;
+    //   }
+    // } else if(doc){
+    //   const fromId = doc.fromId.toString();
+    //   const toId = doc.toId.toString();
+    //   if (fromId && toId) {
+    //     r = await this.deleteOne(query, options);
+    //     await this.updateBalanceByAccountIdV2(fromId);
+    //     await this.updateBalanceByAccountIdV2(toId);
+    //     return r.result; // {n, ok}
+    //   } else {
+    //     return;
+    //   }
+    // } else {
+    //   return;
+    // }
+  }
   // deprecated
   // async joinFindV2(query: any, fields: string[] = []) {
   //   const ts = await this.find(query, fields);
