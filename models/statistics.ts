@@ -1,12 +1,16 @@
 import { DB } from "../db";
 import { Model } from "./model";
 import { Order, IOrder, OrderStatus, OrderType } from "../models/order";
+import { Pickup, PickupStatus } from "./pickup";
 
 export class Statistics extends Model{
   orderModel: Order;
+  pickupModel: Pickup;
+
   constructor(db: DB) {
     super(db, 'statistics');
     this.orderModel = new Order(db);
+    this.pickupModel = new Pickup(db);
   }
   async getById(id: string){
     return;
@@ -121,21 +125,31 @@ export class Statistics extends Model{
   }
   
   // return [{productName, quantity}...]
-  groupByProduct(orders: any[], type: string = OrderType.GROCERY) {
+  groupByProduct(orders: any[], pickups: any[], type: string = OrderType.GROCERY) {
     const productMap: any = {};
     const rs = orders.filter(order => order.type === type);
     rs.forEach(r => {
       r.items.forEach((it: any) => {
         const productId = it.productId;
         const productName = it.productName;
-        productMap[productId] = { productId, productName, quantity: 0 };
+        productMap[productId] = { productId, productName, quantity: 0, status: PickupStatus.UNPICK_UP  };
       });
     });
+
     rs.forEach(r => {
       r.items.forEach((it: any) => {
         productMap[it.productId].quantity += it.quantity;
       });
     });
+
+    if (pickups && pickups.length > 0) {
+      pickups.forEach((pickup: any) => {
+        if (productMap.hasOwnProperty(pickup.productId)) {
+          productMap[pickup.productId]._id = pickup._id;
+          productMap[pickup.productId].status = pickup.status;
+        }
+      });
+    }
 
     return Object.keys(productMap).map(pId => productMap[pId]);
   }
@@ -186,11 +200,13 @@ export class Statistics extends Model{
       driverMap[driverId].orders.push(order);
     });
 
+    const delivered = deliverDate + 'T15:00:00.000Z';
+    const pickups = await this.pickupModel.find({delivered});
 
     Object.keys(driverMap).forEach(driverId => {
       driverMap[driverId].merchants = this.groupByMerchant(driverMap[driverId].orders).map(group => ({
         merchantName: group.merchantName,
-        items: this.groupByProduct(group.orders)
+        items: this.groupByProduct(group.orders, pickups)
       }));
       delete driverMap[driverId].orders;
     });
