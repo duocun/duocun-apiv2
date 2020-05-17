@@ -89,6 +89,32 @@ export class TransactionController extends Controller {
     }
   }
 
+  async exportRevenue(req: Request, res: Response): Promise<void> {
+    // const where = req.query.where;
+    // let code = Code.FAIL;
+    // let data = _id;
+    // try {
+    //   if (req.body) {
+    //     const r = await this.model.deleteOneAndRecalculate({_id});
+    //     if (r && r.ok === 1) {
+    //       code = Code.SUCCESS;
+    //       data = _id; // r.upsertedId ?
+    //     } else {
+    //       code = Code.FAIL;
+    //       data = _id;
+    //     }
+    //   }
+    // } catch (error) {
+    //   logger.error(`deleteOneAndRecalculate error: ${error}`);
+    // } finally {
+    //   res.setHeader("Content-Type", "application/json");
+    //   res.send({
+    //     code,
+    //     data,
+    //   });
+    // }
+  }
+
   async recalculate(req: Request, res: Response) {
     const accountId: any = req.query.accountId;
     res.setHeader('Content-Type', 'application/json');

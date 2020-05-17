@@ -44,6 +44,8 @@ export const TransactionAction = {
 
   REFUND_EXPENSE: { code: 'RE', name: 'refund expense' },
   REFUND_CLIENT: { code: 'RC', name: 'refund client' },
+  ADD_CREDIT_TO_CLIENT: { code: 'ACTC', name: 'add credit to client' },
+
   ADD_CREDIT_BY_CARD: { code: 'ACC', name: 'client add credit by card' },
   ADD_CREDIT_BY_WECHAT: { code: 'ACW', name: 'client add credit by WECHATPAY' },
   ADD_CREDIT_BY_CASH: { code: 'ACCH', name: 'client add credit by cash' },
