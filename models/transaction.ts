@@ -13,6 +13,10 @@ import { AccountType } from "./log";
 
 import path from 'path';
 import { getLogger } from '../lib/logger';
+import { DateTime } from "./date-time";
+
+import { createObjectCsvWriter } from 'csv-writer';
+
 const logger = getLogger(path.basename(__filename));
 
 
@@ -44,6 +48,8 @@ export const TransactionAction = {
 
   REFUND_EXPENSE: { code: 'RE', name: 'refund expense' },
   REFUND_CLIENT: { code: 'RC', name: 'refund client' },
+  ADD_CREDIT_TO_CLIENT: { code: 'ACTC', name: 'add credit to client' },
+
   ADD_CREDIT_BY_CARD: { code: 'ACC', name: 'client add credit by card' },
   ADD_CREDIT_BY_WECHAT: { code: 'ACW', name: 'client add credit by WECHATPAY' },
   ADD_CREDIT_BY_CASH: { code: 'ACCH', name: 'client add credit by cash' },
@@ -111,12 +117,63 @@ export class Transaction extends Model {
     this.eventLogModel = new EventLog(dbo);
   }
 
+  // const path = '../a.csv';
+  getRevenueCSV(path: string) {
+    const q = {
+      actionCode: {
+        $in: [
+          TransactionAction.PAY_BY_CARD.code,
+          TransactionAction.PAY_BY_WECHAT.code
+        ]
+      }
+    };
+
+    return new Promise((resolve) => {
+      this.find(q).then(trs => {
+        const dt = new DateTime();
+        let i = 1;
+        const data: any[] = [];
+        trs.forEach(tr => {
+          const date = dt.getMomentFromUtc(tr.created).format('YYYY-MM-DD');
+          if((+tr.amount) >= 1 && date){
+            const id = 'RT' + i;
+            i++;
+            const description = `[${tr.actionCode}] ${tr.fromName}`;
+            const total = tr.amount;
+            const revenue = Math.round(tr.amount / 1.13 * 100) / 100;
+            const hst = Math.round(revenue * 13) / 100;
+            data.push({ date, id, description, revenue, hst, total });
+          }
+        });
+
+        const cw = createObjectCsvWriter({
+          path,
+          header: [
+            { id: 'date', title: 'Invoice Date' },
+            { id: 'id', title: 'Invoice #' },
+            { id: 'description', title: 'Description' },
+            { id: 'revenue', title: 'Revenue' },
+            { id: 'hst', title: 'Hst' },
+            { id: 'total', title: 'Total' },
+          ]
+        });
+
+        if(data){
+          cw.writeRecords(data).then(() => {
+            resolve();
+          });
+        }else{
+          resolve();
+        }
+      });
+    });
+  }
 
   // update balance of debit and credit
   async doInsertOne(tr: ITransaction) {
     const fromId: string = tr.fromId; // must be account id
     const toId: string = tr.actionCode === TransactionAction.PAY_SALARY.code ? EXPENSE_ID : tr.toId;     // must be account id
-    const amount: number = Math.round((+tr.amount) * 100)/100;
+    const amount: number = Math.round((+tr.amount) * 100) / 100;
 
     try {
       const fromAccount: IAccount = await this.accountModel.findOne({ _id: fromId });
@@ -218,8 +275,8 @@ export class Transaction extends Model {
   async updateOneAndRecalculate(query: any, doc: any, options?: any): Promise<any> {
     const fromId = doc.fromId.toString();
     const toId = doc.toId.toString();
-    const amount = Math.round((+doc.amount) * 100)/100;
-    const data = {...doc, amount};
+    const amount = Math.round((+doc.amount) * 100) / 100;
+    const data = { ...doc, amount };
     let r;
     if (doc.actionCode === TransactionAction.PAY_SALARY.code) {
       const staffId = doc.staffId;
@@ -260,7 +317,7 @@ export class Transaction extends Model {
       } else {
         return;
       }
-    } else if(doc){
+    } else if (doc) {
       const fromId = doc.fromId.toString();
       const toId = doc.toId.toString();
       if (fromId && toId) {

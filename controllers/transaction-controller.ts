@@ -1,10 +1,11 @@
 import { Request, Response } from "express";
-import { Transaction } from "../models/transaction";
+import { Transaction, TransactionAction } from "../models/transaction";
 import { DB } from "../db";
 import { Controller, Code } from "./controller";
 
 import path from 'path';
 import { getLogger } from '../lib/logger'
+import { DateTime } from "../models/date-time";
 const logger = getLogger(path.basename(__filename));
 
 export class TransactionController extends Controller {
@@ -87,6 +88,18 @@ export class TransactionController extends Controller {
         data,
       });
     }
+  }
+
+  exportRevenue(req: Request, res: Response) {
+    const path = './uploads/revenue.csv';
+    this.model.getRevenueCSV(path).then(() => {
+      // res.download(path, () => {});
+      res.setHeader("Content-Type", "application/json");
+      res.send({
+        code: Code.SUCCESS,
+        data: 1,
+      });
+    });
   }
 
   async recalculate(req: Request, res: Response) {
