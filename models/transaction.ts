@@ -54,6 +54,8 @@ export const TransactionAction = {
   ADD_CREDIT_BY_WECHAT: { code: 'ACW', name: 'client add credit by WECHATPAY' },
   ADD_CREDIT_BY_CASH: { code: 'ACCH', name: 'client add credit by cash' },
   TRANSFER: { code: 'T', name: 'transfer' },
+
+  SUPPLIES: { code: 'S', name: 'supplies' },
   BUY_MATERIAL: { code: 'BM', name: 'buy material' }, // buy drinks
   BUY_EQUIPMENT: { code: 'BE', name: 'buy equipment' },
   BUY_ADVERTISEMENT: { code: 'BA', name: 'buy advertisement' },
