@@ -102,4 +102,50 @@ export class Controller {
     }
   }
 
+  // alias to updateOne
+  async update(req: Request, res: Response) {
+    return this.updateOne(req, res);
+  }
+
+  async create(req: Request, res: Response): Promise<any> {
+    const doc = req.body.data;
+    delete(doc._id);
+    try {
+      await this.model.validate(doc, "create");
+    } catch (e) {
+      return res.json({
+        code: Code.FAIL,
+        message: e.toString()
+      });
+    }
+    try {
+      const data = await this.model.insertOne(doc);
+      return res.json({
+        code: Code.SUCCESS,
+        data
+      });
+    } catch (e) {
+      console.error(e);
+      logger.error(`create error: ${e}`);
+      return res.json({
+        code: Code.FAIL,
+        message: 'save failed'
+      });
+    }
+  }
+
+  async delete(req: Request, res: Response) {
+    const _id = req.params.id;
+    try {
+      await this.model.deleteById(_id);
+      return res.json({
+        code: Code.SUCCESS
+      });
+    } catch (e) {
+      return res.json({
+        code: Code.FAIL,
+        message: e
+      });
+    }
+  }
 }

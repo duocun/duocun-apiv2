@@ -315,4 +315,8 @@ export class Model extends Entity {
     const s = x.split('T')[1].slice(0, 5);
     return s;
   }
+
+  async validate(data: any, scope: "create"|"update"): Promise<any> {
+    return true;
+  }
 }

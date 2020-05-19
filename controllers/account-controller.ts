@@ -37,13 +37,16 @@ export class AccountController extends Controller {
   async login(req: Request, res: Response):Promise<void> { 
     const username: any = req.body.username;
     const password: any = req.body.password;
-
     let data: any = null;
     let code = Code.FAIL;
     try {
         const tokenId = await this.model.doLogin(username, password);
-        code = Code.SUCCESS;
-        data = tokenId;
+        if (tokenId) {
+          code = Code.SUCCESS;
+          data = tokenId;
+        } else {
+          code = Code.FAIL;
+        }
     } catch (error) {
       logger.error(`list error: ${error}`);
     } finally {
@@ -271,8 +274,17 @@ export class AccountController extends Controller {
   async getCurrentAccount(req: Request, res: Response) {
     const tokenId: any = req.query.tokenId;
     const account = await this.model.getAccountByToken(tokenId);
-    res.setHeader('Content-Type', 'application/json');
-    res.send(account);
+    if (account) {
+      res.json({
+        code: Code.SUCCESS,
+        data: account
+      })
+    } else {
+      res.json({
+        code: Code.FAIL
+      })
+    }
+    
   }
 
   signup(req: Request, res: Response) {

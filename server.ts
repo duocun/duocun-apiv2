@@ -50,7 +50,7 @@ import { LogRouter } from "./routers/log-route";
 import { EventLogRouter } from "./routers/event-log-route";
 import { StatisticsRouter } from "./routers/statistics-route";
 import { ToolRouter } from "./routers/tool-route";
-
+import { PageRouter } from "./routers/page-route";
 import { CellApplicationRouter } from "./routers/cell-application-route";
 
 import { AreaRouter } from "./routers/area-route";
@@ -95,14 +95,14 @@ function startCellOrderTask(dbo: any) {
 //   fs.appendFile("/tmp/log-duocun.log", msg, function (err) { });
 // }
 
-const apimw = new ApiMiddleWare();
 const utils = new Utils();
 const cfg = new Config();
 const SERVER = cfg.APIV2_SERVER;
 const ROUTE_PREFIX = '/api/admin'; // SERVER.ROUTE_PREFIX;
 
 const app = express();
-const dbo = new DB();
+export const dbo = new DB();
+const apimw = new ApiMiddleWare();
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "uploads/");
@@ -204,6 +204,7 @@ dbo.init(cfg.DATABASE).then((dbClient) => {
   app.use(ROUTE_PREFIX + "/orders", OrderRouter(dbo));
   app.use(ROUTE_PREFIX + "/categories", CategoryRouter(dbo));
   app.use(ROUTE_PREFIX + "/products", ProductRouter(dbo));
+  app.use(ROUTE_PREFIX + "/pages", PageRouter(dbo));
   app.use(ROUTE_PREFIX + "/productStock", StockRouter(dbo));
   app.use(ROUTE_PREFIX + "/statistics", StatisticsRouter(dbo));
   app.use(ROUTE_PREFIX + "/Restaurants", MerchantRouter(dbo)); // deprecated
@@ -215,7 +216,6 @@ dbo.init(cfg.DATABASE).then((dbClient) => {
   app.use(ROUTE_PREFIX + "/Locations", LocationRouter(dbo));
   app.use(ROUTE_PREFIX + "/Pickups", PickupRouter(dbo));
   app.use(ROUTE_PREFIX + "/Drivers", DriverRouter(dbo));
-
   app.use(ROUTE_PREFIX + "/Distances", DistanceRouter(dbo));
   app.use(ROUTE_PREFIX + "/Regions", RegionRouter(dbo));
   app.use(ROUTE_PREFIX + "/MerchantPayments", MerchantPaymentRouter(dbo));

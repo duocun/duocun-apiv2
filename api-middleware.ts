@@ -1,15 +1,20 @@
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { Config } from "./config";
-
+import { Account } from "./models/account";
+import { DB } from "./db";
+import { dbo } from "./server";
 export class ApiMiddleWare {
-    constructor(options?: any) {
-
+    constructor() {
     }
 
-    auth(req: Request, res: Response, next: any) {
-      const token = req.get('Authorization');
-      if(1){
+    async auth(req: Request, res: Response, next: any) {
+      let token = req.get('Authorization') || (`${req.query.token}` || "");
+      token = token.replace("Bearer ", "");
+      if(
+        req.path === "/api/admin/accounts/login"
+        || req.path.indexOf("api/admin/accounts/current") !== -1
+      ){
       // if(req.path === '/api/Accounts/wxLogin' || req.path === '/api/Accounts/wechatLogin' || req.path === '/api/Accounts/login'
       //   || req.path === '/api/Accounts/signup' || req.path === '/api/Accounts/logout'
       //   || req.path === '/api/Accounts/loginByPhone'
@@ -34,7 +39,18 @@ export class ApiMiddleWare {
             const accountId = jwt.verify(token, cfg.JWT.SECRET);
             // TODO: compare redis token
             if(accountId){
-              next();
+              const accountModel = new Account(dbo);
+              accountModel.findOne({ _id: accountId }).then(account => {
+                // TODO: check account role
+                if (account) {
+                  next();
+                } else {
+                  return res.status(401).send("Authorization failed");  
+                }
+              }).catch(e => {
+                console.error(e);
+                return res.status(401).send("Authorization failed");
+              })
             }else{
               // return res.send(JSON.stringify({err: 401, msg:"Authorization: bad token"}, null, 3));
               return res.status(401).send("Authorization: bad token");

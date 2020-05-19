@@ -111,6 +111,7 @@ export class Account extends Model {
   // username --- optional, can be null, unique  username
   // password --- mandadory field
   async doLogin(username: string, password: string) {
+    // console.log(await bcrypt.hash("111111", saltRounds));
     if (username) {
       const account: IAccount = await this.findOne({ username });
       if (account && account.password) {

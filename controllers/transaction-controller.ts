@@ -14,7 +14,7 @@ export class TransactionController extends Controller {
     this.model = model;
   }
 
-  async create(req: Request, res: Response) {
+  async create(req: Request, res: Response):Promise<any> {
     const tr = req.body;
     let data: any = null;
     let code = Code.FAIL;
