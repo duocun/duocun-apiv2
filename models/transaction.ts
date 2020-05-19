@@ -296,6 +296,11 @@ export class Transaction extends Model {
         r = await this.updateOne(query, data, options);
         await this.updateBalanceByAccountIdV2(fromId);
         await this.updateBalanceByAccountIdV2(toId);
+        // refund client
+        const clientId = doc.clientId ? doc.clientId.toString() : '';
+        if(clientId){
+          await this.updateBalanceByAccountIdV2(clientId);
+        }
         return r;
       } else {
         return;
