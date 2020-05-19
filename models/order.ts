@@ -324,10 +324,11 @@ export class Order extends Model {
       code: r.code,
       type: r.type,
       location: r.location,
-      address: this.locationModel.getAddrString(r.location), // deprecated
+      // address: this.locationModel.getAddrString(r.location), // deprecated
       items: r.items,
       price: r.price,
       cost: r.cost,
+      total: r.total,
       paymentMethod: r.paymentMethod,
       paymentStatus: r.paymentStatus,
       status: r.status,
