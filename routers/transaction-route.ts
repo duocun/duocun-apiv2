@@ -12,6 +12,7 @@ export function TransactionRouter(db: DB) {
   // admin api
 
   // api/admin/transactions?query={where:xxx,options:{"limit":10,"skip":0,"sort":[["_id",1]]}}
+  router.get('/revenue', [parseQuery], (req: Request, res: Response) => { controller.exportRevenue(req, res); });
   router.get('/', [parseQuery], (req: Request, res: Response) => { controller.list(req, res); });
   router.get('/:id', (req, res) => { controller.get(req, res); });
   router.post('/', async (req: Request, res: Response) => { await controller.create(req, res); });

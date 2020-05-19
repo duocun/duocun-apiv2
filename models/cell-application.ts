@@ -153,31 +153,5 @@ export class CellApplication extends Model {
       });
     });
 
-    // const fileStream = fs.createReadStream(path);
-    // this.cfg = JSON.parse(fs.readFileSync('../duocun.cfg.json', 'utf-8'));
-    // https.get(url, (res1: IncomingMessage) => {
-      const filename = 'a.csv'; // path.basename(path);
-      // res.setHeader('Content-disposition', 'attachment; filename=' + filename);
-      // res.setHeader('Content-type', 'csv');
-      // fileStream.pipe(res);
-      
-      // res1.on('data', (d) => {
-      //   data += d;
-      // });
-
-      // res1.on('end', (rr: any) => {
-      //   // console.log('receiving done!');
-      //   if (data) {
-      //     const s = JSON.parse(data);
-      //     if (s.predictions && s.predictions.length > 0) {
-      //       res.send(s.predictions);
-      //     } else {
-      //       res.send([]);
-      //     }
-      //   } else {
-      //     res.send([]);
-      //   }
-      // });
-    // });
   }
 }
