@@ -387,6 +387,67 @@ export class Order extends Model {
     return this.filterArray(ts, fields);
   }
 
+
+  async getMapMarkers(where: any, options?: object) {
+    const ret: any = await this.find_v2(where, options);
+    const driverMap: any = {};
+    const driverAccounts = await this.accountModel.find({ type: "driver" });
+    ret.data.forEach((order: any) => {
+      // const address = this.locationModel.getAddrString(order.location);
+      const _id = order._id.toString();
+      const lat = order.location.lat;
+      const lng = order.location.lng;
+
+      if (order.driverId) {
+        const d = driverAccounts.find((a: IAccount) => a._id.toString() === order.driverId.toString());
+        if (d && d._id) {
+          order.driver = {
+            _id: d._id.toString(),
+            username: d.username,
+            phone: d.phone,
+          };
+        } else {
+          console.log("driver id not found: " + order.driverId);
+        }
+      }
+      const driver = order.driver;
+      const status = order.status;
+      const driverId = driver ? driver._id : 'unassigned';
+      driverMap[driverId] = {driver, markers: [] };
+    });
+
+    ret.data.forEach((order: any) => {
+      
+    })
+    return {data: [], count: 0};
+  }
+
+  // should only use with paging
+  // get transactions with purchase items
+  async getTransactions(where: any, options?: object) {
+    const ret: any = await this.transactionModel.find_v2(where, options);
+    const trs = ret.data;
+    const orderIds: string[] = [];
+    trs.forEach((tr: any) => {
+      if(tr.orderId){
+        orderIds.push(tr.orderId.toString());
+      }
+    });
+    const r = await this.joinFindV2({_id: {$in: orderIds} });
+    const orders: any[] = r.data;
+    trs.forEach((tr: any) => {
+      if(tr.orderId){
+        const order = orders.find((order: any) => order._id.toString() === tr.orderId.toString());
+        if(order){
+          tr.items = order.items;
+        }
+      }
+    });
+    ret.data = trs;
+    return ret;
+  }
+
+  // deprecated
   reqTransactions(req: Request, res: Response) {
     let query = null;
     if (
