@@ -17,7 +17,7 @@ import {
 import { Log, Action, AccountType } from "./log";
 
 import { createObjectCsvWriter } from 'csv-writer';
-import { ObjectID, Collection, BulkWriteOpResultObject } from "mongodb";
+import { ObjectID, Collection, BulkWriteOpResultObject, ObjectId } from "mongodb";
 
 import { ClientCredit } from "./client-credit";
 import fs from "fs";
@@ -198,6 +198,28 @@ export class Order extends Model {
   }
 
 
+  async getById(id: string, options: any={}) {
+    if (id && ObjectId.isValid(id)) {
+      const order = await this.findOne({ _id: id }, options);
+      if (order) {
+        const ps = await this.productModel.find({merchantId: order.merchantId});
+        const items: any[] = [];
+        if (order.items) {
+          order.items.forEach((it: IOrderItem) => {
+            const product = ps.find(
+              (p: any) => p && p._id.toString() === it.productId.toString()
+            );
+            if (product) {
+              items.push({ ...it, productName: product.name });
+            }
+          });
+          order.items = items;
+        }
+        return order;
+      }
+    }
+    return null;
+  }
 
 
 
