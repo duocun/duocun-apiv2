@@ -40,8 +40,7 @@ export class Statistics extends Model{
     const orders = dataSet.data;
     const merchantMap: any = {};
     orders.forEach((order: any) => {
-      const merchant = order.merchant;
-      const mId = merchant ? merchant._id : null;
+      const mId = order.merchantId;
       if (mId !== undefined) {
         if (!merchantMap[mId]) {
           merchantMap[mId] = {
@@ -53,7 +52,7 @@ export class Statistics extends Model{
           };
         }
         merchantMap[mId].merchantId = mId;
-        merchantMap[mId].merchantName = order.merchant.name;
+        merchantMap[mId].merchantName = order.merchantName;
         merchantMap[mId].nOrders++;
         merchantMap[mId].totalPrice += order.price;
         merchantMap[mId].totalCost += order.cost;
@@ -99,7 +98,7 @@ export class Statistics extends Model{
               totalCost: 0,
             };
           }
-          productMap[pId].merchantName = order.merchant.name;
+          productMap[pId].merchantName = order.merchantName;
           productMap[pId].price = item.price;
           productMap[pId].cost = item.cost;
           productMap[pId].quantity += item.quantity;
@@ -160,13 +159,13 @@ export class Statistics extends Model{
     const rs = orders.filter(order => order.type === type);
 
     rs.forEach(r => {
-      const merchantName = r.merchant? r.merchant.name: null;
-      const merchantId = r.merchant ? r.merchant._id : null;
+      const merchantName = r.merchantName;
+      const merchantId = r.merchantId.toString();
       merchantMap[merchantId] = { merchantId, merchantName, orders:[] };
     });
 
     rs.forEach(r => {
-      const merchantId = r.merchant ? r.merchant._id : null;
+      const merchantId = r.merchantId.toString();
       merchantMap[merchantId].orders.push(r);
     });
 

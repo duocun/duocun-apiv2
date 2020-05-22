@@ -22,13 +22,13 @@ export class PaymentController extends Model {
     super(db, 'payments');
   }
 
-  sync(req: Request, res: Response) {
-    // const phone = req.body.phone;
-    // const verificationCode = req.body.verificationCode;
+  // sync(req: Request, res: Response) {
+  //   // const phone = req.body.phone;
+  //   // const verificationCode = req.body.verificationCode;
 
-    // this.model.sync().then(() => {
-    //   res.setHeader('Content-Type', 'application/json');
-    //   res.send(JSON.stringify({status: 'success'}, null, 3));
-    // });
-  }
+  //   // this.model.sync().then(() => {
+  //   //   res.setHeader('Content-Type', 'application/json');
+  //   //   res.send(JSON.stringify({status: 'success'}, null, 3));
+  //   // });
+  // }
 }
