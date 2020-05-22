@@ -10,7 +10,7 @@ export function LocationRouter(db: DB){
   const controller = new LocationController(model, db);
   
   // admin api
-  router.get('/:address', (req, res) => { controller.getLocationByAddress(req, res); });
+  router.get('/geocode/',[parseQuery], (req: Request, res: Response) => { controller.reqLocation(req, res); });
   router.get('/',[parseQuery], (req: Request, res: Response) => { controller.list(req, res); });
   router.get('/suggest/:keyword', (req, res) => { controller.getSuggestAddressList(req, res)});
   router.get('/history/:accountId', (req, res) => { controller.getLocationsByAccount(req, res); });
