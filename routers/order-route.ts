@@ -20,6 +20,8 @@ export function OrderRouter(db: DB) {
   router.put('/:id', (req, res) => { controller.updateOne(req, res); });
   router.delete('/:id', (req, res) => { controller.removeOrder(req, res); });
 
+  router.get('/bulkPhones/:year', (req, res) => { controller.updateOrderPhone(req, res)});
+
   router.post('/', (req, res) => { controller.create(req, res); });
   
   // support ?query={where, options}

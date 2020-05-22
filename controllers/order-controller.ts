@@ -110,6 +110,16 @@ export class OrderController extends Controller {
   }
 
   // admin
+  async updateOrderPhone(req: Request, res: Response) {
+    const year = req.params.year;
+    await this.model.updateOrderPhone(year);
+    res.setHeader("Content-Type", "application/json");
+    res.send({
+      code: Code.SUCCESS,
+      data: 'done',
+    });
+  }
+
   async list(req: Request, res: Response): Promise<void> {
     const where: any = req.query.where;
     const options: any = req.query.options;

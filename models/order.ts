@@ -85,7 +85,7 @@ export interface IOrder {
   code?: string;
   clientId: string;
   clientName: string;
-  clientPhoneNumber?: string;
+  clientPhone?: string;
   merchantId: string;
   merchantName: string;
   driverId?: string;
@@ -273,32 +273,32 @@ export class Order extends Model {
   async joinFindV2(where: any, options?: object) {
     const ret: any = await this.find_v2(where, options);
     const rs = ret.data;
-    const clientAccountIds = rs.map((r: any) => r.clientId);
+    // const clientAccountIds = rs.map((r: any) => r.clientId);
     const merchantAccountIds = rs.map((r: any) => r.merchantId);
     const driverAccounts = await this.accountModel.find({ type: "driver" });
-    const clientAccounts = await this.accountModel.find({ _id: { $in: clientAccountIds } });
+    // const clientAccounts = await this.accountModel.find({ _id: { $in: clientAccountIds } });
     const merchantAccounts = await this.accountModel.find({ _id: { $in: merchantAccountIds } });
     const merchants = await this.merchantModel.find({});
     const ps = await this.productModel.find({});
     rs.forEach((order: any) => {
       const items: any[] = [];
 
-      if (order.clientId) {
-        const c = clientAccounts.find(
-          (a: any) => a._id.toString() === order.clientId.toString()
-        );
-        order.client = {
-          _id: c._id.toString(),
-          username: c.username,
-          phone: c.phone,
-        };
-      }
+      // if (order.clientId) {
+      //   const c = clientAccounts.find(
+      //     (a: any) => a._id.toString() === order.clientId.toString()
+      //   );
+      //   order.client = {
+      //     _id: c._id.toString(),
+      //     username: c.username,
+      //     phone: c.phone,
+      //   };
+      // }
 
       if (order.merchantId) {
         const m = merchants.find(
           (m: any) => m._id.toString() === order.merchantId.toString()
         );
-        order.merchant = { _id: m._id.toString(), name: m.name };
+        order.merchant = { _id: m._id.toString(), name: m.name, accountId: m.accountId };
       }
 
       if (order.merchant && order.merchant.accountId) {
@@ -354,8 +354,11 @@ export class Order extends Model {
       paymentMethod: r.paymentMethod,
       paymentStatus: r.paymentStatus,
       status: r.status,
-      client: r.client,
-      merchant: r.merchant,
+      clientId: r.clientId,
+      clientName: r.clientName,
+      clientPhone: r.clientPhone,
+      merchantId: r.merchantId,
+      merchantName: r.merchantName,
       // merchantAccount: r.merchantAccount,
       driver: r.driver,
       note: r.note,
@@ -1286,8 +1289,8 @@ export class Order extends Model {
       order.merchantAccount = accounts.find(
         (a: any) =>
           a &&
-          order.merchant &&
-          a._id.toString() === order.merchant._id.toString()
+          order.merchantId &&
+          a._id.toString() === order.merchantId.toString()
       );
 
       order.items.map((it: any) => {
@@ -1474,11 +1477,10 @@ export class Order extends Model {
               }
               const date = this.getFirstAndLastDeliverDate(group);
               if (date) {
-                const phone = order.client ? order.client.phone : "N/A";
                 rs.push({
                   clientId: key,
                   clientName: order.clientName,
-                  clientPhoneNum: phone,
+                  clientPhoneNum: order.clientPhone,
                   nOrders: group.length,
                   firstOrdered: date.first,
                   lastOrdered: date.last,
@@ -1675,7 +1677,7 @@ export class Order extends Model {
         data.push({
           code: order.code,
           client: order.clientName,
-          clientPhone: order.client ? order.client.phone : "N/A",
+          clientPhone: order.clientPhone,
           clientAttr: this.getAttributesString(client),
           merchant: order.merchantName,
           items: this.getItemString(order),
@@ -2297,5 +2299,27 @@ export class Order extends Model {
       await this.updateOne({ _id }, { status: 'T' });
     }
     return a;
+  }
+
+  
+  async updateOrderPhone(year: string) {
+    const orders = await this.find({
+      status: {
+        $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
+      },
+      created: {$regex: year}
+    });
+
+    const accounts = await this.accountModel.find({});
+    for (let i = 0; i < orders.length; i++) {
+      const order = orders[i];
+      if(order && order.clientId){
+        const _id = order._id.toString();
+        const account = accounts.find(a => a._id.toString() === order.clientId.toString());
+        const clientPhone = account.phone;
+        await this.updateOne({ _id }, { clientPhone });
+      }
+    }
+    return 'success';
   }
 }
