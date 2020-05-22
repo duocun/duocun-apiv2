@@ -17,7 +17,7 @@ import {
 import { Log, Action, AccountType } from "./log";
 
 import { createObjectCsvWriter } from 'csv-writer';
-import { ObjectID, Collection, BulkWriteOpResultObject } from "mongodb";
+import { ObjectID, Collection, BulkWriteOpResultObject, ObjectId } from "mongodb";
 
 import { ClientCredit } from "./client-credit";
 import fs from "fs";
@@ -198,6 +198,28 @@ export class Order extends Model {
   }
 
 
+  async getById(id: string, options: any={}) {
+    if (id && ObjectId.isValid(id)) {
+      const order = await this.findOne({ _id: id }, options);
+      if (order) {
+        const ps = await this.productModel.find({merchantId: order.merchantId});
+        const items: any[] = [];
+        if (order.items) {
+          order.items.forEach((it: IOrderItem) => {
+            const product = ps.find(
+              (p: any) => p && p._id.toString() === it.productId.toString()
+            );
+            if (product) {
+              items.push({ ...it, productName: product.name });
+            }
+          });
+          order.items = items;
+        }
+        return order;
+      }
+    }
+    return null;
+  }
 
 
 
@@ -324,10 +346,11 @@ export class Order extends Model {
       code: r.code,
       type: r.type,
       location: r.location,
-      address: this.locationModel.getAddrString(r.location), // deprecated
+      // address: this.locationModel.getAddrString(r.location), // deprecated
       items: r.items,
       price: r.price,
       cost: r.cost,
+      total: r.total,
       paymentMethod: r.paymentMethod,
       paymentStatus: r.paymentStatus,
       status: r.status,
@@ -364,6 +387,67 @@ export class Order extends Model {
     return this.filterArray(ts, fields);
   }
 
+
+  async getMapMarkers(where: any, options?: object) {
+    const ret: any = await this.find_v2(where, options);
+    const driverMap: any = {};
+    const driverAccounts = await this.accountModel.find({ type: "driver" });
+    ret.data.forEach((order: any) => {
+      // const address = this.locationModel.getAddrString(order.location);
+      const _id = order._id.toString();
+      const lat = order.location.lat;
+      const lng = order.location.lng;
+
+      if (order.driverId) {
+        const d = driverAccounts.find((a: IAccount) => a._id.toString() === order.driverId.toString());
+        if (d && d._id) {
+          order.driver = {
+            _id: d._id.toString(),
+            username: d.username,
+            phone: d.phone,
+          };
+        } else {
+          console.log("driver id not found: " + order.driverId);
+        }
+      }
+      const driver = order.driver;
+      const status = order.status;
+      const driverId = driver ? driver._id : 'unassigned';
+      driverMap[driverId] = {driver, markers: [] };
+    });
+
+    ret.data.forEach((order: any) => {
+      
+    })
+    return {data: [], count: 0};
+  }
+
+  // should only use with paging
+  // get transactions with purchase items
+  async getTransactions(where: any, options?: object) {
+    const ret: any = await this.transactionModel.find_v2(where, options);
+    const trs = ret.data;
+    const orderIds: string[] = [];
+    trs.forEach((tr: any) => {
+      if(tr.orderId){
+        orderIds.push(tr.orderId.toString());
+      }
+    });
+    const r = await this.joinFindV2({_id: {$in: orderIds} });
+    const orders: any[] = r.data;
+    trs.forEach((tr: any) => {
+      if(tr.orderId){
+        const order = orders.find((order: any) => order._id.toString() === tr.orderId.toString());
+        if(order){
+          tr.items = order.items;
+        }
+      }
+    });
+    ret.data = trs;
+    return ret;
+  }
+
+  // deprecated
   reqTransactions(req: Request, res: Response) {
     let query = null;
     if (

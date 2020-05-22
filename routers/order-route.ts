@@ -14,7 +14,8 @@ export function OrderRouter(db: DB) {
 
   // admin
   router.get('/bad', (req, res) => { controller.getBadOrder(req, res); });
-  
+  router.get('/markers', (req, res) => { controller.getMapMarkers(req, res); });
+
   router.post('/', (req, res) => { controller.create(req, res); });
   router.put('/:id', (req, res) => { controller.updateOne(req, res); });
   router.delete('/:id', (req, res) => { controller.removeOrder(req, res); });

@@ -5,14 +5,47 @@ import { Controller, Code } from "./controller";
 
 import path from 'path';
 import { getLogger } from '../lib/logger'
-import { DateTime } from "../models/date-time";
+// import { DateTime } from "../models/date-time";
+import { Order } from "../models/order";
+
 const logger = getLogger(path.basename(__filename));
 
 export class TransactionController extends Controller {
   model: Transaction;
+  orderModel: Order;
+  
   constructor(model: Transaction, db: DB) {
     super(model, db);
     this.model = model;
+    this.orderModel = new Order(db);
+  }
+
+  async list(req: Request, res: Response): Promise<void> {
+    const where: any = req.query.where;
+    const options: any = req.query.options;
+    res.setHeader("Content-Type", "application/json");
+    let data: any[] = [];
+    let count: number = 0;
+    let code = Code.FAIL;
+    try {
+      if (where) {
+        // TODO: no where will return error, is it a good choice?
+        const r = await this.orderModel.getTransactions(where, options);
+        code = Code.SUCCESS;
+        data = r.data;
+        count = r.count;
+      }
+    } catch (error) {
+      // logger.error(`list error: ${error}`);
+    } finally {
+      res.send(
+        JSON.stringify({
+          code,
+          data,
+          count,
+        })
+      );
+    }
   }
 
   async create(req: Request, res: Response):Promise<any> {
