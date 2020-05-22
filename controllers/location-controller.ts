@@ -28,16 +28,23 @@ export class LocationController extends Controller {
     });
   }
 
-  async getLocationByAddress(req: Request, res: Response) {
-    const addr = req.params.address;
-    const r = await this.model.getLocationByAddress(addr);
+  async reqLocation(req: Request, res: Response) {
+    const where: any = req.query.where;
     res.setHeader('Content-Type', 'application/json');
-    res.send({
-      code: Code.SUCCESS,
-      data: r
-    });
+    if(where.placeId){
+      const r = await this.model.getLocationByPlaceId(where.placeId);
+      res.send({
+        code: Code.SUCCESS,
+        data: r
+      });
+    }else{
+      const r = await this.model.getLocationByAddress(where.address);
+      res.send({
+        code: Code.SUCCESS,
+        data: r
+      });
+    }
   }
-
   // getPlaceList(req: Request, res: Response) {
   //   const keyword = req.params.input;
   //   this.model.getSuggestPlaces(keyword).then((rs: IGooglePlace[]) => {

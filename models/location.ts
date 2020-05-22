@@ -42,7 +42,7 @@ export interface IGooglePlace {
 }
 
 // use for front-end address list
-export interface IAddress{
+export interface IAddress {
   placeId: string;
   mainText: string;
   secondaryText: string;
@@ -113,7 +113,7 @@ export class Location extends Model {
         res.on('data', (d) => {
           data += d;
         });
-  
+
         res.on('end', (rr: any) => {
           if (data) {
             const s = JSON.parse(data);
@@ -209,71 +209,84 @@ export class Location extends Model {
     }
   }
 
-  async getLocationByAddress(address: string){
-    const rs = await this.getGoogleGeocodes(address);
-    if(rs && rs.length > 0){
-      return this.geocodeToLocation(rs[0]);
-    }else{
-      return;
-    }
+  async getLocationByAddress(address: string) {
+    const r = await this.getGoogleGeocodeByAddress(address);
+    return this.geocodeToLocation(r);
+  }
+
+  async getLocationByPlaceId(placeId: string) {
+    const r = await this.getGoogleGeocodeByPlaceId(placeId);
+    return this.geocodeToLocation(r);
   }
 
   // deprecated
-  getLocation(accountId: string, placeId: string, address: string) {
-    return new Promise((resolve, reject) => {
-      if(placeId){
-        this.find({placeId}).then(ds => {
-          if(ds && ds.length > 0){
-            const history = ds.find((d: any) => d.accountId.toString() === accountId);
-            if(history){
-              resolve(history.location);
-            } else {
-              const h = ds[0];
-              if(accountId){
-                this.insertOne({accountId, placeId: h.placeId, location: h.location}).then(r => {
-                  resolve(h.location);
-                });
-              }else{
-                resolve(h.location);
-              }
-            }
-          }else{
-            this.getGoogleGeocodes(address).then((rs: any[]) => {
-              if(rs && rs.length > 0){
-                const loc = this.geocodeToLocation(rs[0]);
-                if(accountId){
-                  this.insertOne({accountId, placeId: loc.placeId, location: loc}).then(r => {
-                    resolve(loc);
-                  });
-                }else{
-                  resolve(loc);
-                }
-              }else{
-                resolve();
-              }
-            });
+  async getLocation(accountId: string, placeId: string, address: string) {
+    if (placeId) {
+      const ds = await this.find({ placeId });
+      if (ds && ds.length > 0) {
+        const history = ds.find((d: any) => d.accountId.toString() === accountId);
+        if (history) {
+          return history.location;
+        } else {
+          const h = ds[0];
+          if (accountId) {
+            const r = await this.insertOne({ accountId, placeId: h.placeId, location: h.location });
+            return h.location;
+          } else {
+            return h.location;
           }
+        }
+      } else {
+        const r = await this.getGoogleGeocodeByAddress(address);
+        const loc = this.geocodeToLocation(r);
+        if (accountId) {
+          await this.insertOne({ accountId, placeId: loc.placeId, location: loc });
+          return loc;
+        } else {
+          return loc;
+        }
+      }
+    } else { // should never go here
+      const r = await this.getGoogleGeocodeByAddress(address);
+      const loc = this.geocodeToLocation(r);
+      if (accountId) {
+        const r = await this.insertOne({ accountId, placeId: loc.placeId, location: loc });
+        return loc;
+      } else {
+        return loc;
+      }
+    }
+  }
+
+  // return --- Google Geocode object
+  getGoogleGeocodeByPlaceId(placeId: string): Promise<object> {
+    const key = this.cfg.GEOCODE_KEY;
+    const url = 'https://maps.googleapis.com/maps/api/geocode/json?sensor=false&key=' + key + '&place_id=' + placeId;
+
+    return new Promise((resolve, reject) => {
+      https.get(encodeURI(url), (res: IncomingMessage) => {
+        let data = '';
+        res.on('data', (d) => {
+          data += d;
         });
-      } else { // should never go here
-        this.getGoogleGeocodes(address).then((rs: any[]) => {
-          if(rs && rs.length > 0){
-            const loc = this.geocodeToLocation(rs[0]);
-            if(accountId){
-              this.insertOne({accountId, placeId: loc.placeId, location: loc}).then(r => {
-                resolve(loc);
-              });
-            }else{
-              resolve(loc);
+
+        res.on('end', () => {
+          if (data) {
+            const s = JSON.parse(data);
+            if (s.results && s.results.length > 0) {
+              resolve(s.results[0]);
+            } else {
+              resolve();
             }
-          }else{
+          } else {
             resolve();
           }
         });
-      }
+      });
     });
   }
 
-  getGoogleGeocodes(addr: string): Promise<any[]>{
+  getGoogleGeocodeByAddress(addr: string): Promise<object> {
     const key = this.cfg.GEOCODE_KEY;
     const url = 'https://maps.googleapis.com/maps/api/geocode/json?sensor=false&key=' + key + '&address=' + addr;
 
@@ -283,17 +296,17 @@ export class Location extends Model {
         res.on('data', (d) => {
           data += d;
         });
-  
+
         res.on('end', () => {
           if (data) {
             const s = JSON.parse(data);
             if (s.results && s.results.length > 0) {
-              resolve(s.results);
+              resolve(s.results[0]);
             } else {
-              resolve([]);
+              resolve();
             }
           } else {
-            resolve([]);
+            resolve();
           }
         });
       });
@@ -303,7 +316,7 @@ export class Location extends Model {
 
 
   toProvinceAbbr(input: string, to = 'abbr') {
-    if(!input){return ''}
+    if (!input) { return '' }
     const provinces = [
       ['Alberta', 'AB'],
       ['British Columbia', 'BC'],
@@ -416,7 +429,7 @@ export class Location extends Model {
   }
 
   toStreetAbbr(streetName: string) {
-    if(!streetName){return ''}
+    if (!streetName) { return '' }
     return streetName.replace(' Street', ' St').replace(' Avenue', ' Ave');
   }
 
