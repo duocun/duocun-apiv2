@@ -90,11 +90,16 @@ export class Location extends Model {
     this.cfg = new Config();
   }
 
-  reqPlaces(req: Request, res: Response) {
-    const keyword = req.params.input;
-    this.getSuggestPlaces(keyword).then((rs: IGooglePlace[]) => {
-      res.send(rs);
-    });
+  async updateOne(query: any, doc: any, options?: any): Promise<any> {
+    if (Object.keys(doc).length === 0 && doc.constructor === Object) {
+      return;
+    } else {
+      query = this.convertIdFields(query);
+      doc = this.convertIdFields(doc);
+      const c = await this.getCollection();
+      const r = await c.updateOne(query, { $set: doc }, options); // {n: 1, nModified: 0, ok: 1} UpdateWriteOpResult
+      return r;
+    }
   }
 
   getSuggestPlaces(keyword: string): Promise<IGooglePlace[]> {
@@ -143,42 +148,6 @@ export class Location extends Model {
     }
   }
 
-  reqSuggestAddressList(req: Request, res: Response) {
-    const keyword = req.params.keyword;
-    this.getSuggestPlaces(keyword).then((rs: IGooglePlace[]) => {
-      const addrs: IAddress[] = this.googlePlacesToAddressList(rs);
-      res.send(addrs);
-    });
-  }
-
-  getHistoryLocations(query: any, fields: string[]): Promise<ILocation[]>{
-    return new Promise((resolve, reject) => {
-      this.find(query).then((xs: ILocation[]) => {
-        const rs = this.filterArray(xs, fields);
-        resolve(rs);
-      });
-    });
-  }
-
-  reqHistoryAddressList(req: Request, res: Response) {
-    let query = {};
-    let key = null;
-    let fields: any = null;
-    if (req.headers) {
-      if (req.headers.filter && typeof req.headers.filter === 'string') {
-        query = req.headers.filter ? JSON.parse(req.headers.filter) : null;
-      }
-
-      if (req.headers.fields && typeof req.headers.fields === 'string') {
-        fields = JSON.parse(req.headers.fields);
-      }
-    }
-  
-    this.getHistoryLocations(query, fields).then((rs: ILocation[]) => {
-      const addrs: IAddress[] = this.locationsToAddressList(rs);
-      res.send(addrs);
-    });
-  }
 
   locationsToAddressList(items: any[]) {
     const options: IAddress[] = [];
@@ -240,53 +209,16 @@ export class Location extends Model {
     }
   }
 
-  reqGeocodes(req: Request, res: Response) {
-    const addr = req.params.address;
-
-    this.getGeocodes(addr).then(rs => {
-      res.send(rs);
-    });
-  }
-  // onSelectPlace(place: IPlace) {
-  //   const self = this;
-  //   const address = place.structured_formatting.main_text + ', ' + place.structured_formatting.secondary_text;
-  //   if (place.type === 'suggest') { // 'suggest'
-  //     this.locationSvc.reqLocationByAddress(address).pipe(takeUntil(this.onDestroy$)).subscribe(xs => {
-  //       const r = this.locationSvc.getLocationFromGeocode(xs[0]);
-  //       self.placeSeleted.emit({address: address, location: r});
-  //     });
-  //   } else { // history
-  //     const r = place.location;
-  //     self.placeSeleted.emit({address: address, location: r});
-  //   }
-  // }
-  reqLocation(req: Request, res: Response) {
-    let query;
-    let fields;
-
-    if (req.headers) {
-      if (req.headers.filter && typeof req.headers.filter === 'string') {
-        query = req.headers.filter ? JSON.parse(req.headers.filter) : null;
-      }
-
-      if (req.headers.fields && typeof req.headers.fields === 'string') {
-        fields = JSON.parse(req.headers.fields);
-      }
-    }
-
-    if(query){
-      const accountId: string = query.accountId;
-      const address: string = query.address;
-      const placeId: string = query.placeId;
-
-      this.getLocation(accountId, placeId, address).then(r => {
-        res.send(r);
-      });
+  async getLocationByAddress(address: string){
+    const rs = await this.getGoogleGeocodes(address);
+    if(rs && rs.length > 0){
+      return this.geocodeToLocation(rs[0]);
     }else{
-      res.send();
+      return;
     }
   }
 
+  // deprecated
   getLocation(accountId: string, placeId: string, address: string) {
     return new Promise((resolve, reject) => {
       if(placeId){
@@ -306,7 +238,7 @@ export class Location extends Model {
               }
             }
           }else{
-            this.getGeocodes(address).then((rs: any[]) => {
+            this.getGoogleGeocodes(address).then((rs: any[]) => {
               if(rs && rs.length > 0){
                 const loc = this.geocodeToLocation(rs[0]);
                 if(accountId){
@@ -323,7 +255,7 @@ export class Location extends Model {
           }
         });
       } else { // should never go here
-        this.getGeocodes(address).then((rs: any[]) => {
+        this.getGoogleGeocodes(address).then((rs: any[]) => {
           if(rs && rs.length > 0){
             const loc = this.geocodeToLocation(rs[0]);
             if(accountId){
@@ -341,7 +273,7 @@ export class Location extends Model {
     });
   }
 
-  getGeocodes(addr: string): Promise<any[]>{
+  getGoogleGeocodes(addr: string): Promise<any[]>{
     const key = this.cfg.GEOCODE_KEY;
     const url = 'https://maps.googleapis.com/maps/api/geocode/json?sensor=false&key=' + key + '&address=' + addr;
 
