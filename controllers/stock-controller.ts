@@ -121,7 +121,7 @@ export class StockController extends Controller {
     let productId = req.params.id;
     let product: IProduct;
     try {
-      product = await this.model.findOne({ _id: productId })
+      product = await this.model.findOne({ _id: productId });
     } catch (e) {
       return res.json({
         code: Code.FAIL,
@@ -140,17 +140,25 @@ export class StockController extends Controller {
         message: 'stock not enabled'
       });
     }
+    logger.info("--- BEGIN PRODUCT QUANTITY CHANGE ---");
+    logger.info(`Product ID: ${product._id}, name: ${product.name}, old stock: ${product.stock.quantity}`);
+    const orderedCount = await this.getOrderedProductQuantity(productId);
+    logger.info(`\tOrdered product quantity: ${orderedCount}`);
     let quantity = req.body.quantity || 0;
-    quantity -= await this.getOrderedProductQuantity(productId);
+    quantity -= orderedCount;
     product.stock.quantity = quantity;
+    
     try {
       await this.model.updateOne({ _id: productId }, product);
+      logger.info(`\tNew quantity: ${product.stock.quantity}`);
     } catch (e) {
+      logger.error(`Quantity save failed, ${e}`);
       return res.json({
         code: Code.FAIL,
         message: 'save failed'
       });
     }
+    logger.info("--- END PRODUCT QUANTITY CHANGE ---");
     return res.json({
       code: Code.SUCCESS
     });
