@@ -7,7 +7,7 @@ export const storage = multer.diskStorage({
     cb(null, "uploads/");
   },
   filename: function (req: any, file, cb) {
-    const name = path.parse(file.originalname).name + "_" + Date.now();
+    const name = Math.random().toString(36).substring(2) + "_" + Date.now();
     const extension = mime.extension(file.mimetype);
     const filename = `${name}.${extension}`;
     req.fileInfo = {
