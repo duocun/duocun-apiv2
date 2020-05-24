@@ -42,9 +42,23 @@ export class MerchantScheduleController extends Controller {
   }
 
   // tools
+
+  // generate schedule for new merchant
   async generateSchedules(req: Request, res: Response) {
-    const merchantId: any = req.params.id;
+    const merchantId: any = req.params.merchantId;
     const schedules = await this.model.createSchedules(merchantId);
+    res.setHeader('Content-Type', 'application/json');
+    res.send({
+      code: Code.SUCCESS,
+      data: schedules 
+    });
+  }
+
+  // update schedules for an area
+  async updateSchedulesForArea(req: Request, res: Response) {
+    const areaId: any = req.params.areaId;
+    const dows = req.body.dows ? req.body.dows : [];
+    const schedules = await this.model.updateSchedulesForArea(areaId, dows);
     res.setHeader('Content-Type', 'application/json');
     res.send({
       code: Code.SUCCESS,
