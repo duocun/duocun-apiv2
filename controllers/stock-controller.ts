@@ -198,7 +198,7 @@ export class StockController extends Controller {
       if (order.items && order.items.length) {
         order.items.forEach((item:any)  => {
           if (item.productId.toString() === productId.toString()) {
-            count++;
+            count += item.quantity;
           }
         })
       }
