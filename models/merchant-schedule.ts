@@ -55,6 +55,30 @@ export class MerchantSchedule extends Model{
     return await this.find({merchantId});
   }
 
+  async updateSchedulesForArea(areaId: string, dows: string[]){
+    const schedules = await this.find({areaId});
+    for(let i=0; i<schedules.length; i++){
+      const schedule = schedules[i];
+      const rules = dows.map((dow: any) => ({
+        pickup: {
+          dow,
+          time: '10:00'
+        },
+        deliver: {
+          dow,
+          time: '10:00'
+        }
+      }));
+
+      if(rules && rules.length > 0){
+        const query = {_id: schedule._id};
+        const data = {rules};
+        await this.updateOne(query, data);
+      }
+    }
+    return await this.find({areaId});
+  }
+
   async getAvailables(merchantId: string, lat: number, lng: number, appType= AppType.GROCERY) {
     const area = await this.areaModel.getMyArea({lat, lng}, AppType.GROCERY);
     if(area){
