@@ -23,11 +23,14 @@ export class StockController extends Controller {
 
   async list(req: Request, res: Response) {
     const where: any = req.query.where || {};
+    const startDate = where.startDate || moment().format("YYYY-MM-DD");
+    delete(where.startDate);
     const options: any = req.query.options;
+    console.log("startDate: " + startDate);
     let ret = await this.model.list(where, options);
     for (let product of ret.data) {
       if (product.stock) {
-        product.delivery = await this.getOrdersContainingProduct(product._id);
+        product.delivery = await this.getOrdersContainingProduct(product._id, startDate);
         product.stock.quantity = product.stock.quantity || 0;
         product.stock.quantity += this.countProductQuantityFromOrders(product.delivery, product._id);
       }
@@ -169,12 +172,13 @@ export class StockController extends Controller {
     return this.countProductQuantityFromOrders(orders, productId);
   }
 
-  async getOrdersContainingProduct(productId: any) {
+  async getOrdersContainingProduct(productId: any, start: string = "") {
     productId = new ObjectId(productId);
-    let todayString = moment().format("YYYY-MM-DDT00:00:00.000Z");
+    let todayString = moment().format("YYYY-MM-DD") + "T00:00:00.000Z";
+    let startDate = start || todayString;
     const collection  = await this.orderModel.getCollection();
     const orders = await collection.find({
-      delivered: { $gte: todayString },
+      delivered: { $gte: startDate },
       status: { 
         $nin: [
           OrderStatus.BAD,
@@ -192,9 +196,10 @@ export class StockController extends Controller {
     return orders;
   }
 
-  countProductQuantityFromOrders(orders: Array<IOrder>, productId: any) {
+  countProductQuantityFromOrders(orders: Array<IOrder>, productId: any, start: string = "") {
     let count = 0;
-    orders.forEach(order => {
+    let startDate = start || moment().format("YYYY-MM-DD") + "T00:00:00.000Z";
+    orders.filter(order => order.delivered || "" >= startDate).forEach(order => {
       if (order.items && order.items.length) {
         order.items.forEach((item:any)  => {
           if (item.productId.toString() === productId.toString()) {
