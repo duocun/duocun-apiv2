@@ -26,7 +26,6 @@ export class StockController extends Controller {
     const startDate = where.startDate || moment().format("YYYY-MM-DD");
     delete(where.startDate);
     const options: any = req.query.options;
-    console.log("startDate: " + startDate);
     let ret = await this.model.list(where, options);
     for (let product of ret.data) {
       if (product.stock) {

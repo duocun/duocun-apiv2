@@ -224,6 +224,7 @@ export class ProductController extends Controller {
     doc.descriptionEN = req.body.descriptionEN || "";
     doc.price = parseFloat(req.body.price);
     doc.cost = parseFloat(req.body.cost);
+    doc.type = "G";
     if (req.body.dow) {
       doc.dow = req.body.dow;
     }
