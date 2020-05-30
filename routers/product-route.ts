@@ -21,6 +21,7 @@ export function ProductRouter(db: DB) {
   router.put('/',(req,res) => {model.update(req, res);});
   router.patch('/',(req,res) => {model.update(req, res);});
   // admin api
+  router.put('/batchPrice', async (req, res) => { await controller.batchPrice(req, res); });
   router.post('/imageUpload',upload.single("upload"), async (req, res) => {
 
     const productId = req.query.productId;
@@ -76,6 +77,8 @@ export function ProductRouter(db: DB) {
   router.get('/', [parseQuery], async (req: Request, res: Response) => { await controller.list(req, res) });
   router.get('/delivery/:id', async (req: Request, res: Response) => { await controller.delivery(req, res) });
   router.get('/:id', async (req, res) => { await controller.get(req, res); });
+
+
   // old api
 
   router.get('/qFind', (req, res) => { model.quickFind(req, res); });
