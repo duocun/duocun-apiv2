@@ -182,7 +182,6 @@ export class StockController extends Controller {
         $nin: [
           OrderStatus.BAD,
           OrderStatus.DELETED,
-          OrderStatus.DONE,
           OrderStatus.TEMP
         ] 
       },
