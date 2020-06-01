@@ -252,4 +252,26 @@ export class ProductController extends Controller {
     doc.combinations = req.body.combinations || [];
     return doc;
   }
+
+
+  // admin tool
+  async batchPrice(req: Request, res: Response) {
+    const products  = await this.model.find({type:'G'});
+    const datas: any[] = [];
+    products.forEach(p => {
+      if(p.price % 1 === 0){
+        datas.push({
+          query: { _id: p._id },
+          data: { price: Math.round((p.price - 0.01)*100)/100 }
+        });
+      }
+    });
+    await this.model.bulkUpdate(datas);
+    const nps  = await this.model.find({type:'G'});
+    const rs = nps.map(np => ({name: np.name, price: np.price}));
+    res.json({
+      code: Code.SUCCESS,
+      data: rs
+    });
+  }
 }
