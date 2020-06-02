@@ -83,6 +83,7 @@ export class StatisticsController extends Controller {
       );
     }
   }
+
   async getProductStatistics(req: Request, res: Response) {
     const startDate: any = req.query.startDate;
     const endDate: any = req.query.endDate;
@@ -120,6 +121,53 @@ export class StatisticsController extends Controller {
       }
     } catch (error) {
       logger.error(`get sales statistic error: ${error}`);
+    } finally {
+      res.setHeader("Content-Type", "application/json");
+      res.send(
+        JSON.stringify({
+          code: code,
+          data: data,
+        })
+      );
+    }
+  }
+
+
+  async getOrderAnalytics(req: Request, res: Response) {
+    const startDate: any = req.query.startDate;
+    const endDate: any = req.query.endDate;
+    let data: any[] = [];
+    let code = Code.FAIL;
+    try {
+      if (startDate) {
+        code = Code.SUCCESS;
+        data = await this.model.getOrderAnalytics(startDate, endDate);
+      }
+    } catch (error) {
+      logger.error(`get order statistic error: ${error}`);
+    } finally {
+      res.setHeader("Content-Type", "application/json");
+      res.send(
+        JSON.stringify({
+          code: code,
+          data: data,
+        })
+      );
+    }
+  }
+
+  async getProductAnalytics(req: Request, res: Response) {
+    const startDate: any = req.query.startDate;
+    const endDate: any = req.query.endDate;
+    let data: any[] = [];
+    let code = Code.FAIL;
+    try {
+      if (startDate) {
+        code = Code.SUCCESS;
+        data = await this.model.getProductAnalytics(startDate, endDate);
+      }
+    } catch (error) {
+      logger.error(`get product statistic error: ${error}`);
     } finally {
       res.setHeader("Content-Type", "application/json");
       res.send(

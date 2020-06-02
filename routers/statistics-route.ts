@@ -15,6 +15,9 @@ export function StatisticsRouter(db: DB) {
     router.get('/product', (req, res) => { controller.getProductStatistics(req, res); });
     router.get('/sales', (req, res) => { controller.getSalesMap(req, res); });
    
+    router.get('/order-analytics', (req, res) => { controller.getOrderAnalytics(req, res); });
+    router.get('/product-analytics', (req, res) => { controller.getProductAnalytics(req, res); });
+
     return router;
   };
   
