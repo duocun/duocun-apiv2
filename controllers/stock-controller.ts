@@ -30,6 +30,7 @@ export class StockController extends Controller {
     for (let product of ret.data) {
       if (product.stock) {
         product.delivery = await this.getOrdersContainingProduct(product._id, startDate);
+        product.stock.quantityReal = product.stock.quantity;
         product.stock.quantity = product.stock.quantity || 0;
         product.stock.quantity += this.countProductQuantityFromOrders(product.delivery, product._id);
       }
@@ -197,7 +198,7 @@ export class StockController extends Controller {
   countProductQuantityFromOrders(orders: Array<IOrder>, productId: any, start: string = "") {
     let count = 0;
     let startDate = start || moment().format("YYYY-MM-DD") + "T00:00:00.000Z";
-    orders.filter(order => order.delivered || "" >= startDate).forEach(order => {
+    orders.filter(order => (order.delivered || "") >= startDate).forEach(order => {
       if (order.items && order.items.length) {
         order.items.forEach((item:any)  => {
           if (item.productId.toString() === productId.toString()) {
