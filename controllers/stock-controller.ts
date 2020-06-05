@@ -178,7 +178,7 @@ export class StockController extends Controller {
     let startDate = start || todayString;
     const collection  = await this.orderModel.getCollection();
     const orders = await collection.find({
-      deliverDate: { $gt: startDate },
+      deliverDate: { $gte: startDate },
       status: { 
         $nin: [
           OrderStatus.BAD,
@@ -197,8 +197,8 @@ export class StockController extends Controller {
 
   countProductQuantityFromOrders(orders: Array<IOrder>, productId: any, start: string = "") {
     let count = 0;
-    let startDate = start || moment().format("YYYY-MM-DD") + "T00:00:00.000Z";
-    orders.filter(order => (order.delivered || "") > startDate).forEach(order => {
+    let startDate = start || moment().format("YYYY-MM-DD");
+    orders.filter(order => (order.deliverDate || "") > startDate).forEach(order => {
       if (order.items && order.items.length) {
         order.items.forEach((item:any)  => {
           if (item.productId.toString() === productId.toString()) {
