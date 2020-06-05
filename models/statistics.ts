@@ -241,4 +241,55 @@ export class Statistics extends Model{
     const totalCost = parseFloat(stat.totalCost.toFixed(2)); //总成本
     return { ...stat, totalPrice, totalCost };
   }
+
+
+  async getOrderAnalytics(startDate: string, endDate: string) {
+    const q = {
+      deliverDate: { $gte: startDate, $lte: endDate },
+      status: {
+        $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
+      },
+    };
+    const dataSet = await this.orderModel.joinFindV2(q);
+    const orders = dataSet.data;
+
+    const priceMap: any = {};
+
+    orders.forEach((order: any) => {
+      priceMap[order.total] = 0; 
+    });
+
+    orders.forEach((order: any) => {
+      priceMap[order.total]++; 
+    });
+
+    return priceMap;
+  }
+
+  async getProductAnalytics(startDate: string, endDate: string) {
+    const q = {
+      deliverDate: { $gte: startDate, $lte: endDate },
+      status: {
+        $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
+      },
+    };
+    const dataSet = await this.orderModel.joinFindV2(q);
+    const orders = dataSet.data;
+
+    const productMap: any = {};
+
+    orders.forEach((order: any) => {
+      order.items.forEach((it: any) => {
+        productMap[it.productId.toString()] = {name: it.productName, count: 0, price: it.price, cost: it.cost}; 
+      });
+    });
+
+    orders.forEach((order: any) => {
+      order.items.forEach((it: any) => {
+        productMap[it.productId.toString()].count++; 
+      });
+    });
+
+    return productMap;
+  }
 }
