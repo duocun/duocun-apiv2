@@ -8,16 +8,19 @@ import { getDefaultProduct } from "../helpers/product-helper";
 import { ObjectId } from "mongodb";
 import moment from "moment";
 import { Order, OrderStatus } from "../models/order";
+import { Merchant } from "../models/merchant";
 
 const logger = getLogger(path.basename(__filename));
 
 export class ProductController extends Controller {
   model: Product;
   orderModel: Order;
+  merchantModel: Merchant;
   constructor(model: Product, db: DB) {
     super(model, db);
     this.model = model;
     this.orderModel = new Order(db);
+    this.merchantModel = new Merchant(db);
   }
 
   // joined list
@@ -134,24 +137,29 @@ export class ProductController extends Controller {
   async gv1_get(req: Request, res: Response) {
     const id = req.params.id;
     let data: any = {};
-    let code = Code.FAIL;
     try {
       if (id) {
         const r = await this.model.getById(id);
-        code = Code.SUCCESS;
+        const merchants = await this.merchantModel.find({
+          
+        });
         data = r;
+        return res.json({
+          code: Code.SUCCESS,
+          data: data,
+          meta: {
+            merchants
+          }
+        }
+      );
       }
     } catch (error) {
       logger.error(`gv1_get error: ${error}`);
-    } finally {
-      res.setHeader("Content-Type", "application/json");
-      res.send(
-        JSON.stringify({
-          code: code,
-          data: data,
-        })
-      );
-    }
+      return res.json({
+        code: Code.FAIL,
+        data: [],
+      })
+    } 
   }
 
   async av1_list(req: Request, res: Response) {
@@ -224,6 +232,7 @@ export class ProductController extends Controller {
     doc.descriptionEN = req.body.descriptionEN || "";
     doc.price = parseFloat(req.body.price);
     doc.cost = parseFloat(req.body.cost);
+    doc.rank = parseInt(req.body.rank);
     doc.type = "G";
     if (req.body.dow) {
       doc.dow = req.body.dow;
