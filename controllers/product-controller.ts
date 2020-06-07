@@ -7,7 +7,7 @@ import { getLogger } from "../lib/logger";
 import { getDefaultProduct } from "../helpers/product-helper";
 import { ObjectId } from "mongodb";
 import moment from "moment";
-import { Order, OrderStatus } from "../models/order";
+import { Order, OrderStatus, IOrder } from "../models/order";
 import { Merchant } from "../models/merchant";
 
 const logger = getLogger(path.basename(__filename));
@@ -72,6 +72,9 @@ export class ProductController extends Controller {
         });
       }
     }
+
+    doc.stock.quantity -= this.countProductQuantityFromOrders(await this.getOrdersContainingProduct(id, moment().format("YYYY-MM-DD")), id);
+
     const collection = await this.model.getCollection();
     if (!id || id === "new") {
       const result = await collection.insertOne(doc);
@@ -144,6 +147,9 @@ export class ProductController extends Controller {
           
         });
         data = r;
+        data.stock.quantityReal = data.stock.quantityReal;
+        data.stock.quantity = data.stock.quantity || 0;
+        data.stock.quantity += this.countProductQuantityFromOrders(await this.getOrdersContainingProduct(data._id, moment().format("YYYY-MM-DD")), data._id);
         return res.json({
           code: Code.SUCCESS,
           data: data,
@@ -233,6 +239,7 @@ export class ProductController extends Controller {
     doc.price = parseFloat(req.body.price);
     doc.cost = parseFloat(req.body.cost);
     doc.rank = parseInt(req.body.rank);
+    doc.taxRate = parseFloat(req.body.taxRate);
     doc.type = "G";
     if (req.body.dow) {
       doc.dow = req.body.dow;
@@ -282,5 +289,43 @@ export class ProductController extends Controller {
       code: Code.SUCCESS,
       data: rs
     });
+  }
+
+  async getOrdersContainingProduct(productId: any, start: string = "") {
+    productId = new ObjectId(productId);
+    let todayString = moment().format("YYYY-MM-DD") ;
+    let startDate = start || todayString;
+    const collection  = await this.orderModel.getCollection();
+    const orders = await collection.find({
+      deliverDate: { $gte: startDate },
+      status: { 
+        $nin: [
+          OrderStatus.BAD,
+          OrderStatus.DELETED,
+          OrderStatus.TEMP
+        ] 
+      },
+      items: {
+        $elemMatch: {
+          productId
+        }
+      }
+    }).toArray();
+    return orders;
+  }
+
+  countProductQuantityFromOrders(orders: Array<IOrder>, productId: any, start: string = "") {
+    let count = 0;
+    let startDate = start || moment().format("YYYY-MM-DD");
+    orders.filter(order => (order.deliverDate || "") > startDate).forEach(order => {
+      if (order.items && order.items.length) {
+        order.items.forEach((item:any)  => {
+          if (item.productId.toString() === productId.toString()) {
+            count += item.quantity;
+          }
+        })
+      }
+    });
+    return count;
   }
 }
