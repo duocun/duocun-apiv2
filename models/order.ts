@@ -831,6 +831,70 @@ export class Order extends Model {
 
 
 
+  hasDuplicatedOrder(orders: any[]){
+    const countMap: any = {};
+    orders.forEach(order => {
+      let id = '';
+      order.items.forEach((it: any) => {
+        id += it.productId.toString();
+      });
+      countMap[id] = {count: 0};
+    });
+
+    orders.forEach(order => {
+      let id = '';
+      order.items.forEach((it: any) => {
+        id += it.productId.toString();
+      });
+      countMap[id].count++;
+    });
+
+    let dup = false;
+    Object.keys(countMap).forEach(key => {
+      if(countMap[key].count > 1){
+        dup = true;
+      }
+    });
+    return dup;
+  }
+
+
+  async getClientWithDuplicatedOrders(delivered: string){
+    const dt = new DateTime();
+    const deliverDate = dt.getMomentFromUtc(delivered).format('YYYY-MM-DD');
+    const query = {
+      deliverDate,
+      status: {
+        $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
+      },
+    };
+
+    const clientMap: any = {};
+    const orders = await this.find(query);
+    orders.forEach(order => {
+      const clientId = order.clientId.toString();
+      const clientName = order.clientName;
+      const clientPhone = order.clientPhone;
+      clientMap[clientId] = {clientId, clientName, clientPhone, orders: [], dup: false};
+    });
+
+    orders.forEach(order => {
+      const clientId = order.clientId.toString();
+      clientMap[clientId].orders.push(order);
+    });
+
+    const rs: any[] = [];
+    Object.keys(clientMap).forEach(clientId => {
+      clientMap[clientId].dup = this.hasDuplicatedOrder(clientMap[clientId].orders);
+      if(clientMap[clientId].dup){
+        const v = clientMap[clientId];
+        rs.push({clientName: v.clientName, clientPhone: v.clientPhone});
+      }
+    });
+    return rs;
+  }
+
+
   // obsoleted
   createV1(req: Request, res: Response) {
     if (req.body instanceof Array) {
