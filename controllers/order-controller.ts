@@ -197,6 +197,13 @@ export class OrderController extends Controller {
     }
   }
 
+  async getClientWithDuplicatedOrders(req: Request, res: Response){
+    const utcDelivered = `${req.query.delivered}`;
+    let rs: any[] = await this.model.getClientWithDuplicatedOrders(utcDelivered);
+    res.setHeader('Content-Type', 'application/json');
+    res.send(rs);
+  }
+
   async getBadOrder(req: Request, res: Response){
     let rs: any[] = await this.model.getBadOrder();
     res.setHeader('Content-Type', 'application/json');
