@@ -2,15 +2,18 @@ import { DB } from "../db";
 import { Model } from "./model";
 import { Order, IOrder, OrderStatus, OrderType } from "../models/order";
 import { Pickup, PickupStatus } from "./pickup";
+import { TransactionAction, Transaction } from "./transaction";
 
 export class Statistics extends Model{
   orderModel: Order;
   pickupModel: Pickup;
+  transactionModel: Transaction;
 
   constructor(db: DB) {
     super(db, 'statistics');
     this.orderModel = new Order(db);
     this.pickupModel = new Pickup(db);
+    this.transactionModel = new Transaction(db);
   }
   async getById(id: string){
     return;
@@ -291,5 +294,47 @@ export class Statistics extends Model{
     });
 
     return productMap;
+  }
+
+  async getDeliverCostAnalytics(startDate: string, endDate: string) {
+    const q = {
+      deliverDate: { $gte: startDate, $lte: endDate },
+      status: {
+        $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
+      },
+    };
+    
+    const dataSet = await this.orderModel.joinFindV2(q);
+    const orders = dataSet.data;
+
+    const driverMap: any = {};
+
+    orders.forEach((order: any) => {
+      driverMap[order.driverId.toString()] = {driverName: order.driverName, nOrders:0, salary:0}; 
+    });
+
+    orders.forEach((order: any) => {
+      driverMap[order.driverId.toString()].nOrders++; 
+    });
+
+    const qTr = {
+      created: { 
+        $gte: startDate+'T04:00:00.000Z',
+        $lte: endDate+'T04:00:00.000Z' },
+      actionCode: TransactionAction.PAY_SALARY.code
+    }
+    const trs = await this.transactionModel.find(qTr);
+    Object.keys(driverMap).forEach(driverId => {
+      const ts = trs.filter(t => t.staffId.toString() === driverId);
+      let cost = 0;
+      ts.forEach(t => {
+        cost += t.amount;
+      });
+      driverMap[driverId].salary = Math.round(cost * 100)/100;
+      const nOrders = driverMap[driverId].nOrders;
+      driverMap[driverId].costPerOrder = Math.round(cost / nOrders * 100)/100;
+    });
+
+    return driverMap;
   }
 }

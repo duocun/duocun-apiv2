@@ -178,4 +178,27 @@ export class StatisticsController extends Controller {
       );
     }
   }
+
+  async getDeliverCostAnalytics(req: Request, res: Response) {
+    const startDate: any = req.query.startDate;
+    const endDate: any = req.query.endDate;
+    let data: any[] = [];
+    let code = Code.FAIL;
+    try {
+      if (startDate) {
+        code = Code.SUCCESS;
+        data = await this.model.getDeliverCostAnalytics(startDate, endDate);
+      }
+    } catch (error) {
+      logger.error(`get order statistic error: ${error}`);
+    } finally {
+      res.setHeader("Content-Type", "application/json");
+      res.send(
+        JSON.stringify({
+          code: code,
+          data: data,
+        })
+      );
+    }
+  }
 }
