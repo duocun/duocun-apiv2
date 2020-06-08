@@ -161,4 +161,23 @@ export class TransactionController extends Controller {
       })
     }
   }
+
+  fixTransactionAmount(req: Request, res: Response) {
+    const q1 = { amount: {$type: 'string'}};
+    this.model.find(q1).then((t1s: any) => {
+      const datas: any[] = [];
+      t1s.forEach((t1: any) => {
+        const amount = Math.round(+t1.amount * 100)/100;
+        datas.push({
+          query: { _id: t1._id },
+          data: { amount }
+        });
+      });
+
+      this.model.bulkUpdate(datas).then(() => {
+        res.setHeader('Content-Type', 'application/json');
+        res.send(datas);
+      });
+    });
+  }
 }

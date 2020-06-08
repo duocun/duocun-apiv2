@@ -727,24 +727,6 @@ export class Transaction extends Model {
     // });
   }
 
-  fixCancelTransactions(req: Request, res: Response) {
-    // const q1 = { action: {$in: ['client cancel order from duocun', 'duocun cancel order from merchant']}, delivered:null};
-    // this.find(q1).then(t1s => {
-    //   const datas: any[] = [];
-    //   t1s.map((t1: ITransaction) => {
-    //     const m = moment(t1.created).set({ hour: 11, minute: 20, second: 0, millisecond: 0 });
-    //     datas.push({
-    //       query: { _id: t1._id },
-    //       data: { delivered: m.toISOString() }
-    //     });
-    //   });
-    //   this.bulkUpdate(datas).then(() => {
-    //     res.setHeader('Content-Type', 'application/json');
-    //     res.send(JSON.stringify('success', null, 3));
-    //   });
-    // });
-  }
-
   // v2 api
   async updateBalanceList(accountIds: string[]) {
     const self = this;
