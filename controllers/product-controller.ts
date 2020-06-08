@@ -72,9 +72,6 @@ export class ProductController extends Controller {
         });
       }
     }
-
-    doc.stock.quantity -= this.countProductQuantityFromOrders(await this.getOrdersContainingProduct(id, moment().format("YYYY-MM-DD")), id);
-
     const collection = await this.model.getCollection();
     if (!id || id === "new") {
       const result = await collection.insertOne(doc);
@@ -93,7 +90,9 @@ export class ProductController extends Controller {
         });
       }
     } else {
+      doc.stock.quantity -= this.countProductQuantityFromOrders(await this.getOrdersContainingProduct(id, moment().format("YYYY-MM-DD")), id);
       const oid = new ObjectId(id);
+
       const result = await collection.updateOne({_id: oid}, {$set: doc}, {upsert: true});
       if (result.result.ok) {
         collection.findOne({_id: oid}).then(data => {
@@ -141,24 +140,23 @@ export class ProductController extends Controller {
     const id = req.params.id;
     let data: any = {};
     try {
-      if (id) {
-        const r = await this.model.getById(id);
-        const merchants = await this.merchantModel.find({
-          
-        });
-        data = r;
+      const data = (id == "new") ? {} : await this.model.getById(id);
+      const merchants = await this.merchantModel.find({
+        
+      });
+      if (id !== "new") {
+        
         data.stock.quantityReal = data.stock.quantityReal;
         data.stock.quantity = data.stock.quantity || 0;
         data.stock.quantity += this.countProductQuantityFromOrders(await this.getOrdersContainingProduct(data._id, moment().format("YYYY-MM-DD")), data._id);
-        return res.json({
-          code: Code.SUCCESS,
-          data: data,
-          meta: {
-            merchants
-          }
-        }
-      );
       }
+      return res.json({
+        code: Code.SUCCESS,
+        data: data,
+        meta: {
+          merchants
+        }
+      });
     } catch (error) {
       logger.error(`gv1_get error: ${error}`);
       return res.json({
