@@ -17,7 +17,7 @@ export function StatisticsRouter(db: DB) {
    
     router.get('/order-analytics', (req, res) => { controller.getOrderAnalytics(req, res); });
     router.get('/product-analytics', (req, res) => { controller.getProductAnalytics(req, res); });
-    router.get('/deliver-cost-analytics', (req, res) => { controller.getDeliverCostAnalytics(req, res); });
+    router.get('/deliver-cost-analytics', [parseQuery], (req: Request, res: Response) => { controller.getDeliverCostAnalytics(req, res); });
     
     return router;
   };

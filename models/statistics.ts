@@ -304,17 +304,20 @@ export class Statistics extends Model{
       },
     };
     
-    const dataSet = await this.orderModel.joinFindV2(q);
-    const orders = dataSet.data;
+    const orders = await this.orderModel.find(q);
 
     const driverMap: any = {};
 
     orders.forEach((order: any) => {
-      driverMap[order.driverId.toString()] = {driverName: order.driverName, nOrders:0, salary:0}; 
+      if(order.driverId){
+        driverMap[order.driverId.toString()] = {driverName: order.driverName, nOrders:0, salary:0};
+      }
     });
 
     orders.forEach((order: any) => {
-      driverMap[order.driverId.toString()].nOrders++; 
+      if(order.driverId){
+        driverMap[order.driverId.toString()].nOrders++;
+      }
     });
 
     const qTr = {

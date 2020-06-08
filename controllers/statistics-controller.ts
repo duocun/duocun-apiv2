@@ -180,8 +180,9 @@ export class StatisticsController extends Controller {
   }
 
   async getDeliverCostAnalytics(req: Request, res: Response) {
-    const startDate: any = req.query.startDate;
-    const endDate: any = req.query.endDate;
+    const where: any = req.query.where;
+    const startDate: any = where.startDate;
+    const endDate: any = where.endDate;
     let data: any[] = [];
     let code = Code.FAIL;
     try {

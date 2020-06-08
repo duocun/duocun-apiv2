@@ -178,6 +178,7 @@ export class Transaction extends Model {
     const amount: number = Math.round((+tr.amount) * 100) / 100;
 
     try {
+      tr.amount = amount;
       const fromAccount: IAccount = await this.accountModel.findOne({ _id: fromId });
       const toAccount: IAccount = await this.accountModel.findOne({ _id: toId });
 
