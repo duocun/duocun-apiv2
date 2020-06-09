@@ -471,38 +471,64 @@ export class Order extends Model {
   }
 
 
+  // allow maximum 11 drivers
+  // return --- {markers: [{orderId, lat, lng, type, status, icon}], driverMap:{driverId:{driverId, driverName}} }
   async getMapMarkers(where: any, options?: object) {
-    const ret: any = await this.find_v2(where, options);
+    const q = {
+      ...where, 
+      status: {
+        $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
+    }};
+    const ret: any = await this.find_v2(q, options);
     const driverMap: any = {};
-    const driverAccounts = await this.accountModel.find({ type: "driver" });
+    const icons = [
+      'gBlack',
+      'gBlue',
+      'gBrown',
+      'gGray',
+      'gOrange',
+      'gPurple',
+      'gYellow',
+      'gPink',
+      'gRed',
+      'gLightBlue',
+      'gDarkYellow'
+    ]
+
     ret.data.forEach((order: any) => {
       // const address = this.locationModel.getAddrString(order.location);
-      const _id = order._id.toString();
-      const lat = order.location.lat;
-      const lng = order.location.lng;
 
-      if (order.driverId) {
-        const d = driverAccounts.find((a: IAccount) => a._id.toString() === order.driverId.toString());
-        if (d && d._id) {
-          order.driver = {
-            _id: d._id.toString(),
-            username: d.username,
-            phone: d.phone,
-          };
-        } else {
-          console.log("driver id not found: " + order.driverId);
-        }
-      }
-      const driver = order.driver;
-      const status = order.status;
-      const driverId = driver ? driver._id : 'unassigned';
-      driverMap[driverId] = {driver, markers: [] };
+      const driverId = order.driverId ? order.driverId.toString() : 'unassigned';
+      const driverName = order.driverName ? order.driverName : '';
+      driverMap[driverId] = {driverId, driverName, icon: 'gWhite' };
     });
 
-    ret.data.forEach((order: any) => {
-      
+    let i = 0;
+    Object.keys(driverMap).forEach(driverId => {
+      if(driverId === 'unassigned'){
+        driverMap[driverId].icon = 'gWhite';
+      }else{
+        if(i<icons.length){
+          driverMap[driverId].icon = icons[i];
+        }
+        i++;
+      }
     })
-    return {data: [], count: 0};
+
+    const markers: any[] = [];
+    ret.data.forEach((order: any) => {
+      const driverId = order.driverId ? order.driverId.toString() : 'unassigned';
+      const orderId = order._id.toString();
+      const lat = order.location.lat;
+      const lng = order.location.lng;
+      const status = order.status;
+      const type = order.type;
+      const icon = status === OrderStatus.DONE ? 'gGreen' : driverMap[driverId].icon;
+      markers.push({orderId, lat, lng, type, status, icon});
+    });
+
+
+    return {markers, driverMap};
   }
 
   // should only use with paging
