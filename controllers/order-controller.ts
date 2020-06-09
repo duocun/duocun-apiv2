@@ -214,26 +214,23 @@ export class OrderController extends Controller {
     const where: any = req.query.where;
     const options: any = req.query.options;
     res.setHeader("Content-Type", "application/json");
-    let data: any[] = [];
+    let data: any;
     let count: number = 0;
     let code = Code.FAIL;
     try {
       if (where) {
         // TODO: no where will return error, is it a good choice?
-        const r = await this.model.getMapMarkers(where, options);
+        const r = await this.model.getMapMarkers(where);
         code = Code.SUCCESS;
-        data = r.data;
-        count = r.count;
+        data = r;
       }
     } catch (error) {
       // logger.error(`list error: ${error}`);
     } finally {
-      res.send(
-        JSON.stringify({
+      res.send({
           code,
-          data,
-          count,
-        })
+          data
+        }
       );
     }
   }
