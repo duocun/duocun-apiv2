@@ -76,7 +76,7 @@ export interface IOrderItem {
   price: number;
   cost: number;
   quantity: number;
-
+  taxRate: number;
   product?: IProduct;
 }
 
@@ -216,6 +216,86 @@ export class Order extends Model {
           order.items = items;
         }
         return order;
+      }
+    }
+    return null;
+  }
+
+  getChargeFromOrderItems(
+    items: IOrderItem[],
+    overRangeCharge: number
+  ) {
+    let price = 0;
+    let cost = 0;
+    let tax = 0;
+  
+    items.map((x: IOrderItem) => {
+      price += x.price * x.quantity;
+      cost += x.cost * x.quantity;
+      tax += Math.ceil(x.price * x.quantity * x.taxRate) / 100;
+    });
+  
+    const tips = 0;
+    const groupDiscount = 0;
+    const overRangeTotal = Math.round(overRangeCharge * 100) / 100;
+  
+    return {
+      price,
+      cost,
+      tips,
+      tax,
+      overRangeCharge: overRangeTotal,
+      deliveryCost: 0, // merchant.deliveryCost,
+      deliveryDiscount: 0, // merchant.deliveryCost,
+      groupDiscount, // groupDiscount,
+      total: price + tax + tips - groupDiscount + overRangeTotal
+    };
+  }
+
+
+  async cancelItems(orderId: string, itemsToRemove: IOrderItem[]) {
+    if (orderId && ObjectId.isValid(orderId) && itemsToRemove && itemsToRemove.length > 0) {
+      const order = await this.findOne({ _id: orderId });
+      if (order && order.items) {
+        const remains = order.items.filter((it: IOrderItem) => {
+          const product = itemsToRemove.find(
+            (itR: any) => itR.productId.toString() !== it.productId.toString()
+          );
+          return product ? true : false;
+        });
+        
+
+        if(remains && remains.length>0){
+          // update old order
+          const charge = this.getChargeFromOrderItems(remains, 0);
+          order.price = charge.price;
+          order.cost = charge.cost;
+          order.total = charge.total;
+          order.tax = charge.tax;
+          order.items = remains;
+
+          let updates = {...order};
+          delete updates._id;
+          await this.updateOne({_id: orderId}, updates);
+
+          // create cancelled order and set it as deleted
+          let rmData = {...updates};
+          rmData.items = itemsToRemove;
+          const rmCharge = this.getChargeFromOrderItems(itemsToRemove, 0);
+          rmData.price = rmCharge.price;
+          rmData.cost = rmCharge.cost;
+          rmData.total = rmCharge.total;
+          rmData.tax = rmCharge.tax;
+          
+          const sequence = await this.sequenceModel.reqSequence();
+          rmData.code = this.sequenceModel.getCode(rmData.location, sequence);
+          rmData.status = OrderStatus.DELETED;
+          const savedOrder = await this.insertOne(rmData);
+          const rmOrderId = savedOrder._id.toString();
+
+          await this.transactionModel.updateForCancelItems(orderId, rmOrderId, itemsToRemove, rmCharge.total, rmCharge.cost);
+          return savedOrder;
+        }
       }
     }
     return null;
@@ -432,19 +512,39 @@ export class Order extends Model {
     const trs = ret.data;
     const orderIds: string[] = [];
     trs.forEach((tr: any) => {
+
       if(tr.orderId){
         orderIds.push(tr.orderId.toString());
       }
+
+      if(tr.cancelledOrderIds && tr.cancelledOrderIds.length > 0){
+        tr.cancelledOrderIds.forEach((cId: string) => {
+          orderIds.push(cId);
+        });
+      }
+
     });
+
     const r = await this.joinFindV2({_id: {$in: orderIds} });
     const orders: any[] = r.data;
     trs.forEach((tr: any) => {
+      let items: any[] = [];
       if(tr.orderId){
         const order = orders.find((order: any) => order._id.toString() === tr.orderId.toString());
         if(order){
-          tr.items = order.items;
+          items = order.items;
         }
       }
+
+      if(tr.cancelledOrderIds && tr.cancelledOrderIds.length > 0){
+        tr.cancelledOrderIds.forEach((cId: string) => {
+          const order = orders.find((order: any) => order._id.toString() === cId);
+          if(order){
+            items = items.concat(order.items);
+          }
+        });
+      }
+      tr.items = items;
     });
     ret.data = trs;
     return ret;
@@ -798,6 +898,7 @@ export class Order extends Model {
                 quantity: it.quantity,
                 price: it.price,
                 cost: it.cost,
+                taxRate: it.taxRate,
                 product: product,
               });
             }
