@@ -144,7 +144,7 @@ export class ProductController extends Controller {
       const merchants = await this.merchantModel.find({
         
       });
-      if (id !== "new") {
+      if (id !== "new" && data.stock) {
         
         data.stock.quantityReal = data.stock.quantityReal;
         data.stock.quantity = data.stock.quantity || 0;
