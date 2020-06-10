@@ -531,8 +531,9 @@ export class Order extends Model {
       const lng = order.location.lng;
       const status = order.status;
       const type = order.type;
+      const clientName = order.clientName;
       // const icon = status === OrderStatus.DONE ? 'gGreen' : driverMap[driverId].icon;
-      markers.push({orderId, lat, lng, type, status, driverId});
+      markers.push({orderId, lat, lng, type, status, driverId, clientName});
     });
 
     return {markers, driverMap};
