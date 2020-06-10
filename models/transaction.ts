@@ -243,6 +243,55 @@ export class Transaction extends Model {
   }
 
 
+  // total --- total money to cancel for the client
+  // cost --- cost to cancel for merchant
+  // return --- true: updated, false: didn't update
+  async updateForCancelItems(orderId: string, rmOrderId:string, items: IOrderItem[], total: number, cost: number){
+    const ofm = await this.findOne({orderId, actionCode: TransactionAction.ORDER_FROM_MERCHANT.code});
+    const ofd = await this.findOne({orderId, actionCode: TransactionAction.ORDER_FROM_DUOCUN.code});
+
+    if(ofm && ofd){
+      const cancelledOrderIds = (ofm.cancelledOrderIds && ofm.cancelledOrderIds.length > 0) ?
+        [...ofm.cancelledOrderIds, rmOrderId] : [rmOrderId];
+      await this.updateOne({_id: ofm._id}, {cancelledOrderIds});
+      await this.updateOne({_id: ofd._id}, {cancelledOrderIds});
+
+      const clientName = ofd.toName;
+      const clientId = ofd.toId.toString();
+      const merchantName = ofm.fromName;
+      const merchantAccountId = ofm.fromId.toString();
+      const delivered = ofm.delivered;
+
+      const cfm: ITransaction = {
+        fromId: CASH_BANK_ID,
+        fromName: clientName,
+        toId: merchantAccountId,
+        toName: merchantName,
+        actionCode: TransactionAction.CANCEL_ORDER_FROM_MERCHANT.code, // 'duocun cancel order from merchant',
+        amount: Math.round(cost * 100) / 100,
+        orderId: rmOrderId,
+        items: items,
+        delivered: delivered
+      };
+  
+      const cfd: ITransaction = {
+        fromId: clientId,
+        fromName: clientName,
+        toId: CASH_BANK_ID,
+        toName: merchantName,
+        amount: Math.round(total * 100) / 100,
+        actionCode: TransactionAction.CANCEL_ORDER_FROM_DUOCUN.code, // 'client cancel order from duocun',
+        orderId: rmOrderId,
+        delivered: delivered
+      };
+  
+      await this.doInsertOne(cfm);
+      await this.doInsertOne(cfd);
+      return true;
+    }
+    return false;
+  }
+
   // add cancel transactions for merchant and client
   async saveTransactionsForRemoveOrder(orderId: string, merchantAccountId: string, merchantName: string, clientId: string, clientName: string,
     cost: number, total: number, delivered: string, items: IOrderItem[]) {

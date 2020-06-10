@@ -16,6 +16,60 @@ export class OrderController extends Controller {
     this.model = model;
   }
 
+  async cancelItems(req: Request, res: Response): Promise<void> {
+    const _id = req.params.id;
+    const items = req.body.items.map((it: any) => {
+      let c = {...it};
+      delete c.status;
+      return c;
+    });
+    let code = Code.FAIL;
+    let data = _id;
+    try {
+      if (req.body) {
+        const r = await this.model.cancelItems(_id, items);
+        if (r) {
+          code = Code.SUCCESS;
+          data = r;
+        } else {
+          code = Code.FAIL;
+          data = '';
+        }
+      }
+    } catch (error) {
+      logger.error(`cancelItems error: ${error}`);
+    } finally {
+      res.setHeader("Content-Type", "application/json");
+      res.send({
+        code,
+        data,
+      });
+    }
+  }
+
+  async assign(req: Request, res: Response): Promise<void> {
+    const driverId = req.body.driverId;
+    const driverName = req.body.driverName;
+    const orderIds = req.body.orderIds;
+    let code = Code.FAIL;
+    let data = '';
+    try {
+      if (driverId && driverName && orderIds && orderIds.length>0) {
+        await this.model.assign(driverId, driverName, orderIds);
+        code = Code.SUCCESS;
+        data = 'done';
+      }
+    } catch (error) {
+      logger.error(`assgin order error: ${error}`);
+    } finally {
+      res.setHeader("Content-Type", "application/json");
+      res.send({
+        code,
+        data,
+      });
+    }
+  }
+
   // deprecated
   loadPage(req: Request, res: Response) {
     const itemsPerPage = +req.params.itemsPerPage;
@@ -214,27 +268,25 @@ export class OrderController extends Controller {
     const where: any = req.query.where;
     const options: any = req.query.options;
     res.setHeader("Content-Type", "application/json");
-    let data: any[] = [];
+    let data: any;
     let count: number = 0;
     let code = Code.FAIL;
     try {
       if (where) {
         // TODO: no where will return error, is it a good choice?
-        const r = await this.model.getMapMarkers(where, options);
+        const r = await this.model.getMapMarkers(where);
         code = Code.SUCCESS;
-        data = r.data;
-        count = r.count;
+        data = r;
       }
     } catch (error) {
       // logger.error(`list error: ${error}`);
     } finally {
-      res.send(
-        JSON.stringify({
+      res.send({
           code,
-          data,
-          count,
-        })
+          data
+        }
       );
     }
   }
+
 }
