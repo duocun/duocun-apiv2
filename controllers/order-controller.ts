@@ -16,6 +16,37 @@ export class OrderController extends Controller {
     this.model = model;
   }
 
+  async splitOrder(req: Request, res: Response): Promise<void> {
+    const _id = req.params.id; // orderId
+    const items = req.body.items.map((it: any) => { // productId, price, cost, quantity to be split
+      let c = {...it};
+      delete c.status;
+      return c;
+    });
+    let code = Code.FAIL;
+    let data = _id;
+    try {
+      if (req.body) {
+        const r = await this.model.splitOrder(_id, items);
+        if (r) {
+          code = Code.SUCCESS;
+          data = r;
+        } else {
+          code = Code.FAIL;
+          data = '';
+        }
+      }
+    } catch (error) {
+      logger.error(`split order error: ${error}`);
+    } finally {
+      res.setHeader("Content-Type", "application/json");
+      res.send({
+        code,
+        data,
+      });
+    }
+  }
+
   async cancelItems(req: Request, res: Response): Promise<void> {
     const _id = req.params.id;
     const items = req.body.items.map((it: any) => {

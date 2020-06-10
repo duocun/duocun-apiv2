@@ -252,7 +252,56 @@ export class Order extends Model {
     };
   }
 
+  async splitOrder(orderId: string, itemsToSplit: IOrderItem[]) {
+    if (orderId && ObjectId.isValid(orderId) && itemsToSplit && itemsToSplit.length > 0) {
+      const order = await this.findOne({ _id: orderId });
 
+      // update original order and only keep items except items to be split
+      if (order && order.items) {
+        const remains = order.items.filter((it: IOrderItem) => {
+          const product = itemsToSplit.find(
+            (itR: any) => itR.productId.toString() !== it.productId.toString()
+          );
+          return product ? true : false;
+        });
+        
+        if(remains && remains.length>0){
+          // update the price of the original order
+          const charge = this.getChargeFromOrderItems(remains, 0);
+          order.price = charge.price;
+          order.cost = charge.cost;
+          order.total = charge.total;
+          order.tax = charge.tax;
+          order.items = remains;
+
+          let updates = {...order};
+          delete updates._id;
+          await this.updateOne({_id: orderId}, updates);
+
+          // create a new order and set it as paid
+          let splitData = {...updates};
+          splitData.items = itemsToSplit;
+          const splitCharge = this.getChargeFromOrderItems(itemsToSplit, 0);
+          splitData.price = splitCharge.price;
+          splitData.cost = splitCharge.cost;
+          splitData.total = splitCharge.total;
+          splitData.tax = splitCharge.tax;
+
+          const sequence = await this.sequenceModel.reqSequence();
+          splitData.code = this.sequenceModel.getCode(splitData.location, sequence);
+          splitData.status = OrderStatus.NEW;
+          const savedOrder = await this.insertOne(splitData);
+
+          await this.transactionModel.saveTransactionsForSplitOrder(order, savedOrder);
+          return savedOrder;
+        }
+      }
+    }
+    return null;
+  }
+
+
+  // deprecated
   async cancelItems(orderId: string, itemsToRemove: IOrderItem[]) {
     if (orderId && ObjectId.isValid(orderId) && itemsToRemove && itemsToRemove.length > 0) {
       const order = await this.findOne({ _id: orderId });
@@ -286,7 +335,7 @@ export class Order extends Model {
           rmData.cost = rmCharge.cost;
           rmData.total = rmCharge.total;
           rmData.tax = rmCharge.tax;
-          
+
           const sequence = await this.sequenceModel.reqSequence();
           rmData.code = this.sequenceModel.getCode(rmData.location, sequence);
           rmData.status = OrderStatus.DELETED;
