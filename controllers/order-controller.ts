@@ -47,6 +47,29 @@ export class OrderController extends Controller {
     }
   }
 
+  async assign(req: Request, res: Response): Promise<void> {
+    const driverId = req.body.driverId;
+    const driverName = req.body.driverName;
+    const orderIds = req.body.orderIds;
+    let code = Code.FAIL;
+    let data = '';
+    try {
+      if (driverId && driverName && orderIds && orderIds.length>0) {
+        await this.model.assign(driverId, driverName, orderIds);
+        code = Code.SUCCESS;
+        data = 'done';
+      }
+    } catch (error) {
+      logger.error(`assgin order error: ${error}`);
+    } finally {
+      res.setHeader("Content-Type", "application/json");
+      res.send({
+        code,
+        data,
+      });
+    }
+  }
+
   // deprecated
   loadPage(req: Request, res: Response) {
     const itemsPerPage = +req.params.itemsPerPage;

@@ -18,6 +18,7 @@ export function OrderRouter(db: DB) {
   router.get('/duplicates', (req, res) => { controller.getClientWithDuplicatedOrders(req, res)});
 
   router.put('/cancelItems/:id', (req, res) => { controller.cancelItems(req, res); });
+  router.put('/assign', (req, res) => { controller.assign(req, res); });
 
   router.post('/', (req, res) => { controller.create(req, res); });
   router.put('/:id', (req, res) => { controller.updateOne(req, res); });

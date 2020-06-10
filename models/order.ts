@@ -301,6 +301,14 @@ export class Order extends Model {
     return null;
   }
 
+  async assign(driverId: string, driverName: string, orderIds: string[]) {
+    const updates: any[] = orderIds.map(_id => ({
+      query: { _id },
+      data: {driverId, driverName},
+    }));
+    await this.bulkUpdate(updates);
+    return;
+  }
 
 
   createV2(req: Request, res: Response) {
@@ -481,39 +489,39 @@ export class Order extends Model {
     }};
     const ret: any = await this.find_v2(q, options);
     const driverMap: any = {};
-    const icons = [
-      'gBlack',
-      'gBlue',
-      'gBrown',
-      'gGray',
-      'gOrange',
-      'gPurple',
-      'gYellow',
-      'gPink',
-      'gRed',
-      'gLightBlue',
-      'gDarkYellow'
-    ]
+    // const icons = [
+    //   'gBlack',
+    //   'gBlue',
+    //   'gBrown',
+    //   'gGray',
+    //   'gOrange',
+    //   'gPurple',
+    //   'gYellow',
+    //   'gPink',
+    //   'gRed',
+    //   'gLightBlue',
+    //   'gDarkYellow'
+    // ]
 
     ret.data.forEach((order: any) => {
       // const address = this.locationModel.getAddrString(order.location);
 
       const driverId = order.driverId ? order.driverId.toString() : 'unassigned';
       const driverName = order.driverName ? order.driverName : '';
-      driverMap[driverId] = {driverId, driverName, icon: 'gWhite' };
+      driverMap[driverId] = {driverId, driverName }; // icon: 'gWhite'
     });
 
-    let i = 0;
-    Object.keys(driverMap).forEach(driverId => {
-      if(driverId === 'unassigned'){
-        driverMap[driverId].icon = 'gWhite';
-      }else{
-        if(i<icons.length){
-          driverMap[driverId].icon = icons[i];
-        }
-        i++;
-      }
-    })
+    // let i = 0;
+    // Object.keys(driverMap).forEach(driverId => {
+    //   if(driverId === 'unassigned'){
+    //     driverMap[driverId].icon = 'gWhite';
+    //   }else{
+    //     if(i<icons.length){
+    //       driverMap[driverId].icon = icons[i];
+    //     }
+    //     i++;
+    //   }
+    // });
 
     const markers: any[] = [];
     ret.data.forEach((order: any) => {
@@ -523,10 +531,9 @@ export class Order extends Model {
       const lng = order.location.lng;
       const status = order.status;
       const type = order.type;
-      const icon = status === OrderStatus.DONE ? 'gGreen' : driverMap[driverId].icon;
-      markers.push({orderId, lat, lng, type, status, icon});
+      // const icon = status === OrderStatus.DONE ? 'gGreen' : driverMap[driverId].icon;
+      markers.push({orderId, lat, lng, type, status, driverId});
     });
-
 
     return {markers, driverMap};
   }
