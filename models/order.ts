@@ -240,15 +240,15 @@ export class Order extends Model {
     const overRangeTotal = Math.round(overRangeCharge * 100) / 100;
   
     return {
-      price,
-      cost,
-      tips,
-      tax,
+      price: Math.round(price * 100) / 100,
+      cost: Math.round(cost * 100) / 100,
+      tips: Math.round(tips * 100) / 100,
+      tax: Math.round(tax * 100) / 100,
       overRangeCharge: overRangeTotal,
       deliveryCost: 0, // merchant.deliveryCost,
       deliveryDiscount: 0, // merchant.deliveryCost,
       groupDiscount, // groupDiscount,
-      total: price + tax + tips - groupDiscount + overRangeTotal
+      total: Math.round((price + tax + tips - groupDiscount + overRangeTotal)*100)/100
     };
   }
 
