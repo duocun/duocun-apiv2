@@ -7,7 +7,7 @@ import path from "path";
 import { getLogger } from "../lib/logger";
 import { ObjectId } from "mongodb";
 import { Order } from "../models/order";
-import moment from "moment";
+import moment from "moment-timezone";
 
 const logger = getLogger(path.basename(__filename));
 
@@ -23,7 +23,7 @@ export class StockController extends Controller {
 
   async list(req: Request, res: Response) {
     const where: any = req.query.where || {};
-    const startDate = where.startDate || moment().format("YYYY-MM-DD");
+    const startDate = where.startDate || moment().tz("America/Toronto").format("YYYY-MM-DD");
     delete(where.startDate);
     const options: any = req.query.options;
     let ret = await this.model.list(where, options);
@@ -32,7 +32,7 @@ export class StockController extends Controller {
         product.delivery = await this.getOrdersContainingProduct(product._id, startDate);
         product.stock.quantityReal = product.stock.quantity;
         product.stock.quantity = product.stock.quantity || 0;
-        product.stock.quantity += this.countProductQuantityFromOrders(await this.getOrdersContainingProduct(product._id, moment().format("YYYY-MM-DD")), product._id);
+        product.stock.quantity += this.countProductQuantityFromOrders(await this.getOrdersContainingProduct(product._id, moment().tz('America/Toronto').format("YYYY-MM-DD")), product._id);
       }
     }
     res.json({
@@ -174,7 +174,7 @@ export class StockController extends Controller {
 
   async getOrdersContainingProduct(productId: any, start: string = "") {
     productId = new ObjectId(productId);
-    let todayString = moment().format("YYYY-MM-DD") ;
+    let todayString = moment().tz('America/Toronto').format("YYYY-MM-DD") ;
     let startDate = start || todayString;
     const collection  = await this.orderModel.getCollection();
     const orders = await collection.find({
@@ -197,7 +197,7 @@ export class StockController extends Controller {
 
   countProductQuantityFromOrders(orders: Array<IOrder>, productId: any, start: string = "") {
     let count = 0;
-    let startDate = start || moment().format("YYYY-MM-DD");
+    let startDate = start || moment().tz('America/Toronto').format("YYYY-MM-DD");
     orders.filter(order => (order.deliverDate || "") > startDate).forEach(order => {
       if (order.items && order.items.length) {
         order.items.forEach((item:any)  => {
