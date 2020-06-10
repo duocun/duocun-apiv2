@@ -292,6 +292,68 @@ export class Transaction extends Model {
     return false;
   }
 
+
+  // add cancel transactions for merchant and client
+  async saveTransactionsForSplitOrder(originalOrder: any, splitOrder: any) {
+    // update original transactions for original OFD, OFM
+    const originalOrderId = originalOrder._id.toString();
+    const splitOrderId = splitOrder._id.toString();
+
+    const ofm = await this.findOne({orderId: originalOrderId, actionCode: TransactionAction.ORDER_FROM_MERCHANT.code});
+    const ofd = await this.findOne({orderId: originalOrderId, actionCode: TransactionAction.ORDER_FROM_DUOCUN.code});
+
+    if(ofm && ofd){
+      const clientName = ofd.toName;
+      const clientId = ofd.toId.toString();
+      const merchantName = ofm.fromName;
+      const merchantAccountId = ofm.fromId.toString();
+      const delivered = ofm.delivered;
+      const created = ofm.created;
+
+      await this.updateOne({_id: ofm._id}, {amount: originalOrder.cost});
+      await this.updateOne({_id: ofd._id}, {amount: originalOrder.total});
+
+      // add split transactions for original OFD, OFM
+      const t1: ITransaction = {
+        fromId: merchantAccountId,
+        fromName: merchantName,
+        toId: CASH_BANK_ID,
+        toName: clientName,
+        actionCode: TransactionAction.ORDER_FROM_MERCHANT.code, // 'duocun order from merchant',
+        amount: Math.round(splitOrder.cost * 100) / 100,
+        orderId: splitOrderId,
+        orderType: splitOrder.type,
+        delivered,
+        created
+      };
+  
+      const t2: ITransaction = {
+        fromId: CASH_BANK_ID,
+        fromName: merchantName,
+        toId: clientId,
+        toName: clientName,
+        amount: Math.round(splitOrder.total * 100) / 100,
+        actionCode: TransactionAction.ORDER_FROM_DUOCUN.code, // 'client order from duocun',
+        orderId: splitOrderId,
+        orderType: splitOrder.type,
+        delivered,
+        created
+      };
+  
+      await this.doInsertOne(t1);
+      await this.doInsertOne(t2);
+
+      // update balance
+      await this.updateBalanceByAccountIdV2(clientId);
+
+      // fix me !!! due to slow, ignore this two update
+      // await this.updateBalanceByAccountIdV2(merchantAccountId);
+      // await this.updateBalanceByAccountIdV2(CASH_BANK_ID);
+    }
+
+    return;
+  }
+
   // add cancel transactions for merchant and client
   async saveTransactionsForRemoveOrder(orderId: string, merchantAccountId: string, merchantName: string, clientId: string, clientName: string,
     cost: number, total: number, delivered: string, items: IOrderItem[]) {
