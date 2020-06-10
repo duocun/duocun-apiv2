@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { DB } from "../db";
-import { Product } from "../models/product";
+import { Product, ProductStatus } from "../models/product";
 import { Controller, Code } from "./controller";
 import path from "path";
 import { getLogger } from "../lib/logger";
@@ -64,6 +64,9 @@ export class ProductController extends Controller {
     }
     try {
       doc = this.fillDocFromRequest(doc, req);
+      if (doc.status != ProductStatus.ACTIVE && doc.status != ProductStatus.INACTIVE && doc.status != ProductStatus.NEW && doc.status != ProductStatus.PROMOTE) {
+        doc.status = ProductStatus.INACTIVE;
+      }
     } catch (e) {
       if (e.getMessage() === "invalid_id") {
         return res.json({
