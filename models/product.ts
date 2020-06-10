@@ -12,10 +12,10 @@ import { Code } from "../controllers/controller";
 
 
 export enum ProductStatus {
-  ACTIVE = 1,
-  INACTIVE,
-  NEW,
-  PROMOTE
+  ACTIVE = "A",
+  INACTIVE = "I",
+  NEW = "N",
+  PROMOTE = "P"
 }
 
 export interface ICategory {
