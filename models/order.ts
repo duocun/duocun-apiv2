@@ -945,6 +945,31 @@ export class Order extends Model {
     return savedOrders;
   }
 
+  // create order batch Id
+  async placePrepaidOrder(order: IOrder) {
+    const paymentId = new ObjectID().toString();
+    order.paymentId = paymentId;
+    order.paymentMethod = PaymentMethod.PREPAY;
+    const savedOrder = await this.doInsertOneV2(order);
+    const merchantId = order.merchantId.toString();
+    const merchant = await this.merchantModel.findOne({ _id: merchantId });
+
+    await this.transactionModel.saveTransactionsForPlaceOrder(
+      savedOrder._id.toString(),
+      savedOrder.type,
+      merchant.accountId.toString(),
+      merchant.name,
+      order.clientId.toString(),
+      order.clientName,
+      order.cost,
+      order.total,
+      savedOrder.delivered
+    );
+    return savedOrder;
+  }
+
+
+
   async doRemoveOne(orderId: string) {
     // return new Promise((resolve, reject) => {
     const order = await this.findOne({ _id: orderId });

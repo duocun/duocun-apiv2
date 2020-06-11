@@ -28,8 +28,6 @@ export function OrderRouter(db: DB) {
   router.delete('/:id', (req, res) => { controller.removeOrder(req, res); });
 
   router.get('/bulkPhones/:year', (req, res) => { controller.updateOrderPhone(req, res)});
-
-  router.post('/', (req, res) => { controller.create(req, res); });
   
   // support ?query={where, options}
   router.get('/', [parseQuery], (req: Request, res: Response) => { controller.list(req, res); });
