@@ -403,8 +403,6 @@ export class Order extends Model {
 
   // v2 return [{
   //  _id,
-  //  client:{ _id, username, phone },
-  //  merchant: { _id, name }
   //  items: [{productId, productName, price, cost, quantity}]}];
 
   async joinFindV2(where: any, options?: object) {
@@ -419,17 +417,6 @@ export class Order extends Model {
     const ps = await this.productModel.find({});
     rs.forEach((order: any) => {
       const items: any[] = [];
-
-      // if (order.clientId) {
-      //   const c = clientAccounts.find(
-      //     (a: any) => a._id.toString() === order.clientId.toString()
-      //   );
-      //   order.client = {
-      //     _id: c._id.toString(),
-      //     username: c.username,
-      //     phone: c.phone,
-      //   };
-      // }
 
       if (order.merchantId) {
         const m = merchants.find(
@@ -497,8 +484,11 @@ export class Order extends Model {
       merchantId: r.merchantId,
       merchantName: r.merchantName,
       // merchantAccount: r.merchantAccount,
-      driver: r.driver,
+      driverId: r.driverId,
+      driverName: r.driverName,
+      driverPhone: r.driver.phone,
       note: r.note,
+      deliverDate: r.deliverDate,
       delivered: r.delivered,
       created: r.creaded,
     }));
@@ -797,16 +787,6 @@ export class Order extends Model {
     this.find(query).then((x: any) => {
       res.setHeader("Content-Type", "application/json");
       res.send(JSON.stringify(x, null, 3));
-    });
-  }
-
-  // admin modify order
-
-  create(req: Request, res: Response) {
-    const order = req.body;
-    this.placeOrders([order]).then((savedOrder) => {
-      res.setHeader("Content-Type", "application/json");
-      res.send(JSON.stringify(savedOrder, null, 3));
     });
   }
 
