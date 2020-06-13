@@ -486,7 +486,7 @@ export class Order extends Model {
       // merchantAccount: r.merchantAccount,
       driverId: r.driverId,
       driverName: r.driverName,
-      driverPhone: r.driver.phone,
+      driverPhone: r.driver? r.driver.phone : '',
       note: r.note,
       deliverDate: r.deliverDate,
       delivered: r.delivered,
