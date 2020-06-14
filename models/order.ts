@@ -403,8 +403,6 @@ export class Order extends Model {
 
   // v2 return [{
   //  _id,
-  //  client:{ _id, username, phone },
-  //  merchant: { _id, name }
   //  items: [{productId, productName, price, cost, quantity}]}];
 
   async joinFindV2(where: any, options?: object) {
@@ -419,17 +417,6 @@ export class Order extends Model {
     const ps = await this.productModel.find({});
     rs.forEach((order: any) => {
       const items: any[] = [];
-
-      // if (order.clientId) {
-      //   const c = clientAccounts.find(
-      //     (a: any) => a._id.toString() === order.clientId.toString()
-      //   );
-      //   order.client = {
-      //     _id: c._id.toString(),
-      //     username: c.username,
-      //     phone: c.phone,
-      //   };
-      // }
 
       if (order.merchantId) {
         const m = merchants.find(
@@ -497,8 +484,11 @@ export class Order extends Model {
       merchantId: r.merchantId,
       merchantName: r.merchantName,
       // merchantAccount: r.merchantAccount,
-      driver: r.driver,
+      driverId: r.driverId,
+      driverName: r.driverName,
+      driverPhone: r.driver? r.driver.phone : '',
       note: r.note,
+      deliverDate: r.deliverDate,
       delivered: r.delivered,
       created: r.creaded,
     }));
@@ -800,16 +790,6 @@ export class Order extends Model {
     });
   }
 
-  // admin modify order
-
-  create(req: Request, res: Response) {
-    const order = req.body;
-    this.placeOrders([order]).then((savedOrder) => {
-      res.setHeader("Content-Type", "application/json");
-      res.send(JSON.stringify(savedOrder, null, 3));
-    });
-  }
-
   // local --- local date time string '2019-11-03T11:20:00.000Z', local.isUTC() must be false.
   // sLocalTime     --- local hour and minute eg. '11:20'
   // return --- utc date time
@@ -944,6 +924,31 @@ export class Order extends Model {
     }
     return savedOrders;
   }
+
+  // create order batch Id
+  async placePrepaidOrder(order: IOrder) {
+    const paymentId = new ObjectID().toString();
+    order.paymentId = paymentId;
+    order.paymentMethod = PaymentMethod.PREPAY;
+    const savedOrder = await this.doInsertOneV2(order);
+    const merchantId = order.merchantId.toString();
+    const merchant = await this.merchantModel.findOne({ _id: merchantId });
+
+    await this.transactionModel.saveTransactionsForPlaceOrder(
+      savedOrder._id.toString(),
+      savedOrder.type,
+      merchant.accountId.toString(),
+      merchant.name,
+      order.clientId.toString(),
+      order.clientName,
+      order.cost,
+      order.total,
+      savedOrder.delivered
+    );
+    return savedOrder;
+  }
+
+
 
   async doRemoveOne(orderId: string) {
     // return new Promise((resolve, reject) => {

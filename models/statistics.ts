@@ -192,13 +192,13 @@ export class Statistics extends Model{
     const orders = dataSet.data;
     const driverMap: any = {};
     orders.forEach((order: any) => {
-      const driverId = order.driver? order.driver._id : null;
-      const driverName = order.driver ? order.driver.username : 'Unassign';
+      const driverId = order.driverId ? order.driverId : null;
+      const driverName = order.driverName ? order.driverName : 'Unassign';
       driverMap[driverId] = {driverId, driverName, orders:[]};
     });
 
     orders.forEach((order: any) => {
-      const driverId = order.driver? order.driver._id : null;
+      const driverId = order.driverId? order.driverId : null;
       driverMap[driverId].orders.push(order);
     });
 

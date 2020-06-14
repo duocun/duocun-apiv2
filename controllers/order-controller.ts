@@ -221,7 +221,7 @@ export class OrderController extends Controller {
         count = r.count;
       }
     } catch (error) {
-      // logger.error(`list error: ${error}`);
+      logger.error(`list error: ${error}`);
     } finally {
       res.send(
         JSON.stringify({
@@ -233,21 +233,21 @@ export class OrderController extends Controller {
     }
   }
 
-  
+  // placePrepaidOrder
   async create(req: Request, res: Response): Promise<void> {
     const order = req.body;
     let code = Code.FAIL;
     let data = {};
     try {
       if (order) {
-        const r = await this.model.createOne(order);
+        const r = await this.model.placePrepaidOrder(order);
         if (r) {
           code = Code.SUCCESS;
           data = r;
         }
       }
     } catch (error) {
-      logger.error(`create one order error: ${error}`);
+      logger.error(`create prepaid order error: ${error}`);
     } finally {
       res.setHeader("Content-Type", "application/json");
       res.send(
