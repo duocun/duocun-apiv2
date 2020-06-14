@@ -4,7 +4,7 @@ import path from "path";
 import sharp from "sharp";
 export const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "uploads/");
+    cb(null, "/home/ubuntu/duocun-api/uploads/");
   },
   filename: function (req: any, file, cb) {
     const name = Math.random().toString(36).substring(2) + "_" + Date.now();

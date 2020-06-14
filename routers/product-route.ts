@@ -36,7 +36,7 @@ export function ProductRouter(db: DB) {
       // @ts-ignore
       const newFilename = `${req.fileInfo.name}_${width}.${req.fileInfo.extension}`;
       // @ts-ignore
-      await sharp(`uploads/${req.fileInfo.filename}`).resize(width).toFile(`uploads/${newFilename}`);
+      await sharp(`/home/ubuntu/duocun-api/uploads/${req.fileInfo.filename}`).resize(width).toFile(`/home/ubuntu/duocun-api/uploads/${newFilename}`);
       urls[`${width}`] = `${baseUrl}/${newFilename}`;
     }
 
