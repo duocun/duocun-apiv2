@@ -23,8 +23,7 @@ export function AreaRouter(db: DB){
   router.get('/qFind', (req, res) => { controller.quickFind(req, res); });
 
   router.post('/', (req, res) => { model.create(req, res); });
-  router.patch('/', (req, res) => { model.update(req, res); });
-  
+  router.patch('/', (req, res) => { model.update(req, res);
   // fix me
   
   router.post('/nearest', (req, res) => {controller.getNearest(req, res); });
