@@ -16,7 +16,7 @@ export class MerchantSchedule extends Model{
     const areaMap: any = {
       'C': {dows:[2,4,6], time:'10:00'},
       'R': {dows:[1,3,5], time:'10:00'},
-      'SC': {dows:[6], time:'10:00'},
+      'SC': {dows:[2,6], time:'10:00'},
       'NM': {dows:[1,5], time:'10:00'},
       'KC': {dows:[3], time:'10:00'},
       'ST': {dows:[4], time:'10:00'},
