@@ -3,17 +3,19 @@ import { Model } from "./model";
 import { Order, IOrder, OrderStatus, OrderType } from "../models/order";
 import { Pickup, PickupStatus } from "./pickup";
 import { TransactionAction, Transaction } from "./transaction";
+import { Account } from "./account";
 
 export class Statistics extends Model{
   orderModel: Order;
   pickupModel: Pickup;
   transactionModel: Transaction;
-
+  accountModel: Account;
   constructor(db: DB) {
     super(db, 'statistics');
     this.orderModel = new Order(db);
     this.pickupModel = new Pickup(db);
     this.transactionModel = new Transaction(db);
+    this.accountModel = new Account(db);
   }
   async getById(id: string){
     return;
@@ -132,7 +134,7 @@ export class Statistics extends Model{
     const rs = orders.filter(order => order.type === type);
     rs.forEach(r => {
       r.items.forEach((it: any) => {
-        const productId = it.productId;
+        const productId = it.productId.toString();
         const productName = it.productName;
         productMap[productId] = { productId, productName, quantity: 0, status: PickupStatus.UNPICK_UP  };
       });
@@ -140,15 +142,17 @@ export class Statistics extends Model{
 
     rs.forEach(r => {
       r.items.forEach((it: any) => {
-        productMap[it.productId].quantity += it.quantity;
+        const productId = it.productId.toString();
+        productMap[productId].quantity += it.quantity;
       });
     });
 
     if (pickups && pickups.length > 0) {
       pickups.forEach((pickup: any) => {
-        if (productMap.hasOwnProperty(pickup.productId)) {
-          productMap[pickup.productId]._id = pickup._id;
-          productMap[pickup.productId].status = pickup.status;
+        const productId = pickup.productId.toString();
+        if (productMap.hasOwnProperty(productId)) {
+          productMap[productId]._id = pickup._id;
+          productMap[productId].status = pickup.status;
         }
       });
     }
@@ -188,17 +192,19 @@ export class Statistics extends Model{
         $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
       },
     };
+    const drivers = await this.accountModel.find({type: 'driver'});
     const dataSet = await this.orderModel.joinFindV2(q);
     const orders = dataSet.data;
     const driverMap: any = {};
     orders.forEach((order: any) => {
-      const driverId = order.driverId ? order.driverId : null;
-      const driverName = order.driverName ? order.driverName : 'Unassign';
+      const driverId = order.driverId ? order.driverId.toString() : null;
+      const driver = drivers.find(d => d._id.toString() === driverId);
+      const driverName = driver ? driver.username : 'Unassign';
       driverMap[driverId] = {driverId, driverName, orders:[]};
     });
 
     orders.forEach((order: any) => {
-      const driverId = order.driverId? order.driverId : null;
+      const driverId = order.driverId? order.driverId.toString() : null;
       driverMap[driverId].orders.push(order);
     });
 
