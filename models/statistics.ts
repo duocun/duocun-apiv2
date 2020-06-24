@@ -77,9 +77,9 @@ export class Statistics extends Model{
     return merchantArray;
   }
   //return [{productId,merchantName,price,cost,quantity,totalPrice,totalCost}]
-  async getProductInfo(startDate: string, endDate: string) {
+  async getProductInfo(deliverDate: string) {
     const q = {
-      deliverDate: { $gte: startDate, $lte: endDate },
+      deliverDate,
       status: {
         $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
       },
@@ -88,28 +88,26 @@ export class Statistics extends Model{
     const orders = dataSet.data;
     const productMap: any = {};
     orders.forEach((order: any) => {
-      const items = order.items;
-      items.forEach((item: any) => {
-        const pId = item.productId;
-        if (pId !== undefined) {
-          if (!productMap[pId]) {
-            productMap[pId] = {
-              prdouctName: "",
-              merchantName: "",
-              price: 0,
-              cost: 0,
-              quantity: 0,
-              totalPrice: 0,
-              totalCost: 0,
-            };
-          }
-          productMap[pId].merchantName = order.merchantName;
-          productMap[pId].price = item.price;
-          productMap[pId].cost = item.cost;
-          productMap[pId].quantity += item.quantity;
-          productMap[pId].totalPrice += item.price * item.quantity;
-          productMap[pId].totalCost += item.cost * item.quantity;
-        }
+      order.items.forEach((item: any) => {
+        const pId = item.productId.toString();
+        productMap[pId] = {
+          productName: item.productName,
+          merchantName: order.merchantName,
+          price: item.price,
+          cost: item.cost,
+          quantity: 0,
+          totalPrice: 0,
+          totalCost: 0,
+        };
+      });
+    });
+
+    orders.forEach((order: any) => {
+      order.items.forEach((item: any) => {
+        const pId = item.productId.toString();
+        productMap[pId].quantity += item.quantity;
+        productMap[pId].totalPrice += item.price * item.quantity;
+        productMap[pId].totalCost += item.cost * item.quantity;
       });
     });
 
@@ -117,6 +115,7 @@ export class Statistics extends Model{
     for (let pId in productMap) {
       productArray.push({
         productId: pId, //商品id
+        productName: productMap[pId].productName,
         merchantName: productMap[pId].merchantName, //商品是谁卖的
         price: productMap[pId].price, //商品单价
         cost: productMap[pId].cost, //商品成本

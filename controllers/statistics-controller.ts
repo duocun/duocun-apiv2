@@ -85,13 +85,12 @@ export class StatisticsController extends Controller {
   }
 
   async getProductStatistics(req: Request, res: Response) {
-    const startDate: any = req.query.startDate;
-    const endDate: any = req.query.endDate;
+    const deliverDate: any = req.query.deliverDate;
     let data: any[] = [];
     let code = Code.FAIL;
     try {
-      if (startDate && endDate) {
-        const r = await this.model.getProductInfo(startDate, endDate);
+      if (deliverDate) {
+        const r = await this.model.getProductInfo(deliverDate);
         code = Code.SUCCESS;
         data = r;
       }
@@ -99,12 +98,10 @@ export class StatisticsController extends Controller {
       logger.error(`get product statistic error: ${error}`);
     } finally {
       res.setHeader("Content-Type", "application/json");
-      res.send(
-        JSON.stringify({
+      res.send({
           code: code,
           data: data,
-        })
-      );
+        });
     }
   }
 
