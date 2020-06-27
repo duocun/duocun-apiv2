@@ -316,6 +316,8 @@ export class Entity {
     doc = this.convertIdField(doc, 'modifyBy');
     doc = this.convertIdField(doc, 'fromId');
     doc = this.convertIdField(doc, 'toId');
+    doc = this.convertIdField(doc, 'items.productId');
+    
 
     if (doc && doc.hasOwnProperty('$or')) {
       const items: any[] = [];
