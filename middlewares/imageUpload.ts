@@ -2,9 +2,14 @@ import multer from "multer";
 import * as mime from "mime-types";
 import path from "path";
 import sharp from "sharp";
+import { Config } from "../config";
+
+
 export const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "/Users/zlk/duocun-api/uploads/");
+    const cfg = new Config();
+    const url = cfg.MEDIA.TEMP_PATH;
+    cb(null, `${url}/`);
   },
   filename: function (req: any, file, cb) {
     const name = Math.random().toString(36).substring(2) + "_" + Date.now();
@@ -18,4 +23,4 @@ export const storage = multer.diskStorage({
     cb(null, filename);
   },
 });
-export const upload = multer({ storage: storage });
+export const MulterUploader = multer({ storage: storage });

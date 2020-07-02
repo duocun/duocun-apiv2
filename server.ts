@@ -103,17 +103,7 @@ const ROUTE_PREFIX = '/api/admin'; // SERVER.ROUTE_PREFIX;
 const app = express();
 export const dbo = new DB();
 const apimw = new ApiMiddleWare();
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/");
-  },
-  filename: function (req: any, file, cb) {
-    cb(null, req.body.fname + "." + req.body.ext);
-  },
-});
-const upload = multer({ storage: storage });
-// const upload = multer({ dest: 'uploads/' });
-let mysocket: any; // Socket;
+
 let io: any;
 
 function setupSocket(server: any) {
@@ -170,27 +160,6 @@ dbo.init(cfg.DATABASE).then((dbClient) => {
   });
 
   app.get(ROUTE_PREFIX + "/users", (req, res) => {});
-
-  app.post(
-    ROUTE_PREFIX + "/files/upload",
-    upload.single("file"),
-    (req, res) => {
-      const product = new Product(dbo);
-      product.uploadPicture(req, res);
-    }
-  );
-
-  // app.get('/' + ROUTE_PREFIX + '/Pictures', (req, res) => {
-  //   picture.get(req, res);
-  // });
-
-  app.post(
-    ROUTE_PREFIX + "/files/upload",
-    upload.single("file"),
-    (req, res, next) => {
-      res.send("upload file success");
-    }
-  );
 
   // disable auth token for testing
   if (process.env.ENV != "dev") {

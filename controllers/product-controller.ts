@@ -9,6 +9,7 @@ import { ObjectId } from "mongodb";
 import moment from "moment";
 import { Order, OrderStatus, IOrder } from "../models/order";
 import { Merchant } from "../models/merchant";
+import { Picture } from "../models/picture";
 
 import sharp from "sharp";
 import { Config } from "../config";
@@ -18,11 +19,14 @@ export class ProductController extends Controller {
   model: Product;
   orderModel: Order;
   merchantModel: Merchant;
+  pictureModel: Picture;
+
   constructor(model: Product, db: DB) {
     super(model, db);
     this.model = model;
     this.orderModel = new Order(db);
     this.merchantModel = new Merchant(db);
+    this.pictureModel = new Picture(db);
   }
 
   // joined list
@@ -342,7 +346,12 @@ export class ProductController extends Controller {
         // @ts-ignore
         default: `${baseUrl}/${req.fileInfo.filename}`
       };
-      for (const width of [480, 720, 960, 1200]) {
+      // @ts-ignore
+      const defaultFilename =`${req.fileInfo.filename}`;
+      const defaultPath = `${cfg.MEDIA.TEMP_PATH}/${defaultFilename}`;
+      await this.pictureModel.uploadToAws(defaultFilename, defaultPath);
+
+      for (const width of [480, 720, 960]) {
         // @ts-ignore
         const newFilename = `${req.fileInfo.name}_${width}.${req.fileInfo.extension}`;
         const fpath = `${cfg.MEDIA.TEMP_PATH}/${newFilename}`;
@@ -350,7 +359,7 @@ export class ProductController extends Controller {
         await sharp(`${cfg.MEDIA.TEMP_PATH}/${req.fileInfo.filename}`).resize(width).toFile(fpath);
         urls[`${width}`] = `${baseUrl}/${newFilename}`;
 
-        await this.model.uploadToAws(newFilename, fpath);
+        await this.pictureModel.uploadToAws(newFilename, fpath);
       }
   
       const picture = {

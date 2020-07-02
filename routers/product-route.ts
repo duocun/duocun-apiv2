@@ -8,7 +8,7 @@ import * as mime from "mime-types";
 import path from "path";
 import sharp from "sharp";
 import { Code } from "../controllers/controller";
-import { upload } from "../middlewares/imageUpload";
+import { MulterUploader } from "../middlewares/imageUpload";
 
 export function ProductRouter(db: DB) {
   const router = express.Router();
@@ -22,7 +22,7 @@ export function ProductRouter(db: DB) {
   router.patch('/',(req,res) => {model.update(req, res);});
   // admin api
   router.put('/batchPrice', async (req, res) => { await controller.batchPrice(req, res); });
-  router.post('/imageUpload',upload.single("upload"), (req, res) => { controller.uploadImage(req, res); } );
+  router.post('/imageUpload', MulterUploader.single("upload"), (req, res) => { controller.uploadImage(req, res); } );
 
   router.post('/:id', (req, res) => { controller.save(req, res); });
   router.put('/:id',(req,res) => {controller.updateOne(req, res);});
