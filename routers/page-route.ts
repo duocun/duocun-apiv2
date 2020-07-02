@@ -21,7 +21,7 @@ export function PageRouter(db: DB) {
       // @ts-ignore
       default: `${baseUrl}/${req.fileInfo.filename}`
     };
-    for (const width of [480, 720, 960, 1200]) {
+    for (const width of [480, 720, 960]) {
       // @ts-ignore
       const newFilename = `${ req.fileInfo.name}_${width}.${req.fileInfo.extension}`;
       // @ts-ignore
@@ -33,6 +33,7 @@ export function PageRouter(db: DB) {
       urls
     });
   });
+
   router.post('/new', (req, res) => { controller.create(req, res); });
   router.put('/:id', (req, res) => { controller.update(req, res); });
   router.delete('/:id', (req, res) => { controller.delete(req, res); });
