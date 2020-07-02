@@ -23,16 +23,17 @@ export class StockController extends Controller {
 
   async list(req: Request, res: Response) {
     const where: any = req.query.where || {};
+    const today = moment().tz("America/Toronto").format("YYYY-MM-DD");
     const startDate = where.startDate || moment().tz("America/Toronto").format("YYYY-MM-DD");
     delete(where.startDate);
     const options: any = req.query.options;
     let ret = await this.model.list(where, options);
     for (let product of ret.data) {
       if (product.stock) {
-        product.delivery = await this.getOrdersContainingProduct(product._id, startDate);
+        product.delivery = await this.getOrdersContainingProduct(product._id, startDate >= today ? today : startDate);
         product.stock.quantityReal = product.stock.quantity;
         product.stock.quantity = product.stock.quantity || 0;
-        product.stock.quantity += this.countProductQuantityFromOrders(await this.getOrdersContainingProduct(product._id, moment().tz('America/Toronto').format("YYYY-MM-DD")), product._id);
+        product.stock.quantity += this.countProductQuantityFromOrders(await this.getOrdersContainingProduct(product._id, today), product._id);
       }
     }
     res.json({
