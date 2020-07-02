@@ -10,6 +10,8 @@ import moment from "moment";
 import { Order, OrderStatus, IOrder } from "../models/order";
 import { Merchant } from "../models/merchant";
 
+import sharp from "sharp";
+import { Config } from "../config";
 const logger = getLogger(path.basename(__filename));
 
 export class ProductController extends Controller {
@@ -329,4 +331,56 @@ export class ProductController extends Controller {
     });
     return count;
   }
+
+  async uploadImage(req: Request, res: Response){
+    const cfg = new Config();
+      const productId = req.query.productId;
+      const product = await this.orderModel.findOne({ _id: productId });
+  
+      const baseUrl = "https://duocun.com.cn/media";
+      const urls: any = {
+        // @ts-ignore
+        default: `${baseUrl}/${req.fileInfo.filename}`
+      };
+      for (const width of [480, 720, 960, 1200]) {
+        // @ts-ignore
+        const newFilename = `${req.fileInfo.name}_${width}.${req.fileInfo.extension}`;
+        const fpath = `${cfg.MEDIA.TEMP_PATH}/${newFilename}`;
+        // @ts-ignore
+        await sharp(`${cfg.MEDIA.TEMP_PATH}/${req.fileInfo.filename}`).resize(width).toFile(fpath);
+        urls[`${width}`] = `${baseUrl}/${newFilename}`;
+
+        await this.model.uploadToAws(newFilename, fpath);
+      }
+  
+      const picture = {
+        // @ts-ignore
+        name: req.fileInfo.filename,
+        // @ts-ignore
+        url: req.fileInfo.filename
+      };
+  
+      if (product) {
+        if (!product.pictures) {
+          product.pictures = [];
+        }
+    
+        product.pictures.push(picture);
+    
+        try {
+          await this.orderModel.updateOne({ _id: product._id }, product);
+        } catch (e) {
+          console.error(e);
+          return res.json({
+            code: Code.FAIL
+          });
+        }
+      }
+  
+      return res.json({
+        code: Code.SUCCESS,
+        data: picture
+      });
+    }
+  
 }

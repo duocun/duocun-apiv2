@@ -60,6 +60,14 @@ export interface IMoneris {
   ENVIRONMENT: "qa"|"prod";
 }
 
+export interface IAwsS3 {
+  ACCESS_ID: string,
+  ACCESS_KEY: string;
+  BUCKET_NAME: string;
+}
+export interface IMedia{
+  TEMP_PATH: string;
+}
 export class Config {
   private cfg: any;
   public JWT: IJWT;
@@ -67,6 +75,7 @@ export class Config {
   public GOOGLE_PLACE_KEY: string = '';
   public GOOGLE_MAP_KEY: string = '';
   public GOOGLE_DISTANCE_KEY: string = '';
+  public MEDIA: IMedia;
   public API_SERVER: IApiServer;
   public APIV2_SERVER: IApiServer;
   public DATABASE: IDatabase;
@@ -75,6 +84,8 @@ export class Config {
   public STRIPE: IStripe;
   public SNAPPAY: ISnappay;
   public MONERIS: IMoneris;
+  public AWS_S3: IAwsS3;
+
   constructor() {
     this.cfg = JSON.parse(fs.readFileSync('../duocun.cfg.json', 'utf-8'));
     this.JWT = this.cfg.JWT;
@@ -82,6 +93,7 @@ export class Config {
     this.GOOGLE_PLACE_KEY = this.cfg.GOOGLE_PLACE.KEY;
     this.GOOGLE_MAP_KEY = this.cfg.GOOGLE_MAP_KEY;
     this.GOOGLE_DISTANCE_KEY = this.cfg.GOOGLE_DISTANCE.KEY;
+    this.MEDIA = this.cfg.MEDIA;
     this.API_SERVER = this.cfg.API_SERVER;
     this.APIV2_SERVER = this.cfg.APIV2_SERVER;
     this.DATABASE = this.cfg.DATABASE;
@@ -90,6 +102,7 @@ export class Config {
     this.STRIPE = this.cfg.STRIPE;
     this.SNAPPAY = this.cfg.SNAPPAY;
     this.MONERIS = this.cfg.MONERIS;
+    this.AWS_S3 = this.cfg.AWS_S3;
   }
 
 }

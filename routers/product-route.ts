@@ -22,54 +22,8 @@ export function ProductRouter(db: DB) {
   router.patch('/',(req,res) => {model.update(req, res);});
   // admin api
   router.put('/batchPrice', async (req, res) => { await controller.batchPrice(req, res); });
-  router.post('/imageUpload',upload.single("upload"), async (req, res) => {
+  router.post('/imageUpload',upload.single("upload"), (req, res) => { controller.uploadImage(req, res); } );
 
-    const productId = req.query.productId;
-    const product = await model.findOne({ _id: productId });
-
-    const baseUrl = "https://duocun.com.cn/media";
-    const urls: any = {
-      // @ts-ignore
-      default: `${baseUrl}/${req.fileInfo.filename}`
-    };
-    for (const width of [480, 720, 960, 1200]) {
-      // @ts-ignore
-      const newFilename = `${req.fileInfo.name}_${width}.${req.fileInfo.extension}`;
-      // @ts-ignore
-      await sharp(`/home/ubuntu/duocun-api/uploads/${req.fileInfo.filename}`).resize(width).toFile(`/home/ubuntu/duocun-api/uploads/${newFilename}`);
-      urls[`${width}`] = `${baseUrl}/${newFilename}`;
-    }
-
-    const picture = {
-      // @ts-ignore
-      name: req.fileInfo.filename,
-      // @ts-ignore
-      url: req.fileInfo.filename
-    };
-
-    if (product) {
-      if (!product.pictures) {
-        product.pictures = [];
-      }
-  
-      product.pictures.push(picture);
-  
-      try {
-        await model.updateOne({ _id: product._id }, product);
-      } catch (e) {
-        console.error(e);
-        return res.json({
-          code: Code.FAIL
-        });
-      }
-    }
-
-    return res.json({
-      code: Code.SUCCESS,
-      data: picture
-    });
-
-  });
   router.post('/:id', (req, res) => { controller.save(req, res); });
   router.put('/:id',(req,res) => {controller.updateOne(req, res);});
 
