@@ -194,7 +194,7 @@ export class Statistics extends Model{
     const drivers = await this.accountModel.find({type: 'driver'});
     const dataSet = await this.orderModel.joinFindV2(q);
     const orders = dataSet.data;
-    const driverMap: any = {};
+    const driverMap: any = {'all': {driverId: 'all', driverName:'All', orders:[]}};
     orders.forEach((order: any) => {
       const driverId = order.driverId ? order.driverId.toString() : null;
       const driver = drivers.find(d => d._id.toString() === driverId);
@@ -205,6 +205,7 @@ export class Statistics extends Model{
     orders.forEach((order: any) => {
       const driverId = order.driverId? order.driverId.toString() : null;
       driverMap[driverId].orders.push(order);
+      driverMap['all'].orders.push(order); // push all
     });
 
     const delivered = deliverDate + 'T15:00:00.000Z';
