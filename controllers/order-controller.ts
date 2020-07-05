@@ -320,4 +320,24 @@ export class OrderController extends Controller {
     }
   }
 
+  async getRoutes(req: Request, res: Response){
+    const deliverDate: any = req.query.deliverDate;
+    res.setHeader("Content-Type", "application/json");
+    let data: any;
+    let count: number = 0;
+    let code = Code.FAIL;
+    try {
+      const r = await this.model.getRoutes(deliverDate);
+      code = Code.SUCCESS;
+      data = r;
+    } catch (error) {
+      // logger.error(`list error: ${error}`);
+    } finally {
+      res.send({
+          code,
+          data
+        }
+      );
+    }
+  }
 }

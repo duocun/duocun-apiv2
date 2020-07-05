@@ -1,4 +1,6 @@
 import { Request, Response } from "express";
+import https from 'https';
+import http from 'http';
 import { DB } from "../db";
 import { Model } from "./model";
 import { ILocation, Location } from "./location";
@@ -198,11 +200,11 @@ export class Order extends Model {
   }
 
 
-  async getById(id: string, options: any={}) {
+  async getById(id: string, options: any = {}) {
     if (id && ObjectId.isValid(id)) {
       const order = await this.findOne({ _id: id }, options);
       if (order) {
-        const ps = await this.productModel.find({merchantId: order.merchantId});
+        const ps = await this.productModel.find({ merchantId: order.merchantId });
         const items: any[] = [];
         if (order.items) {
           order.items.forEach((it: IOrderItem) => {
@@ -228,17 +230,17 @@ export class Order extends Model {
     let price = 0;
     let cost = 0;
     let tax = 0;
-  
+
     items.map((x: IOrderItem) => {
       price += x.price * x.quantity;
       cost += x.cost * x.quantity;
       tax += Math.ceil(x.price * x.quantity * x.taxRate) / 100;
     });
-  
+
     const tips = 0;
     const groupDiscount = 0;
     const overRangeTotal = Math.round(overRangeCharge * 100) / 100;
-  
+
     return {
       price: Math.round(price * 100) / 100,
       cost: Math.round(cost * 100) / 100,
@@ -248,7 +250,7 @@ export class Order extends Model {
       deliveryCost: 0, // merchant.deliveryCost,
       deliveryDiscount: 0, // merchant.deliveryCost,
       groupDiscount, // groupDiscount,
-      total: Math.round((price + tax + tips - groupDiscount + overRangeTotal)*100)/100
+      total: Math.round((price + tax + tips - groupDiscount + overRangeTotal) * 100) / 100
     };
   }
 
@@ -264,8 +266,8 @@ export class Order extends Model {
           );
           return product ? true : false;
         });
-        
-        if(remains && remains.length>0){
+
+        if (remains && remains.length > 0) {
           // update the price of the original order
           const charge = this.getChargeFromOrderItems(remains, 0);
           order.price = charge.price;
@@ -274,12 +276,12 @@ export class Order extends Model {
           order.tax = charge.tax;
           order.items = remains;
 
-          let updates = {...order};
+          let updates = { ...order };
           delete updates._id;
-          await this.updateOne({_id: orderId}, updates);
+          await this.updateOne({ _id: orderId }, updates);
 
           // create a new order and set it as paid
-          let splitData = {...updates};
+          let splitData = { ...updates };
           splitData.items = itemsToSplit;
           const splitCharge = this.getChargeFromOrderItems(itemsToSplit, 0);
           splitData.price = splitCharge.price;
@@ -312,9 +314,9 @@ export class Order extends Model {
           );
           return product ? true : false;
         });
-        
 
-        if(remains && remains.length>0){
+
+        if (remains && remains.length > 0) {
           // update old order
           const charge = this.getChargeFromOrderItems(remains, 0);
           order.price = charge.price;
@@ -323,12 +325,12 @@ export class Order extends Model {
           order.tax = charge.tax;
           order.items = remains;
 
-          let updates = {...order};
+          let updates = { ...order };
           delete updates._id;
-          await this.updateOne({_id: orderId}, updates);
+          await this.updateOne({ _id: orderId }, updates);
 
           // create cancelled order and set it as deleted
-          let rmData = {...updates};
+          let rmData = { ...updates };
           rmData.items = itemsToRemove;
           const rmCharge = this.getChargeFromOrderItems(itemsToRemove, 0);
           rmData.price = rmCharge.price;
@@ -353,7 +355,7 @@ export class Order extends Model {
   async assign(driverId: string, driverName: string, orderIds: string[]) {
     const updates: any[] = orderIds.map(_id => ({
       query: { _id },
-      data: {driverId, driverName},
+      data: { driverId, driverName },
     }));
     await this.bulkUpdate(updates);
     return;
@@ -486,7 +488,7 @@ export class Order extends Model {
       // merchantAccount: r.merchantAccount,
       driverId: r.driverId,
       driverName: r.driverName,
-      driverPhone: r.driver? r.driver.phone : '',
+      driverPhone: r.driver ? r.driver.phone : '',
       note: r.note,
       deliverDate: r.deliverDate,
       delivered: r.delivered,
@@ -517,15 +519,36 @@ export class Order extends Model {
     return this.filterArray(ts, fields);
   }
 
+  async getRoutes(deliverDate: string) {
+    return new Promise((resolve, reject) => {
+      http.get(`http://localhost:5002/routes?deliverDate=${deliverDate}`, (resp) => {
+        let data = '';
+        resp.on('data', (chunk) => {
+          data += chunk;
+        });
+
+        resp.on('end', () => {
+          const d = JSON.parse(data);
+          console.log(d);
+          resolve(d);
+        });
+
+      }).on("error", (err) => {
+        console.log("Error: " + err.message);
+        resolve();
+      });
+    });
+  }
 
   // allow maximum 11 drivers
   // return --- {markers: [{orderId, lat, lng, type, status, icon}], driverMap:{driverId:{driverId, driverName}} }
   async getMapMarkers(where: any, options?: object) {
     const q = {
-      ...where, 
+      ...where,
       status: {
         $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
-    }};
+      }
+    };
     const ret: any = await this.find_v2(q, options);
     const driverMap: any = {};
     // const icons = [
@@ -547,7 +570,7 @@ export class Order extends Model {
 
       const driverId = order.driverId ? order.driverId.toString() : 'unassigned';
       const driverName = order.driverName ? order.driverName : '';
-      driverMap[driverId] = {driverId, driverName }; // icon: 'gWhite'
+      driverMap[driverId] = { driverId, driverName }; // icon: 'gWhite'
     });
 
     // let i = 0;
@@ -572,10 +595,10 @@ export class Order extends Model {
       const type = order.type;
       const clientName = order.clientName;
       // const icon = status === OrderStatus.DONE ? 'gGreen' : driverMap[driverId].icon;
-      markers.push({orderId, lat, lng, type, status, driverId, clientName});
+      markers.push({ orderId, lat, lng, type, status, driverId, clientName });
     });
 
-    return {markers, driverMap};
+    return { markers, driverMap };
   }
 
   // should only use with paging
@@ -586,11 +609,11 @@ export class Order extends Model {
     const orderIds: string[] = [];
     trs.forEach((tr: any) => {
 
-      if(tr.orderId){
+      if (tr.orderId) {
         orderIds.push(tr.orderId.toString());
       }
 
-      if(tr.cancelledOrderIds && tr.cancelledOrderIds.length > 0){
+      if (tr.cancelledOrderIds && tr.cancelledOrderIds.length > 0) {
         tr.cancelledOrderIds.forEach((cId: string) => {
           orderIds.push(cId);
         });
@@ -598,21 +621,21 @@ export class Order extends Model {
 
     });
 
-    const r = await this.joinFindV2({_id: {$in: orderIds} });
+    const r = await this.joinFindV2({ _id: { $in: orderIds } });
     const orders: any[] = r.data;
     trs.forEach((tr: any) => {
       let items: any[] = [];
-      if(tr.orderId){
+      if (tr.orderId) {
         const order = orders.find((order: any) => order._id.toString() === tr.orderId.toString());
-        if(order){
+        if (order) {
           items = order.items;
         }
       }
 
-      if(tr.cancelledOrderIds && tr.cancelledOrderIds.length > 0){
+      if (tr.cancelledOrderIds && tr.cancelledOrderIds.length > 0) {
         tr.cancelledOrderIds.forEach((cId: string) => {
           const order = orders.find((order: any) => order._id.toString() === cId);
-          if(order){
+          if (order) {
             items = items.concat(order.items);
           }
         });
@@ -1020,14 +1043,14 @@ export class Order extends Model {
 
 
 
-  hasDuplicatedOrder(orders: any[]){
+  hasDuplicatedOrder(orders: any[]) {
     const countMap: any = {};
     orders.forEach(order => {
       let id = '';
       order.items.forEach((it: any) => {
         id += it.productId.toString();
       });
-      countMap[id] = {count: 0};
+      countMap[id] = { count: 0 };
     });
 
     orders.forEach(order => {
@@ -1040,7 +1063,7 @@ export class Order extends Model {
 
     let dup = false;
     Object.keys(countMap).forEach(key => {
-      if(countMap[key].count > 1){
+      if (countMap[key].count > 1) {
         dup = true;
       }
     });
@@ -1048,7 +1071,7 @@ export class Order extends Model {
   }
 
 
-  async getClientWithDuplicatedOrders(delivered: string){
+  async getClientWithDuplicatedOrders(delivered: string) {
     const dt = new DateTime();
     const deliverDate = dt.getMomentFromUtc(delivered).format('YYYY-MM-DD');
     const query = {
@@ -1064,7 +1087,7 @@ export class Order extends Model {
       const clientId = order.clientId.toString();
       const clientName = order.clientName;
       const clientPhone = order.clientPhone;
-      clientMap[clientId] = {clientId, clientName, clientPhone, orders: [], dup: false};
+      clientMap[clientId] = { clientId, clientName, clientPhone, orders: [], dup: false };
     });
 
     orders.forEach(order => {
@@ -1075,9 +1098,9 @@ export class Order extends Model {
     const rs: any[] = [];
     Object.keys(clientMap).forEach(clientId => {
       clientMap[clientId].dup = this.hasDuplicatedOrder(clientMap[clientId].orders);
-      if(clientMap[clientId].dup){
+      if (clientMap[clientId].dup) {
         const v = clientMap[clientId];
-        rs.push({clientName: v.clientName, clientPhone: v.clientPhone});
+        rs.push({ clientName: v.clientName, clientPhone: v.clientPhone });
       }
     });
     return rs;
@@ -2554,19 +2577,19 @@ export class Order extends Model {
     return a;
   }
 
-  
+
   async updateOrderPhone(year: string) {
     const orders = await this.find({
       status: {
         $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
       },
-      created: {$regex: year}
+      created: { $regex: year }
     });
 
     const accounts = await this.accountModel.find({});
     for (let i = 0; i < orders.length; i++) {
       const order = orders[i];
-      if(order && order.clientId){
+      if (order && order.clientId) {
         const _id = order._id.toString();
         const account = accounts.find(a => a._id.toString() === order.clientId.toString());
         const clientPhone = account.phone;

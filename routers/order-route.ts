@@ -15,6 +15,7 @@ export function OrderRouter(db: DB) {
   // admin
   router.get('/bad', (req, res) => { controller.getBadOrder(req, res); });
   router.get('/map-markers', [parseQuery], (req: Request, res: Response) => { controller.getMapMarkers(req, res); });
+  router.get('/routes', [parseQuery], (req: Request, res: Response) => { controller.getRoutes(req, res); });
   router.get('/duplicates', (req, res) => { controller.getClientWithDuplicatedOrders(req, res)});
 
 
