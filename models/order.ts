@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import https from 'https';
-import http from 'http';
+import http, { IncomingMessage } from 'http';
+import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 import { DB } from "../db";
 import { Model } from "./model";
 import { ILocation, Location } from "./location";
@@ -519,26 +520,99 @@ export class Order extends Model {
     return this.filterArray(ts, fields);
   }
 
-  async getRoutes(deliverDate: string) {
-    return new Promise((resolve, reject) => {
-      http.get(`http://localhost:5002/routes?deliverDate=${deliverDate}`, (resp) => {
-        let data = '';
-        resp.on('data', (chunk) => {
-          data += chunk;
-        });
+  async getOrderMapForDriver(deliverDate: string) {
+    const q = {
+      deliverDate,
+      status: {
+        $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
+      },
+    };
+    const orders = await this.find(q);
+    const driverMap: any = {};
 
-        resp.on('end', () => {
-          const d = JSON.parse(data);
-          console.log(d);
-          resolve(d);
-        });
-
-      }).on("error", (err) => {
-        console.log("Error: " + err.message);
-        resolve();
-      });
+    orders.forEach((order: any) => {
+      const driverId = order.driverId ? order.driverId.toString() : 'unassigned';
+      driverMap[driverId] = {driverId, orders:[]};
     });
+
+    orders.forEach((order: any) => {
+      const driverId = order.driverId ? order.driverId.toString() : 'unassigned';
+      // const placeId = order.location.placeId;
+      const lat = order.location.lat;
+      const lng = order.location.lng;
+      driverMap[driverId].orders.push({ orderId: order._id.toString(), lat, lng });
+    });
+
+    return driverMap;
   }
+
+  async getRoutes(deliverDate: string){
+    // try {
+      const data = await this.getOrderMapForDriver(deliverDate);
+      const res = await axios.post('http://localhost:5002/routes', data);
+      return res;
+    // } catch (err) {
+    //   console.error(err);
+    //   return err;
+    // }
+  }
+
+  // getRoutes(deliverDate: string) {
+  //   // return new Promise((resolve, reject) => {
+  //   //   http.get(`http://localhost:5002/routes?deliverDate=${deliverDate}`, (resp) => {
+  //   //     let data = '';
+  //   //     resp.on('data', (chunk) => {
+  //   //       data += chunk;
+  //   //     });
+
+  //   //     resp.on('end', () => {
+  //   //       const d = JSON.parse(data);
+  //   //       console.log(d);
+  //   //       resolve(d);
+  //   //     });
+
+  //   //   }).on("error", (err) => {
+  //   //     console.log("Error: " + err.message);
+  //   //     resolve();
+  //   //   });
+  //   // });
+
+  //   const self = this;
+
+  //   return new Promise((resolve, reject) => {
+  //     this.getOrderMapForDriver(deliverDate).then(data => {
+  //       const url = "http://localhost:5002/routes";
+  //       const options = {
+  //         port: 80, // 443,
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //         },
+  //       };
+
+  //       const post_req = http.request(url, options, (res: IncomingMessage) => {
+  //         let ss = "";
+  //         res.on("data", (d) => {
+  //           ss += d;
+  //         });
+  //         res.on("end", (r: any) => {
+  //           if (ss) {
+  //             const ret = JSON.parse(ss);
+  //             resolve(ret);
+  //           } else {
+  //             resolve();
+  //           }
+  //         });
+  //       });
+
+  //       post_req.on("error", (error: any) => {
+  //         resolve();
+  //       });
+  //       post_req.write(JSON.stringify(data));
+  //       post_req.end();
+  //     });
+  //   });
+  // }
 
   // allow maximum 11 drivers
   // return --- {markers: [{orderId, lat, lng, type, status, icon}], driverMap:{driverId:{driverId, driverName}} }

@@ -329,9 +329,9 @@ export class OrderController extends Controller {
     try {
       const r = await this.model.getRoutes(deliverDate);
       code = Code.SUCCESS;
-      data = r;
+      data = r.data;
     } catch (error) {
-      // logger.error(`list error: ${error}`);
+      logger.error(`list error: ${error}`);
     } finally {
       res.send({
           code,

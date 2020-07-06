@@ -30,6 +30,7 @@
     "@types/sharp": "^0.25.0",
     "@types/socket.io": "^2.1.2",
     "@types/twilio": "0.0.10",
+    "axios": "^0.19.2",
     "babel": "^6.23.0",
     "bcrypt": "^3.0.6",
     "compression": "^1.7.4",
