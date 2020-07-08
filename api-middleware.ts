@@ -9,27 +9,12 @@ export class ApiMiddleWare {
     }
 
     async auth(req: Request, res: Response, next: any) {
-      let token = req.get('Authorization') || (`${req.query.token}` || "");
+      let token: any = req.get('Authorization') || (req.query.token || "");
       token = token.replace("Bearer ", "");
       if(
-        req.path === "/api/admin/accounts/login"
-        || req.path.indexOf("api/admin/accounts/current") !== -1
+        req.path.toLowerCase() === "/api/admin/accounts/login"
+        || req.path.toLowerCase().indexOf("api/admin/accounts/current") !== -1
       ){
-      // if(req.path === '/api/Accounts/wxLogin' || req.path === '/api/Accounts/wechatLogin' || req.path === '/api/Accounts/login'
-      //   || req.path === '/api/Accounts/signup' || req.path === '/api/Accounts/logout'
-      //   || req.path === '/api/Accounts/loginByPhone'
-      //   || req.path === '/api/Accounts/verifyCode'
-      //   || req.path === '/api/Accounts/sendVerifyMsg'
-      //   || req.path === '/api/Accounts/verifyAndLogin'
-      //   || (req.method === 'GET' && req.path.indexOf('/api/Accounts') !== -1)
-      //   || req.path.indexOf('/api/Locations') !== -1
-      //   || req.path.indexOf('/api/Restaurants') !== -1
-      //   || req.path.indexOf('/api/Products') !== -1
-      //   || req.path === '/api/Restaurants' || req.path === '/api/Restaurants/qFind' || req.path === '/api/Restaurants/load'
-      //   || req.path === '/api/Products' || req.path === '/api/Products/qFind' || req.path === '/api/Products/categorize'
-      //   || req.path === '/api/Ranges' || req.path === '/api/Ranges/overRange' || req.path === '/api/Ranges/inRange'
-      //   || req.path === '/api/ClientPayments/notify'
-      //   || req.path.includes('.jpeg') || req.path.includes('.jpg') || req.path.includes('.png')){
         next();
       }else{
         res.setHeader('Content-Type', 'application/json');

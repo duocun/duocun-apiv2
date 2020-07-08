@@ -421,23 +421,23 @@ export class Order extends Model {
     rs.forEach((order: any) => {
       const items: any[] = [];
 
-      if (order.merchantId) {
-        const m = merchants.find(
-          (m: any) => m._id.toString() === order.merchantId.toString()
-        );
-        order.merchant = { _id: m._id.toString(), name: m.name, accountId: m.accountId };
-      }
+      // if (order.merchantId) {
+      //   const m = merchants.find(
+      //     (m: any) => m._id.toString() === order.merchantId.toString()
+      //   );
+      //   order.merchant = { _id: m._id.toString(), name: m.name, accountId: m.accountId };
+      // }
 
-      if (order.merchant && order.merchant.accountId) {
-        const merchantAccount = merchantAccounts.find(
-          (a: any) =>
-            a && a._id.toString() === order.merchant.accountId.toString()
-        );
-        if (merchantAccount) {
-          const m = merchantAccount;
-          order.merchantAccount = { _id: m._id.toString(), name: m.name };
-        }
-      }
+      // if (order.merchant && order.merchant.accountId) {
+      //   const merchantAccount = merchantAccounts.find(
+      //     (a: any) =>
+      //       a && a._id.toString() === order.merchant.accountId.toString()
+      //   );
+      //   if (merchantAccount) {
+      //     const m = merchantAccount;
+      //     order.merchantAccount = { _id: m._id.toString(), name: m.name };
+      //   }
+      // }
 
       if (order.driverId) {
         const driver = driverAccounts.find(
@@ -493,7 +493,7 @@ export class Order extends Model {
       note: r.note,
       deliverDate: r.deliverDate,
       delivered: r.delivered,
-      created: r.creaded,
+      created: r.created,
     }));
 
     return {

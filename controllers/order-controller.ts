@@ -223,13 +223,11 @@ export class OrderController extends Controller {
     } catch (error) {
       logger.error(`list error: ${error}`);
     } finally {
-      res.send(
-        JSON.stringify({
-          code,
-          data,
-          count,
-        })
-      );
+      res.send({
+        code,
+        data,
+        count,
+      });
     }
   }
 
