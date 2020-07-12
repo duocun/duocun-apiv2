@@ -106,13 +106,17 @@ export class StatisticsController extends Controller {
   }
 
   async getSalesMap(req: Request, res: Response) {
-    const startDate: any = req.query.startDate;
-    const endDate: any = req.query.endDate;
+    const deliverDate: any = req.query.deliverDate;
+    const orderDate: any = req.query.orderDate;
     let data: any = {};
     let code = Code.FAIL;
     try {
-      if (startDate) {
-        const r = await this.model.getSalesMap(startDate, endDate);
+      if (deliverDate) {
+        const r = await this.model.getSalesMap(deliverDate, 'Delivery Date');
+        code = Code.SUCCESS;
+        data = r;
+      }else if(orderDate){
+        const r = await this.model.getSalesMap(orderDate, 'Order Date');
         code = Code.SUCCESS;
         data = r;
       }

@@ -4,6 +4,7 @@ import { Order, IOrder, OrderStatus, OrderType } from "../models/order";
 import { Pickup, PickupStatus } from "./pickup";
 import { TransactionAction, Transaction } from "./transaction";
 import { Account } from "./account";
+import { DateTime } from "./date-time";
 
 export class Statistics extends Model{
   orderModel: Order;
@@ -20,17 +21,29 @@ export class Statistics extends Model{
   async getById(id: string){
     return;
   }
-  // get sales, cost, nOrders and nProducts
-  async getSalesMap(startDate: string, endDate?: string){
-    const query = {
+
+  /**
+   * get sales, cost, nOrders and nProducts
+   * date: 'YYYY-MM-DD'
+   * dateType: 'Delivery Date', 'Order Date'
+   */
+  async getSalesMap(date: string, dateType: string){
+    const dt = new DateTime();
+    const created = dt.getMomentFromLocal(`${date}T00:00:00`).toISOString();
+    const query = dateType === 'Order Date' ? {
       status: {
         $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
       },
-      created: {$gte: startDate}
+      created: {$gte: created}
+    } : {
+      status: {
+        $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
+      },
+      deliverDate: {$gte: date}
     };
 
     const orders = await this.orderModel.find(query);
-    return this.orderModel.getSalesMap(orders, "created");
+    return this.orderModel.getSalesMap(orders, dateType === 'Order Date' ? "created": "delivered");
   }
 
   //return [{merchantId,merchantName,nOrders,totalPrice,totalCost}]
