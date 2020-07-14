@@ -18,6 +18,7 @@ import { Config } from "./config";
 import { DB } from "./db";
 import { Utils } from "./utils";
 import { Socket } from "./socket";
+import socketio from './socketio';
 
 import { AccountRouter } from "./routers/account-route";
 import { CategoryRouter } from "./routers/category-route";
@@ -51,6 +52,7 @@ import { EventLogRouter } from "./routers/event-log-route";
 import { StatisticsRouter } from "./routers/statistics-route";
 import { ToolRouter } from "./routers/tool-route";
 import { PageRouter } from "./routers/page-route";
+import { MessageRouter } from "./routers/message-route";
 import { CellApplicationRouter } from "./routers/cell-application-route";
 
 import { AreaRouter } from "./routers/area-route";
@@ -205,6 +207,7 @@ dbo.init(cfg.DATABASE).then((dbClient) => {
   app.use(ROUTE_PREFIX + "/DriverSchedules", DriverScheduleRouter(dbo));
   app.use(ROUTE_PREFIX + "/Logs", LogRouter(dbo));
   app.use(ROUTE_PREFIX + "/EventLogs", EventLogRouter(dbo));
+  app.use(ROUTE_PREFIX + "/Messages", MessageRouter(dbo));
 
   app.use(ROUTE_PREFIX + "/CellApplications", CellApplicationRouter(dbo));
 
@@ -216,6 +219,7 @@ dbo.init(cfg.DATABASE).then((dbClient) => {
   });
 
   // setupSocket(server);
+  socketio(server, dbo);
 });
 
 app.use(cors());
