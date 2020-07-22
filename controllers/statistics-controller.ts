@@ -104,7 +104,25 @@ export class StatisticsController extends Controller {
         });
     }
   }
-
+  async getSalaryStatistics(req: Request, res: Response) {
+    let data: any = '';
+    let code = Code.FAIL;
+    try {
+        code = Code.SUCCESS;
+        data = await this.model.getSalaryStatistics();
+    } catch (error) {
+      logger.error(`get salary statistic error: ${error}`);
+    } finally {
+      res.setHeader("Content-Type", "application/json");
+      res.send(
+        JSON.stringify({
+          code: code,
+          data: data,
+        })
+      );
+    }
+  }
+  
   async getSalesMap(req: Request, res: Response) {
     const deliverDate: any = req.query.deliverDate;
     const orderDate: any = req.query.orderDate;
