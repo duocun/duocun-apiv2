@@ -82,6 +82,7 @@ export class OrderController extends Controller {
     const driverId = req.body.driverId;
     const driverName = req.body.driverName;
     const orderIds = req.body.orderIds;
+    const orderIdMap = req.body.orderIdMap;
     let code = Code.FAIL;
     let data = '';
     try {

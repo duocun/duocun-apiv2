@@ -22,7 +22,7 @@ export function OrderRouter(db: DB) {
   router.put('/cancelItems/:id', (req, res) => { controller.cancelItems(req, res); });
   router.put('/splitOrder/:id', (req, res) => { controller.splitOrder(req, res); });
 
-  router.put('/assign', (req, res) => { controller.assign(req, res); });
+  router.put('/assignments', (req, res) => { controller.assign(req, res); });
 
   router.post('/', (req, res) => { controller.create(req, res); });
   router.put('/:id', (req, res) => { controller.updateOne(req, res); });
