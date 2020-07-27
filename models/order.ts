@@ -91,8 +91,8 @@ export interface IOrder {
   clientPhone?: string;
   merchantId: string;
   merchantName: string;
-  driverId?: string;
-  driverName?: string;
+  driverId: string;
+  driverName: string;
   type?: string; // OrderType
 
   paymentStatus?: string;
@@ -105,7 +105,7 @@ export interface IOrder {
   deliverDate?: string; // deliver date  2020-11-01
   deliverTime?: string; // deliver time 14:00:00
 
-  delivered?: string;
+  delivered: string;
   created?: string;
   modified?: string;
 
@@ -113,7 +113,7 @@ export interface IOrder {
   utcCreated?: string;
   utcModified?: string;
 
-  items?: IOrderItem[];
+  items: IOrderItem[];
   tax?: number;
   tips?: number;
   // deliveryAddress?: Address; // duplicated should remove
@@ -616,66 +616,6 @@ export class Order extends Model {
   //   });
   // }
 
-  // allow maximum 11 drivers
-  // return --- {markers: [{orderId, lat, lng, type, status, icon}], driverMap:{driverId:{driverId, driverName}} }
-  async getMapMarkers(where: any, options?: object) {
-    const q = {
-      ...where,
-      status: {
-        $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
-      }
-    };
-    const ret: any = await this.find_v2(q, options);
-    const driverMap: any = {};
-    // const icons = [
-    //   'gBlack',
-    //   'gBlue',
-    //   'gBrown',
-    //   'gGray',
-    //   'gOrange',
-    //   'gPurple',
-    //   'gYellow',
-    //   'gPink',
-    //   'gRed',
-    //   'gLightBlue',
-    //   'gDarkYellow'
-    // ]
-
-    ret.data.forEach((order: any) => {
-      // const address = this.locationModel.getAddrString(order.location);
-
-      const driverId = order.driverId ? order.driverId.toString() : 'unassigned';
-      const driverName = order.driverName ? order.driverName : '';
-      driverMap[driverId] = { driverId, driverName }; // icon: 'gWhite'
-    });
-
-    // let i = 0;
-    // Object.keys(driverMap).forEach(driverId => {
-    //   if(driverId === 'unassigned'){
-    //     driverMap[driverId].icon = 'gWhite';
-    //   }else{
-    //     if(i<icons.length){
-    //       driverMap[driverId].icon = icons[i];
-    //     }
-    //     i++;
-    //   }
-    // });
-
-    const markers: any[] = [];
-    ret.data.forEach((order: any) => {
-      const driverId = order.driverId ? order.driverId.toString() : 'unassigned';
-      const orderId = order._id.toString();
-      const lat = order.location.lat;
-      const lng = order.location.lng;
-      const status = order.status;
-      const type = order.type;
-      const clientName = order.clientName;
-      // const icon = status === OrderStatus.DONE ? 'gGreen' : driverMap[driverId].icon;
-      markers.push({ orderId, lat, lng, type, status, driverId, clientName });
-    });
-
-    return { markers, driverMap };
-  }
 
   // should only use with paging
   // get transactions with purchase items
