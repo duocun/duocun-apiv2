@@ -29,6 +29,7 @@ import { PaymentAction } from "./client-payment";
 import { DbStatus } from "../entity";
 import { Code } from "../controllers/controller";
 import { DateTime } from './date-time';
+import { UNASSIGNED_DRIVER_NAME, UNASSIGNED_DRIVER_ID } from "./driver";
 
 const CASH_ID = "5c9511bb0851a5096e044d10";
 const CASH_NAME = "Cash";
@@ -411,15 +412,20 @@ export class Order extends Model {
   async joinFindV2(where: any, options?: object) {
     const ret: any = await this.find_v2(where, options);
     const rs = ret.data;
-    // const clientAccountIds = rs.map((r: any) => r.clientId);
+    const clientAccountIds = rs.map((r: any) => r.clientId); // to get clientInfo from account table
     const merchantAccountIds = rs.map((r: any) => r.merchantId);
     const driverAccounts = await this.accountModel.find({ type: "driver" });
-    // const clientAccounts = await this.accountModel.find({ _id: { $in: clientAccountIds } });
+    const clientAccounts = await this.accountModel.find({ _id: { $in: clientAccountIds } });
     const merchantAccounts = await this.accountModel.find({ _id: { $in: merchantAccountIds } });
     const merchants = await this.merchantModel.find({});
     const ps = await this.productModel.find({});
     rs.forEach((order: any) => {
       const items: any[] = [];
+
+      if (order.clientId) {
+        const client = clientAccounts.find((m: any) => m._id.toString() === order.clientId.toString());
+        order.clientInfo = client.info;
+      }
 
       // if (order.merchantId) {
       //   const m = merchants.find(
@@ -484,6 +490,7 @@ export class Order extends Model {
       clientId: r.clientId,
       clientName: r.clientName,
       clientPhone: r.clientPhone,
+      clientInfo: r.clientInfo,
       merchantId: r.merchantId,
       merchantName: r.merchantName,
       // merchantAccount: r.merchantAccount,
@@ -520,8 +527,10 @@ export class Order extends Model {
     return this.filterArray(ts, fields);
   }
 
-  async getOrderMapForDriver(deliverDate: string) {
+  async getOrderMapForDriver(deliverDate: string, driverId: string) {
+    const qDriverId = driverId && driverId !== UNASSIGNED_DRIVER_ID ? {driverId} : {}; 
     const q = {
+      ...qDriverId,
       deliverDate,
       status: {
         $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
@@ -546,9 +555,9 @@ export class Order extends Model {
     return driverMap;
   }
 
-  async getRoutes(deliverDate: string){
+  async getRoutes(deliverDate: string, driverId: string){
     // try {
-      const data = await this.getOrderMapForDriver(deliverDate);
+      const data = await this.getOrderMapForDriver(deliverDate, driverId);
       const url = 'https://duocun-route-api.herokuapp.com/routes';
       // const url = 'http://localhost:5002/routes';
       const res = await axios.post(url, data);
