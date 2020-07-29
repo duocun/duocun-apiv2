@@ -21,8 +21,14 @@ Nodejs
     `export NVM_DIR=~/.nvm`
     `source $(brew --prefix nvm)/nvm.sh`
     
-Express
-Mongodb
+Express.js
+
+Mongodb community server
+  To install mongo db server use following command
+ `brew install mongodb-community@4.2`
+
+Mongo compass (optional)
+You can use mongo compass to view your database
 
 # Install
 
