@@ -206,6 +206,7 @@ export class Model extends Entity {
     });
   }
 
+  // deprecated for driver
   update(req: Request, res: Response) {
     if (req.body.data instanceof Array) {
       this.bulkUpdate(req.body.data, req.body.options).then(x => {

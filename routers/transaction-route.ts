@@ -12,8 +12,7 @@ export function TransactionRouter(db: DB) {
   // admin api
 
   // api/admin/transactions?query={where:xxx,options:{"limit":10,"skip":0,"sort":[["_id",1]]}}
-  router.get('/revenue', [parseQuery], (req: Request, res: Response) => { controller.exportRevenue(req, res); });
-  
+
   router.get('/fixAmount', (req, res) => { controller.fixTransactionAmount(req, res); });
   
   // should only use with paging

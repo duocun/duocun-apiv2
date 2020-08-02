@@ -25,8 +25,8 @@ export class MerchantScheduleController extends Controller {
 
   getAvailableSchedules(req: Request, res: Response) {
     const merchantId: any = req.query.merchantId;
-    const lat = +req.query.lat;
-    const lng = +req.query.lng;
+    const lat : any = req.query.lat;
+    const lng : any = req.query.lng;
     merchantId ? 
     this.model.getAvailables(merchantId, lat, lng).then(mss =>{
       res.send(JSON.stringify({

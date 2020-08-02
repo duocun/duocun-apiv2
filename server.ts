@@ -25,6 +25,7 @@ import { CategoryRouter } from "./routers/category-route";
 import { ProductRouter } from "./routers/product-route";
 import { StockRouter } from "./routers/stock-route";
 import { OrderRouter } from "./routers/order-route";
+import { AssignmentRouter } from "./routers/assignment-route";
 import { DistanceRouter } from "./routers/distance-route";
 import { MerchantPaymentRouter } from "./routers/merchant-payment-route";
 import { MerchantBalanceRouter } from "./routers/merchant-balance-route";
@@ -173,6 +174,7 @@ dbo.init(cfg.DATABASE).then((dbClient) => {
   app.use(ROUTE_PREFIX + "/accounts", AccountRouter(dbo));
   app.use(ROUTE_PREFIX + "/merchants", MerchantRouter(dbo));
   app.use(ROUTE_PREFIX + "/orders", OrderRouter(dbo));
+  app.use(ROUTE_PREFIX + "/Assignments", AssignmentRouter(dbo));
   app.use(ROUTE_PREFIX + "/categories", CategoryRouter(dbo));
   app.use(ROUTE_PREFIX + "/products", ProductRouter(dbo));
   app.use(ROUTE_PREFIX + "/pages", PageRouter(dbo));

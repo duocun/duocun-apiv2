@@ -123,17 +123,7 @@ export class TransactionController extends Controller {
     }
   }
 
-  exportRevenue(req: Request, res: Response) {
-    const path = './uploads/revenue.csv';
-    this.model.getRevenueCSV(path).then(() => {
-      // res.download(path, () => {});
-      res.setHeader("Content-Type", "application/json");
-      res.send({
-        code: Code.SUCCESS,
-        data: 1,
-      });
-    });
-  }
+
 
   async recalculate(req: Request, res: Response) {
     const accountId: any = req.query.accountId;

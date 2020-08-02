@@ -119,57 +119,7 @@ export class Transaction extends Model {
     this.eventLogModel = new EventLog(dbo);
   }
 
-  // const path = '../a.csv';
-  getRevenueCSV(path: string) {
-    const q = {
-      actionCode: {
-        $in: [
-          TransactionAction.PAY_BY_CARD.code,
-          TransactionAction.PAY_BY_WECHAT.code
-        ]
-      }
-    };
-
-    return new Promise((resolve) => {
-      this.find(q).then(trs => {
-        const dt = new DateTime();
-        let i = 1;
-        const data: any[] = [];
-        trs.forEach(tr => {
-          const date = dt.getMomentFromUtc(tr.created).format('YYYY-MM-DD');
-          if((+tr.amount) >= 1 && date){
-            const id = 'RT' + i;
-            i++;
-            const description = `[${tr.actionCode}] ${tr.fromName}`;
-            const total = tr.amount;
-            const revenue = Math.round(tr.amount / 1.13 * 100) / 100;
-            const hst = Math.round(revenue * 13) / 100;
-            data.push({ date, id, description, revenue, hst, total });
-          }
-        });
-
-        const cw = createObjectCsvWriter({
-          path,
-          header: [
-            { id: 'date', title: 'Invoice Date' },
-            { id: 'id', title: 'Invoice #' },
-            { id: 'description', title: 'Description' },
-            { id: 'revenue', title: 'Revenue' },
-            { id: 'hst', title: 'Hst' },
-            { id: 'total', title: 'Total' },
-          ]
-        });
-
-        if(data){
-          cw.writeRecords(data).then(() => {
-            resolve();
-          });
-        }else{
-          resolve();
-        }
-      });
-    });
-  }
+  
 
   // update balance of debit and credit
   async doInsertOne(tr: ITransaction) {

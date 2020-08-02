@@ -66,8 +66,8 @@ export class AreaController extends Controller{
 
 
   gv1_getMyArea(req: Request, res: Response) {
-    const lat = +req.query.lat;
-    const lng = +req.query.lng;
+    const lat : any = req.query.lat;
+    const lng : any = req.query.lng;
     this.model.getMyArea({lat, lng}, AppType.GROCERY).then(area => {
       res.setHeader('Content-Type', 'application/json');
       res.send(JSON.stringify({

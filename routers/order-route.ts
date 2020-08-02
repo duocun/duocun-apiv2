@@ -14,7 +14,6 @@ export function OrderRouter(db: DB) {
 
   // admin
   router.get('/bad', (req, res) => { controller.getBadOrder(req, res); });
-  router.get('/map-markers', [parseQuery], (req: Request, res: Response) => { controller.getMapMarkers(req, res); });
   router.get('/routes', [parseQuery], (req: Request, res: Response) => { controller.getRoutes(req, res); });
   router.get('/duplicates', (req, res) => { controller.getClientWithDuplicatedOrders(req, res)});
 
@@ -22,7 +21,7 @@ export function OrderRouter(db: DB) {
   router.put('/cancelItems/:id', (req, res) => { controller.cancelItems(req, res); });
   router.put('/splitOrder/:id', (req, res) => { controller.splitOrder(req, res); });
 
-  router.put('/assign', (req, res) => { controller.assign(req, res); });
+  
 
   router.post('/', (req, res) => { controller.create(req, res); });
   router.put('/:id', (req, res) => { controller.updateOne(req, res); });

@@ -23,7 +23,7 @@ export function AccountRouter(db: DB) {
   router.post('/wechatLoginByOpenId', (req, res) => { controller.wechatLoginByOpenId(req, res); });
   router.get('/wechatLoginByCode', (req, res) => { controller.wechatLoginByCode(req, res); });
   router.get('/qFind', (req, res) => { controller.list(req, res); }); // deprecated
-
+  router.put('/:id', (req, res) => { controller.updateOne(req, res); });
   // v1
   // router.get('/attributes', (req, res) => { this.attrModel.quickFind(req, res); });
 
@@ -35,7 +35,7 @@ export function AccountRouter(db: DB) {
 
   // router.post('/', (req, res) => { controller.create(req, res); });
   // router.put('/', (req, res) => { controller.replace(req, res); });
-  router.patch('/', (req, res) => { model.update(req, res); });
+  router.patch('/', (req, res) => { model.update(req, res); }); // driver
   // router.delete('/', (req, res) => { controller.remove(req, res); });
 
   // router.post('/sendClientMsg2', (req, res) => { controller.sendClientMsg2(req, res); });

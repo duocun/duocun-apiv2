@@ -2,8 +2,9 @@ import { DB } from "../db";
 import { Model } from "./model";
 import { Order, IOrder, OrderStatus, OrderType } from "../models/order";
 import { Pickup, PickupStatus } from "./pickup";
-import { TransactionAction, Transaction } from "./transaction";
+import { TransactionAction, Transaction, ITransaction } from "./transaction";
 import { Account } from "./account";
+import { DateTime } from "./date-time";
 
 export class Statistics extends Model{
   orderModel: Order;
@@ -20,17 +21,29 @@ export class Statistics extends Model{
   async getById(id: string){
     return;
   }
-  // get sales, cost, nOrders and nProducts
-  async getSalesMap(startDate: string, endDate?: string){
-    const query = {
+
+  /**
+   * get sales, cost, nOrders and nProducts
+   * date: 'YYYY-MM-DD'
+   * dateType: 'Delivery Date', 'Order Date'
+   */
+  async getSalesMap(date: string, dateType: string){
+    const dt = new DateTime();
+    const created = dt.getMomentFromLocal(`${date}T00:00:00`).toISOString();
+    const query = dateType === 'Order Date' ? {
       status: {
         $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
       },
-      created: {$gte: startDate}
+      created: {$gte: created}
+    } : {
+      status: {
+        $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
+      },
+      deliverDate: {$gte: date}
     };
 
     const orders = await this.orderModel.find(query);
-    return this.orderModel.getSalesMap(orders, "created");
+    return this.orderModel.getSalesMap(orders, dateType === 'Order Date' ? "created": "delivered");
   }
 
   //return [{merchantId,merchantName,nOrders,totalPrice,totalCost}]
@@ -220,6 +233,71 @@ export class Statistics extends Model{
     });
     return driverMap;
   }
+
+
+  // return [{productName, quantity}...]
+  async getSalaryStatistics(){
+    const ts = await this.transactionModel.find({actionCode: 'PS'});
+    const driverMap = this.getSalaryDriverMap(ts);
+    Object.keys(driverMap).forEach(driverId => {
+      const monthMap = this.getSalaryMonthMap(driverMap[driverId].transactions);
+      driverMap[driverId].monthMap = monthMap;
+    });
+    return driverMap;
+    // const monthMap: any = {}
+    // ts.forEach((t: ITransaction) => {
+    //   const date: any = t.created;
+    //   const [y, m, d] = date.split('T')[0].split('-');
+    //   const key = `${y}-${m}`;
+    //   monthMap[key] = {transactions: [], amount: 0};
+    // });
+
+    // ts.forEach((t: ITransaction) => {
+    //   const date: any = t.created;
+    //   const [y, m, d] = date.split('T')[0].split('-');
+    //   const key = `${y}-${m}`;
+    //   monthMap[key].transactions.push({staffId: t.staffId, staffName: t.staffName, amount: t.amount, created: t.created});
+    //   monthMap[key].amount = Math.round((monthMap[key].amount + t.amount) * 100) / 100;
+    // });
+
+    // Object.keys(monthMap).forEach(m => {
+    //   const driverMap = this.calcMonthlySalary(monthMap[m].transactions);
+    //   monthMap[m].driverMap = driverMap;
+    // });
+
+    // return monthMap;
+  }
+
+  getSalaryMonthMap(transactions: ITransaction[]){
+    const monthMap: any = {}
+    transactions.forEach((t: ITransaction) => {
+      const date: any = t.created;
+      const [y, m, d] = date.split('T')[0].split('-');
+      const ym = `${y}-${m}`;
+      monthMap[ym] = {amount: 0, ym};
+    });
+
+    transactions.forEach((t: ITransaction) => {
+      const date: any = t.created;
+      const [y, m, d] = date.split('T')[0].split('-');
+      const ym = `${y}-${m}`;
+      monthMap[ym].amount = Math.round((monthMap[ym].amount + t.amount) * 100) / 100;
+    });
+    return monthMap;
+  }
+
+  getSalaryDriverMap(transactions: ITransaction[]){
+    const driverMap: any = {};
+    transactions.forEach((t: any) => {
+      driverMap[t.staffId] = {staffId: t.staffId, staffName: t.staffName, amount: 0, transactions:[]};
+    });
+    transactions.forEach((t: any) => {
+      driverMap[t.staffId].transactions.push(t);
+      driverMap[t.staffId].amount = Math.round((driverMap[t.staffId].amount + t.amount) * 100) / 100;;
+    });
+    return driverMap;
+  }
+
 
   //return {nOrders,nProducts,totalPrice,totalCost}
   async getStatisticsInfo(startDate: string, endDate: string) {
