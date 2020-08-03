@@ -24,7 +24,6 @@ export class ChatMessage extends Model{
 
   async getUsers(req: Request, res: Response){
     let realQuery: any = req.query.options;
-    console.log(realQuery);
     let c:Collection = await this.getCollection();
     c.aggregate([
         {
