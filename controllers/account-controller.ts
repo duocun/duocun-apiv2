@@ -7,7 +7,6 @@ import { Config } from "../config";
 import { Controller, Code } from "./controller";
 import path from "path";
 import { getLogger } from "../lib/logger";
-import { retrieve } from "../helpers/request-helper";
 import { ObjectID } from "mongodb";
 
 const logger = getLogger(path.basename(__filename));
