@@ -9,19 +9,19 @@ import { getLogger } from "../lib/logger";
 const logger = getLogger(path.basename(__filename));
 
 export class PageController extends Controller {
-  model: Page
+  model: Page;
   constructor(model: Page, db: DB) {
     super(model, db);
     this.model = model;
   }
   async update(req: Request, res: Response): Promise<any> {
-    const doc = req.body.data;
+    let doc;
     try {
-      await this.model.validate(doc, "update");
+      doc = await this.model.validate(req.body.data, "update");
     } catch (e) {
       return res.json({
         code: Code.FAIL,
-        message: e.toString()
+        message: e.toString(),
       });
     }
     try {
@@ -30,11 +30,11 @@ export class PageController extends Controller {
       console.error(e);
       return res.json({
         code: Code.FAIL,
-        message: "save failed"
+        message: "save failed",
       });
     }
     res.json({
-      code: Code.SUCCESS
-    })
+      code: Code.SUCCESS,
+    });
   }
 }

@@ -28,7 +28,7 @@ export class Page extends Model {
   constructor(db: DB) {
     super(db, "pages");
   }
-  async validate(doc: any, scope: "create"|"update") {
+  async validate(doc: any, scope: "create" | "update") {
     if (!doc) {
       throw new Error("document is empty");
     }
@@ -62,6 +62,7 @@ export class Page extends Model {
         throw new Error("slug is duplicated");
       }
     }
+    return doc;
   }
   
 }

@@ -1,12 +1,15 @@
-import {Request, Response} from "express";
+import { Request, Response } from "express";
 import { DB } from "../db";
 import { Account, AccountAttribute, IAccount } from "../models/account";
 import { MerchantStuff } from "../merchant-stuff";
 import { Utils } from "../utils";
 import { Config } from "../config";
 import { Controller, Code } from "./controller";
-import path from 'path';
-import { getLogger } from '../lib/logger'
+import path from "path";
+import { getLogger } from "../lib/logger";
+import { retrieve } from "../helpers/request-helper";
+import { ObjectID } from "mongodb";
+
 const logger = getLogger(path.basename(__filename));
 
 export class AccountController extends Controller {
@@ -34,36 +37,38 @@ export class AccountController extends Controller {
     this.cfg = new Config();
   }
 
-  async login(req: Request, res: Response):Promise<void> { 
+  async login(req: Request, res: Response): Promise<void> {
     const username: any = req.body.username;
     const password: any = req.body.password;
     let data: any = null;
     let code = Code.FAIL;
     try {
-        const tokenId = await this.model.doLogin(username, password);
-        if (tokenId) {
-          code = Code.SUCCESS;
-          data = tokenId;
-        } else {
-          code = Code.FAIL;
-        }
+      const tokenId = await this.model.doLogin(username, password);
+      if (tokenId) {
+        code = Code.SUCCESS;
+        data = tokenId;
+      } else {
+        code = Code.FAIL;
+      }
     } catch (error) {
       logger.error(`list error: ${error}`);
     } finally {
-      res.setHeader('Content-Type', 'application/json'); 
-      res.send(JSON.stringify({
-        code: code,
-        data: data
-      }));
+      res.setHeader("Content-Type", "application/json");
+      res.send(
+        JSON.stringify({
+          code: code,
+          data: data,
+        })
+      );
     }
   }
 
   /**
    * list accounts (override controller's list to hide sensitive information)
-   * @param req 
-   * @param res 
+   * @param req
+   * @param res
    */
-  async list (req: Request, res: Response):Promise<void> { 
+  async list(req: Request, res: Response): Promise<void> {
     // logger.debug("list override in account")
     let options: any = req.query.options || {};
     // remove sensitive field
@@ -73,115 +78,76 @@ export class AccountController extends Controller {
   }
   /**
    * get account (override controller's to hide sensitive information )
-   * @param req 
-   * @param res 
+   * @param req
+   * @param res
    */
-  async get (req: Request, res: Response):Promise<void> { 
+  async get(req: Request, res: Response): Promise<void> {
     // logger.debug("list override in account")
-    let options: any = ( req.query && req.query.options ) || {};
+    let options: any = (req.query && req.query.options) || {};
     // remove sensitive field
     options.fields = this.FIELDS_HIDE;
     req.query.options = options;
     await super.get(req, res);
   }
-  /**
-   * Create a user
-   * @param req 
-   * @param res 
-   */
-  async create (req: Request, res: Response):Promise<void> {
-    let code = Code.FAIL;
-    let data:any = null;
-    try {
-      const body: any = req.body || {};
-      const { username, type, phone } = body;
-      let { attributes } = body;
-      attributes = attributes || {};
-      
-      // check parameters
-      if(!username || !type) {
-        throw "fields [username, type] are required";
-      }
-      // check account duplicate 
-      const checkUser = await this.model.find_v2({username});
-      if ( checkUser.count > 0) {
-        // TODO: name can be duplicated?
-        throw "username already exists";
-      }
-      if ( ["merchant", "system", "client", "driver", "freight"].indexOf(type) < 0 ) {
-        throw "type not allowed";
-      }
-      // OK, save
-      const _doc = {
-        username, type, phone, attributes,
-        // fixed part
-        verified: true, 
-        balance: 0,
-        realm: "",
-        sex: 0,
-        openId: ""
-      }
-      const { _id } = await this.model.create_v2(_doc);
-      data = { _id };
-      code = Code.SUCCESS;
-    } catch ( err ) {
-      logger.error(`create error: ${err}`);
-      data = `${err}`;
-    } finally {
-      res.send({data, code});
-    }
-  }
 
+  
   //Keep Old API //////////////////////////////
 
   loginByPhone(req: Request, res: Response) {
     const phone = req.body.phone;
     const verificationCode = req.body.verificationCode;
 
-    this.model.doLoginByPhone(phone, verificationCode).then((tokenId: string) => {
-      res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify(tokenId, null, 3));
-    });
+    this.model
+      .doLoginByPhone(phone, verificationCode)
+      .then((tokenId: string) => {
+        res.setHeader("Content-Type", "application/json");
+        res.send(JSON.stringify(tokenId, null, 3));
+      });
   }
-
-
 
   wechatLogin(req: Request, res: Response) {
-
     const authCode: any = req.query.code;
-    res.setHeader('Content-Type', 'application/json');
+    res.setHeader("Content-Type", "application/json");
 
-    this.utils.getWechatAccessToken(authCode).then((r: any) => {
-      this.utils.getWechatUserInfo(r.access_token, r.openid).then((x: any) => { // IAccount
-        this.model.doWechatSignup(x.openid, x.nickname, x.headimgurl, x.sex).then((account: IAccount) => {
-          if (account) {
-            const accountId = account._id.toString();
-            const tokenId = this.model.jwtSign(accountId);
-            res.send(JSON.stringify(tokenId, null, 3));
-          } else {
-            res.send(JSON.stringify('', null, 3));
+    this.utils.getWechatAccessToken(authCode).then(
+      (r: any) => {
+        this.utils.getWechatUserInfo(r.access_token, r.openid).then(
+          (x: any) => {
+            // IAccount
+            this.model
+              .doWechatSignup(x.openid, x.nickname, x.headimgurl, x.sex)
+              .then((account: IAccount) => {
+                if (account) {
+                  const accountId = account._id.toString();
+                  const tokenId = this.model.jwtSign(accountId);
+                  res.send(JSON.stringify(tokenId, null, 3));
+                } else {
+                  res.send(JSON.stringify("", null, 3));
+                }
+              });
+          },
+          (err) => {
+            console.log(err);
+            res.send(JSON.stringify("", null, 3));
           }
-        });
-      }, err => {
+        );
+      },
+      (err) => {
         console.log(err);
-        res.send(JSON.stringify('', null, 3));
-      });
-    }, err => {
-      console.log(err);
-      res.send(JSON.stringify('', null, 3));
-    });
+        res.send(JSON.stringify("", null, 3));
+      }
+    );
   }
-
 
   // return  {tokenId, accessToken, openId, expiresIn}
   wechatLoginByCode(req: Request, res: Response) {
     const wxLoginCode: any = req.query.code;
-    res.setHeader('Content-Type', 'application/json');
+    res.setHeader("Content-Type", "application/json");
     this.model.wechatLoginByCode(wxLoginCode).then((r: any) => {
       if (r && r.tokenId) {
         res.send(JSON.stringify(r, null, 3));
       } else {
-        res.send(JSON.stringify('', null, 3));
+        res.send(JSON.stringify("", null, 3));
       }
     });
   }
@@ -191,16 +157,15 @@ export class AccountController extends Controller {
     const openId = req.body.openId;
     const accessToken = req.body.accessToken;
 
-    res.setHeader('Content-Type', 'application/json');
+    res.setHeader("Content-Type", "application/json");
     this.model.wechatLoginByOpenId(accessToken, openId).then((tokenId: any) => {
       if (tokenId) {
-        res.send(JSON.stringify({tokenId}, null, 3));
+        res.send(JSON.stringify({ tokenId }, null, 3));
       } else {
-        res.send(JSON.stringify('', null, 3));
+        res.send(JSON.stringify("", null, 3));
       }
     });
   }
-
 
   // req --- require accountId, username and phone fields
   sendVerifyMsg(req: Request, res: Response) {
@@ -210,22 +175,23 @@ export class AccountController extends Controller {
     const phone = req.body.phone;
 
     this.model.trySignupV2(accountId, phone).then((r: any) => {
-      res.setHeader('Content-Type', 'application/json');
+      res.setHeader("Content-Type", "application/json");
       if (r.phone) {
-        const text = (lang === 'en' ? 'Duocun Verification Code: ' : '多村验证码: ') + r.verificationCode;
+        const text =
+          (lang === "en" ? "Duocun Verification Code: " : "多村验证码: ") +
+          r.verificationCode;
         this.model.sendMessage(r.phone, text).then(() => {
           if (r.accountId) {
             const tokenId = this.model.jwtSign(r.accountId);
             res.send(JSON.stringify(tokenId, null, 3));
           } else {
-            res.send(JSON.stringify('', null, 3)); // sign up fail, please contact admin
+            res.send(JSON.stringify("", null, 3)); // sign up fail, please contact admin
           }
         });
       } else {
-        res.send(JSON.stringify('', null, 3)); // sign up fail, please contact admin
+        res.send(JSON.stringify("", null, 3)); // sign up fail, please contact admin
       }
     });
-
   }
 
   verifyPhoneNumber(req: Request, res: Response) {
@@ -233,12 +199,14 @@ export class AccountController extends Controller {
     const phone = req.body.phone;
     const code = req.body.code;
 
-    this.model.verifyPhoneNumber(phone, code, loggedInAccountId).then((r: any) => {
-      this.model.updateAccountVerified(r).then((ret) => {
-        res.setHeader('Content-Type', 'application/json');
-        res.send(JSON.stringify(ret, null, 3));
+    this.model
+      .verifyPhoneNumber(phone, code, loggedInAccountId)
+      .then((r: any) => {
+        this.model.updateAccountVerified(r).then((ret) => {
+          res.setHeader("Content-Type", "application/json");
+          res.send(JSON.stringify(ret, null, 3));
+        });
       });
-    });
   }
 
   sendClientMsg(req: Request, res: Response) {
@@ -247,17 +215,23 @@ export class AccountController extends Controller {
     const phone = req.body.phone;
     const orderType = req.body.orderType;
 
-    res.setHeader('Content-Type', 'application/json');
+    res.setHeader("Content-Type", "application/json");
 
     let txt;
-    if (orderType === 'G') {
-      txt = lang === 'en' ? 'Reminder: Your delivery arrived.' : '多村提醒您: 货已送到, 请查收。(系统短信, 勿回)';
+    if (orderType === "G") {
+      txt =
+        lang === "en"
+          ? "Reminder: Your delivery arrived."
+          : "多村提醒您: 货已送到, 请查收。(系统短信, 勿回)";
     } else {
-      txt = lang === 'en' ? 'Reminder: Your delivery arrived.' : '多村提醒您: 餐已送到, 请查收。(系统短信, 勿回)';
+      txt =
+        lang === "en"
+          ? "Reminder: Your delivery arrived."
+          : "多村提醒您: 餐已送到, 请查收。(系统短信, 勿回)";
     }
 
     self.model.sendMessage(phone, txt).then(() => {
-      res.send(JSON.stringify('', null, 3)); // sign up fail, please contact admin
+      res.send(JSON.stringify("", null, 3)); // sign up fail, please contact admin
     });
   }
 
@@ -277,14 +251,13 @@ export class AccountController extends Controller {
     if (account) {
       res.json({
         code: Code.SUCCESS,
-        data: account
-      })
+        data: account,
+      });
     } else {
       res.json({
-        code: Code.FAIL
-      })
+        code: Code.FAIL,
+      });
     }
-    
   }
 
   signup(req: Request, res: Response) {
@@ -292,43 +265,45 @@ export class AccountController extends Controller {
     const code: string = req.body.verificationCode.toString();
 
     this.model.doSignup(phone, code).then((account: any) => {
-      res.setHeader('Content-Type', 'application/json');
+      res.setHeader("Content-Type", "application/json");
       const tokenId = this.model.jwtSign(account._id.toString());
       res.send(JSON.stringify(tokenId, null, 3));
     });
   }
-
 
   // gv1
 
   // optional --- status
   gv1_list(req: Request, res: Response) {
     const status = req.query.status;
-    const query = status ? {status} : {};
-    this.model.find(query).then(accounts => {
+    const query = status ? { status } : {};
+    this.model.find(query).then((accounts) => {
       accounts.map((account: any) => {
         if (account && account.password) {
           delete account.password;
         }
       });
-      res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify({
-        code: Code.SUCCESS,
-        data: accounts 
-      }));
+      res.setHeader("Content-Type", "application/json");
+      res.send(
+        JSON.stringify({
+          code: Code.SUCCESS,
+          data: accounts,
+        })
+      );
     });
   }
-
 
   // id
   getByTokenId(req: Request, res: Response) {
     const tokenId: any = req.params.id;
-    this.model.getAccountByToken(tokenId).then(account => {
-      res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify({
-        code: account ? Code.SUCCESS : Code.FAIL,
-        data: account
-      }));
+    this.model.getAccountByToken(tokenId).then((account) => {
+      res.setHeader("Content-Type", "application/json");
+      res.send(
+        JSON.stringify({
+          code: account ? Code.SUCCESS : Code.FAIL,
+          data: account,
+        })
+      );
     });
   }
 }
