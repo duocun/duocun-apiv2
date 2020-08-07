@@ -318,6 +318,6 @@ export class Model extends Entity {
   }
 
   async validate(data: any, scope: "create"|"update"): Promise<any> {
-    return true;
+    return data;
   }
 }

@@ -97,10 +97,9 @@ export class Controller {
   }
 
   async create(req: Request, res: Response): Promise<any> {
-    const doc = req.body.data;
-    delete doc._id;
+    let doc;
     try {
-      await this.model.validate(doc, "create");
+      doc =  this.model.validate(req.body.data, "create");
     } catch (e) {
       return res.json({
         code: Code.FAIL,
