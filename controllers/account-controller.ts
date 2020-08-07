@@ -37,6 +37,25 @@ export class AccountController extends Controller {
   }
 
   async login(req: Request, res: Response): Promise<void> {
+    const { email, password } = req.body;
+    const result = await this.model.loginByEmail(email, password);
+    if (result.data && result.token) {
+      const account = { ...result.data };
+      delete account.password;
+      res.json({
+        code: Code.SUCCESS,
+        data: account,
+        token: result.token,
+      });
+    } else {
+      res.json({
+        code: Code.FAIL,
+        message: result.message || "",
+      });
+    }
+  }
+
+  async login_old(req: Request, res: Response): Promise<void> {
     const username: any = req.body.username;
     const password: any = req.body.password;
     let data: any = null;
@@ -89,7 +108,6 @@ export class AccountController extends Controller {
     await super.get(req, res);
   }
 
-  
   //Keep Old API //////////////////////////////
 
   loginByPhone(req: Request, res: Response) {

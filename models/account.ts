@@ -3,7 +3,7 @@ import { DB } from "../db";
 import { Model } from "./model";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { Config } from "../config";
+import cfg, { Config } from "../config";
 import { Utils } from "../utils";
 import moment from "moment";
 import { EventLog } from "./event-log";
@@ -93,7 +93,7 @@ export class Account extends Model {
   constructor(dbo: DB) {
     super(dbo, "users");
     this.eventLogModel = new EventLog(dbo);
-    this.cfg = new Config(); // JSON.parse(fs.readFileSync('../duocun.cfg.json', 'utf-8'));
+    this.cfg = cfg;
     this.twilioClient = require("twilio")(
       this.cfg.TWILIO.SID,
       this.cfg.TWILIO.TOKEN
@@ -126,7 +126,6 @@ export class Account extends Model {
           );
           if (matched) {
             account.password = "";
-            const cfg = new Config();
             return jwt.sign(account._id.toString(), cfg.JWT.SECRET); // SHA256
           } else {
             return;
@@ -142,6 +141,37 @@ export class Account extends Model {
     } else {
       logger.error(`login error: username is empty`);
       return;
+    }
+  }
+
+  async loginByEmail(email: string, password: string) {
+    const account: IAccount = await this.findOne({
+      email,
+      type: { $ne: "tmp" },
+    });
+    if (!account) {
+      return {
+        data: null,
+        message: "No such account",
+      };
+    }
+    if (!account.password) {
+      return {
+        data: null,
+        message: "Password is empty",
+      };
+    }
+    const matched = await this.comparePassword(password, account.password);
+    if (matched) {
+      return {
+        data: account,
+        token: this.jwtSign(String(account._id)),
+      };
+    } else {
+      return {
+        data: null,
+        message: "Password mismatch",
+      };
     }
   }
 
@@ -331,7 +361,6 @@ export class Account extends Model {
       const account = result.account;
       const accountId = account._id.toString();
       await this.updateOne({ _id: accountId }, { verified });
-      const cfg = new Config();
       const tokenId = jwt.sign(accountId, cfg.JWT.SECRET); // SHA256
       return { ...result, tokenId: tokenId };
     } else {
@@ -341,8 +370,6 @@ export class Account extends Model {
 
   verifyPhoneNumber(phone: string, code: string, loggedInAccountId: string) {
     return new Promise((resolve, reject) => {
-      const cfg = new Config();
-
       this.findOne({ phone }).then((account) => {
         if (account && account.password) {
           delete account.password;
@@ -519,7 +546,6 @@ export class Account extends Model {
                   account.verificationCode &&
                   code === account.verificationCode
                 ) {
-                  const cfg = new Config();
                   const tokenId = jwt.sign(
                     account._id.toString(),
                     cfg.JWT.SECRET
@@ -558,7 +584,6 @@ export class Account extends Model {
   }
 
   getAccountByToken(tokenId: string): Promise<IAccount> {
-    const cfg = new Config();
     return new Promise((resolve, reject) => {
       if (tokenId && tokenId !== "undefined" && tokenId !== "null") {
         try {
@@ -686,7 +711,6 @@ export class Account extends Model {
         if (r) {
           if (r.verificationCode) {
             if (r.verificationCode === verificationCode) {
-              const cfg = new Config();
               const tokenId = jwt.sign(r._id.toString(), cfg.JWT.SECRET); // SHA256
               if (r.password) {
                 delete r.password;
