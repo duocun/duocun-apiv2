@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import { DB } from "../db";
 import { Model } from "./model";
+import { ROLE } from "./role";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import cfg, { Config } from "../config";
@@ -29,16 +30,6 @@ export const AccountType = {
   TEMP: "tmp",
 };
 
-export enum Role {
-  SUPER = 1,
-  MERCHANT_ADMIN = 2,
-  MERCHANT_STUFF = 3,
-  MANAGER = 4,
-  DRIVER = 5,
-  CLIENT = 6,
-  CUSTOMER_SERVICE = 7,
-  STORAGE_ADMIN = 8,
-}
 
 export interface IAccountAttribute {
   _id?: string;
@@ -64,7 +55,7 @@ export interface IAccount {
   unionid?: string; // wechat unionid
   accessTokens?: any[];
   // address?: IAddress;
-  roles?: number[]; // 'super', 'merchant-admin', 'merchant-stuff', 'driver', 'user'
+  roles?: ROLE[]; // 'super', 'merchant-admin', 'merchant-stuff', 'driver', 'user'
   visited?: boolean;
   stripeCustomerId?: string;
   pickup: string;

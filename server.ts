@@ -1,23 +1,11 @@
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
-import multer from "multer";
 import path from "path";
-import fs from "fs";
 import Server from "socket.io";
-import { ObjectID } from "mongodb";
-
-// import swaggerUi from "swagger-ui-express";
-// import swaggerJsDoc from "swagger-jsdoc";
-// import YAML from "yamljs";
-
-import jwt from "jsonwebtoken";
 import { Config } from "./config";
-//import * as SocketIOAuth from "socketio-auth";
-
 import { DB } from "./db";
 import { Utils } from "./utils";
-import { Socket } from "./socket";
 
 import { AccountRouter } from "./routers/account-route";
 import { CategoryRouter } from "./routers/category-route";
@@ -54,32 +42,19 @@ import { ToolRouter } from "./routers/tool-route";
 import { PageRouter } from "./routers/page-route";
 import { MessageRouter } from "./routers/message-route";
 import { CellApplicationRouter } from "./routers/cell-application-route";
-
 import { AreaRouter } from "./routers/area-route";
-
-import { Product } from "./models/product";
-
+import { RoleRouter } from "./routers/role-route";
 import { ApiMiddleWare } from "./api-middleware";
 import { schedule } from "node-cron";
-
 import { Order } from "./models/order";
 
 import dotenv from "dotenv";
 import log from "./lib/logger";
+import { rbac } from "./middlewares/rbac";
+import { Role } from "./models/role";
+import cache from "./lib/cache";
+
 dotenv.config();
-
-process.env.TZ = "America/Toronto";
-
-// const swaggerDefinition = YAML.load(path.join(__dirname, "/swagger/info.yaml"));
-// // options for the swagger docs
-// const options = {
-//   // import swaggerDefinitions
-//   swaggerDefinition,
-//   // path to the API docs
-//   apis: [path.join(__dirname, "/swagger/**/*.yaml")],
-// };
-// // initialize swagger-jsdoc
-// const swaggerSpec = swaggerJsDoc(options);
 
 function startCellOrderTask(dbo: any) {
   // s m h d m w
@@ -88,19 +63,11 @@ function startCellOrderTask(dbo: any) {
     orderModel.createMobilePlanOrders();
   });
 }
-// schedule('0 45 23 * * *', () => {
-//   let cb = new ClientBalance(dbo);
-//   cb.updateAll();
-// });
-
-// console.log = function (msg: any) {
-//   fs.appendFile("/tmp/log-duocun.log", msg, function (err) { });
-// }
 
 const utils = new Utils();
 const cfg = new Config();
 const SERVER = cfg.APIV2_SERVER;
-const ROUTE_PREFIX = '/api/admin'; // SERVER.ROUTE_PREFIX;
+const { ROUTE_PREFIX } = process.env; // SERVER.ROUTE_PREFIX;
 
 const app = express();
 export const dbo = new DB();
@@ -119,40 +86,20 @@ function setupSocket(server: any) {
   });
 }
 
-// create db connection pool and return connection instance
-dbo.init(cfg.DATABASE).then((dbClient) => {
-  // socket = new Socket(dbo, io);
-  // startCellOrderTask(dbo);
-  // require('socketio-auth')(io, { authenticate: (socket: any, data: any, callback: any) => {
-  //   const uId = data.userId;
-  //   console.log('socketio connecting with uid: ' + uId + '/n');
-  //   if(uId){
-  //     user.findOne({_id: new ObjectID(uId)}).then( x => {
-  //       if(x){
-  //         callback(null, true);
-  //       }else{
-  //         callback(null, false);
-  //       }
-  //     });
-  //   }else{
-  //     callback(null, false);
-  //   }
-  // }, timeout: 200000});
+dbo.init(cfg.DATABASE).then(async (dbClient) => {
+  await loadRolePermission();
+  app.use(cors());
+  app.use(bodyParser.urlencoded({ extended: false, limit: "1mb" }));
+  app.use(bodyParser.json({ limit: "1mb" }));
 
-  // io.on("updateOrders", (x: any) => {
-  //   const ss = x;
-  // });
+  const staticPath = path.resolve("uploads");
+  console.log(staticPath + "/n/r");
+  app.use(express.static(staticPath));
 
   app.get("/wx", (req, res) => {
     utils.genWechatToken(req, res);
   });
 
-  // app.get('/wechatAccessToken', (req, res) => {
-  //   utils.getWechatAccessToken(req, res);
-  // });
-  // app.get('/wechatRefreshAccessToken', (req, res) => {
-  //   utils.refreshWechatAccessToken(req, res);
-  // });
   app.get(ROUTE_PREFIX + "/geocodeLocations", (req, res) => {
     utils.getGeocodeLocationList(req, res);
   });
@@ -163,16 +110,14 @@ dbo.init(cfg.DATABASE).then((dbClient) => {
 
   app.get(ROUTE_PREFIX + "/users", (req, res) => {});
 
-  // disable auth token for testing
-  if (process.env.ENV != "dev") {
-    app.use(apimw.auth);
-  }
+  app.use(apimw.auth);
+  app.use(rbac);
 
-  // app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-  console.log('path: ' + ROUTE_PREFIX);
+  console.log("path: " + ROUTE_PREFIX);
   app.use(ROUTE_PREFIX + "/accounts", AccountRouter(dbo));
   app.use(ROUTE_PREFIX + "/merchants", MerchantRouter(dbo));
   app.use(ROUTE_PREFIX + "/orders", OrderRouter(dbo));
+  app.use(ROUTE_PREFIX + "/roles", RoleRouter(dbo));
   app.use(ROUTE_PREFIX + "/Assignments", AssignmentRouter(dbo));
   app.use(ROUTE_PREFIX + "/categories", CategoryRouter(dbo));
   app.use(ROUTE_PREFIX + "/products", ProductRouter(dbo));
@@ -192,10 +137,7 @@ dbo.init(cfg.DATABASE).then((dbClient) => {
   app.use(ROUTE_PREFIX + "/Regions", RegionRouter(dbo));
   app.use(ROUTE_PREFIX + "/MerchantPayments", MerchantPaymentRouter(dbo));
   app.use(ROUTE_PREFIX + "/MerchantBalances", MerchantBalanceRouter(dbo));
-  app.use(
-    ROUTE_PREFIX + "/MerchantSchedules",
-    MerchantScheduleRouter(dbo)
-  );
+  app.use(ROUTE_PREFIX + "/MerchantSchedules", MerchantScheduleRouter(dbo));
   app.use(ROUTE_PREFIX + "/MallSchedules", MallScheduleRouter(dbo));
 
   app.use(ROUTE_PREFIX + "/ClientPayments", ClientPaymentRouter(dbo));
@@ -218,43 +160,10 @@ dbo.init(cfg.DATABASE).then((dbClient) => {
   const server = app.listen(app.get("port"), () => {
     console.log("API is running on :%d/n", app.get("port"));
   });
-
 });
 
-app.use(cors());
-app.use(bodyParser.urlencoded({ extended: false, limit: "1mb" }));
-app.use(bodyParser.json({ limit: "1mb" }));
-
-// const staticPath = path.resolve('client/dist');
-const staticPath = path.resolve("uploads");
-console.log(staticPath + "/n/r");
-app.use(express.static(staticPath));
-
-// const http = require('http');
-// const express = require('express')
-// const path = require('path')
-// const fs = require('fs');
-// const cfg = JSON.parse(fs.readFileSync('../duocun.cfg.json','utf8'));
-// const DB = require('./db');
-// // const User = require('./user');
-
-// const SERVER = cfg.API_SERVER;
-// const ROUTE_PREFIX = SERVER.ROUTE_PREFIX;
-
-// const app = express();
-// const db = DB().init(cfg.DATABASE);
-
-// console.log(__dirname + '/dist');
-
-// // app.use(express.static(__dirname + '/dist'));
-// // app.get('*',function(req,res){
-// //     res.sendFile(path.join(__dirname, '/dist/index.html'));
-// // });
-// //app.listen(SERVER_PORT, () => console.log('Server setup'))
-
-// app.set('port', process.env.PORT || SERVER.PORT)
-
-// var server = http.createServer(app)
-// server.listen(app.get('port'), function () {
-//   console.log('API server listening on port ' + SERVER.PORT)
-// })
+const loadRolePermission = async () => {
+  const roleModel = new Role(dbo);
+  const role = await roleModel.findOne();
+  cache.set("ROLE_PERMISSION", role);
+};

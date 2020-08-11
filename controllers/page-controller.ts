@@ -6,6 +6,9 @@ import { DB } from "../db";
 
 import path from "path";
 import { getLogger } from "../lib/logger";
+import { hasRole } from "../lib/rbac";
+import { ROLE } from "../models/role";
+
 const logger = getLogger(path.basename(__filename));
 
 export class PageController extends Controller {
@@ -14,6 +17,38 @@ export class PageController extends Controller {
     super(model, db);
     this.model = model;
   }
+
+  @hasRole(ROLE.SUPER)
+  async list(req: Request, res: Response) {
+    return await super.list(req, res);
+  }
+
+  @hasRole(ROLE.SUPER)
+  async create(req: Request, res: Response) {
+    return await super.create(req, res);
+  }
+
+  @hasRole(ROLE.SUPER)
+  async delete(req: Request, res: Response) {
+    return await super.delete(req, res);
+  }
+
+  @hasRole(ROLE.SUPER)
+  async save(req: Request, res: Response) {
+    return await super.save(req, res);
+  }
+
+  @hasRole(ROLE.SUPER)
+  async updateOne(req: Request, res: Response) {
+    return await super.updateOne(req, res);
+  }
+
+  @hasRole(ROLE.SUPER)
+  async get(req: Request, res: Response) {
+    return await super.get(req, res);
+  }
+
+  @hasRole(ROLE.SUPER)
   async update(req: Request, res: Response): Promise<any> {
     let doc;
     try {

@@ -7,7 +7,8 @@ import { Config } from "../config";
 import { Controller, Code } from "./controller";
 import path from "path";
 import { getLogger } from "../lib/logger";
-import { ObjectID } from "mongodb";
+import { hasRole } from "../lib/rbac";
+import { ROLE } from "../models/role";
 
 const logger = getLogger(path.basename(__filename));
 
@@ -55,7 +56,7 @@ export class AccountController extends Controller {
     }
   }
 
-  async login_old(req: Request, res: Response): Promise<void> {
+  async loginByUsername(req: Request, res: Response): Promise<void> {
     const username: any = req.body.username;
     const password: any = req.body.password;
     let data: any = null;
@@ -86,6 +87,7 @@ export class AccountController extends Controller {
    * @param req
    * @param res
    */
+  @hasRole(ROLE.SUPER)
   async list(req: Request, res: Response): Promise<void> {
     // logger.debug("list override in account")
     let options: any = req.query.options || {};
@@ -99,6 +101,7 @@ export class AccountController extends Controller {
    * @param req
    * @param res
    */
+  @hasRole(ROLE.SUPER)
   async get(req: Request, res: Response): Promise<void> {
     // logger.debug("list override in account")
     let options: any = (req.query && req.query.options) || {};
@@ -252,16 +255,6 @@ export class AccountController extends Controller {
     });
   }
 
-  // v1 --- deprecated
-  // verifyCode(req: Request, res: Response) {
-  //   const phone = req.body.phone;
-  //   let code = req.body.code;
-  //   this.model.doVerifyPhone(phone, code).then((verified) => {
-  //     res.setHeader('Content-Type', 'application/json');
-  //     res.send(JSON.stringify(verified, null, 3));
-  //   });
-  // }
-
   async getCurrentAccount(req: Request, res: Response) {
     const tokenId: any = req.query.tokenId;
     const account = await this.model.getAccountByToken(tokenId);
@@ -285,28 +278,6 @@ export class AccountController extends Controller {
       res.setHeader("Content-Type", "application/json");
       const tokenId = this.model.jwtSign(account._id.toString());
       res.send(JSON.stringify(tokenId, null, 3));
-    });
-  }
-
-  // gv1
-
-  // optional --- status
-  gv1_list(req: Request, res: Response) {
-    const status = req.query.status;
-    const query = status ? { status } : {};
-    this.model.find(query).then((accounts) => {
-      accounts.map((account: any) => {
-        if (account && account.password) {
-          delete account.password;
-        }
-      });
-      res.setHeader("Content-Type", "application/json");
-      res.send(
-        JSON.stringify({
-          code: Code.SUCCESS,
-          data: accounts,
-        })
-      );
     });
   }
 

@@ -8,6 +8,9 @@ import { Account } from "../models/account";
 import { Controller, Code } from "./controller";
 import path from 'path';
 import { getLogger } from '../lib/logger'
+import { hasRole } from "../lib/rbac";
+import { RESOURCES } from "../models/role";
+import { ROLE } from "../models/role";
 const logger = getLogger(path.basename(__filename));
 
 export class MerchantController extends Controller {
@@ -27,6 +30,7 @@ export class MerchantController extends Controller {
    * @param req 
    * @param res 
    */
+	@hasRole(ROLE.MERCHANT_ADMIN)
   async get(req: Request, res: Response):Promise<void>  {
     const id = req.params.id;
     let data:any = {};

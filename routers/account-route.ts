@@ -10,10 +10,9 @@ export function AccountRouter(db: DB) {
   const model = new Account(db);
   const controller = new AccountController(model, db);
 
-  // admin api
   router.get("/current", (req, res) => {
     controller.getCurrentAccount(req, res);
-  }); // non standard rsp
+  });
   router.get("/token/:id", (req, res) => {
     controller.getByTokenId(req, res);
   });
@@ -42,9 +41,7 @@ export function AccountRouter(db: DB) {
   router.get("/wechatLoginByCode", (req, res) => {
     controller.wechatLoginByCode(req, res);
   });
-  router.get("/qFind", (req, res) => {
-    controller.list(req, res);
-  }); // deprecated
+
   router.put("/:id", (req, res) => {
     controller.updateOne(req, res);
   });
@@ -55,19 +52,15 @@ export function AccountRouter(db: DB) {
   router.get("/wechatLogin", (req, res) => {
     controller.wechatLogin(req, res);
   });
-  // router.post('/verifyCode', (req, res) => { controller.verifyCode(req, res); }); // deprecated
+
   router.get("/:id", (req, res) => {
     controller.get(req, res);
   }); // fix me
 
-  // router.post('/', (req, res) => { controller.create(req, res); });
-  // router.put('/', (req, res) => { controller.replace(req, res); });
   router.patch("/", (req, res) => {
     model.update(req, res);
   }); // driver
-  // router.delete('/', (req, res) => { controller.remove(req, res); });
-
-  // router.post('/sendClientMsg2', (req, res) => { controller.sendClientMsg2(req, res); });
+  
   router.post("/sendClientMsg", (req, res) => {
     controller.sendClientMsg(req, res);
   });

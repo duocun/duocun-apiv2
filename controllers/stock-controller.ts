@@ -8,6 +8,8 @@ import { getLogger } from "../lib/logger";
 import { ObjectId } from "mongodb";
 import { Order } from "../models/order";
 import moment from "moment-timezone";
+import { hasRole } from "../lib/rbac";
+import { RESOURCES, PERMISSIONS } from "../models/role";
 
 const logger = getLogger(path.basename(__filename));
 
@@ -21,6 +23,7 @@ export class StockController extends Controller {
     this.orderModel = new Order(db);
   }
 
+	@hasRole({ resource: RESOURCES.STOCK, permission: PERMISSIONS.READ })
   async list(req: Request, res: Response) {
     const where: any = req.query.where || {};
     const today = moment().tz("America/Toronto").format("YYYY-MM-DD");
@@ -42,6 +45,7 @@ export class StockController extends Controller {
     });
   }
 
+	@hasRole({ resource: RESOURCES.STOCK, permission: PERMISSIONS.UPDATE })
   async toggleStockEnabled(req: Request, res: Response) {
     let productId = req.params.id;
     let product: IProduct;
@@ -84,6 +88,7 @@ export class StockController extends Controller {
     });
   }
 
+	@hasRole({ resource: RESOURCES.STOCK, permission: PERMISSIONS.UPDATE })
   async toggleAllowNegative(req: Request, res: Response) {
     let productId = req.params.id;
     let product: IProduct;
@@ -121,6 +126,7 @@ export class StockController extends Controller {
     });
   }
 
+	@hasRole({ resource: RESOURCES.STOCK, permission: PERMISSIONS.UPDATE })
   async setQuantity(req: Request, res: Response) {
     let productId = req.params.id;
     let product: IProduct;

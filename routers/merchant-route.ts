@@ -22,9 +22,6 @@ export function MerchantRouter(db: DB){
   router.get('/:id', async (req, res) => { await controller.get(req, res); });
   router.post('/', async (req, res) => { await controller.create(req, res); });
 
-  // router.post('/', (req, res) => { controller.load(req, res); });
-  // router.patch('/', (req, res) => { controller.load(req, res); });
-
   // old api
   router.get('/v2/myMerchants', (req, res) => { controller.gv1_getAvailableMerchants(req, res); });
   router.get('/v2/mySchedules', (req, res) => { controller.getMySchedules(req, res); })
@@ -32,12 +29,6 @@ export function MerchantRouter(db: DB){
   router.post('/load', (req, res) => { controller.load(req, res); });
 
   router.get('/qFind', (req, res) => { model.quickFind(req, res); });
-
-  // v1
-  // router.post('/', (req, res) => { model.create(req, res); });
-  // router.put('/', (req, res) => { model.replace(req, res); });
-  // router.patch('/', (req, res) => { model.update(req, res); });
-  // router.delete('/', (req, res) => { model.remove(req, res); });
 
   return router;
 }

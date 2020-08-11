@@ -1,9 +1,12 @@
 import { Request, Response } from "express";
 import { Model } from "../models/model";
 import { DB } from "../db";
-
 import path from "path";
 import { getLogger } from "../lib/logger";
+import { IAccount } from "../models/account";
+import { hasRole } from "../models/role";
+import { ROLE } from "../models/role";
+import { ObjectID, ObjectId } from "mongodb";
 
 const logger = getLogger(path.basename(__filename));
 
@@ -20,12 +23,20 @@ export class Controller {
     this.db = db;
   }
 
+  getCurrentUser(res: Response): IAccount | null {
+    return res.locals.user;
+  }
+
   async list(req: Request, res: Response): Promise<void> {
     const where: any = req.query.where;
     const options: any = req.query.options;
     let data: any[] = [];
     let count: number = 0;
     let code = Code.FAIL;
+    const user = this.getCurrentUser(res) as IAccount;
+    if (!hasRole(user, ROLE.SUPER)) {
+      where.merchantId = new ObjectID(user._id);
+    }
     try {
       if (where) {
         // console.log(`query: ${where}`);
@@ -54,22 +65,20 @@ export class Controller {
 
   async get(req: Request, res: Response): Promise<void> {
     const id = req.params.id;
-    let data: any = {};
-    let code = Code.FAIL;
     const options: any = (req.query && req.query.options) || {};
-
-    try {
-      data = await this.model.getById(id, options);
-      code = Code.SUCCESS;
-    } catch (error) {
-      logger.error(`get error : ${error}`);
-    } finally {
-      res.setHeader("Content-Type", "application/json");
-      res.send({
-        code: code,
-        data: data,
+    const data = await this.model.getById(id, options);
+    if (!data) {
+      res.json({
+        code: Code.FAIL,
+        message: "not found",
       });
+      return;
     }
+    res.json({
+      code: Code.SUCCESS,
+      data
+    });
+    return;
   }
 
   async updateOne(req: Request, res: Response) {
@@ -82,8 +91,20 @@ export class Controller {
         code: Code.FAIL,
         message: e.toString(),
       });
-    }
-    const r = await this.model.updateOne({ _id }, updates);
+		}
+		const where: any = { _id };
+		const user = res.locals.user;
+		if (!hasRole(user, ROLE.SUPER)) {
+			where.merchantId = new ObjectID(user._id);
+		}
+		const exists = await this.model.findOne(where);
+		if (!exists) {
+			return res.json({
+				code: Code.FAIL,
+				message: 'model does not exists or does not belong to user'
+			});
+		}
+    const r = await this.model.updateOne(where, updates);
     const data = await this.model.findOne({ _id });
     return res.json({
       code: Code.SUCCESS,
@@ -99,12 +120,17 @@ export class Controller {
   async create(req: Request, res: Response): Promise<any> {
     let doc;
     try {
-      doc =  this.model.validate(req.body.data, "create");
+      doc = this.model.validate(req.body.data, "create");
     } catch (e) {
       return res.json({
         code: Code.FAIL,
         message: e.toString(),
       });
+		}
+		const user = res.locals.user;
+		if (!hasRole(user, ROLE.SUPER) && hasRole(user, ROLE.MERCHANT_ADMIN)) {
+			//@ts-ignore
+      doc.merchantId = new ObjectID(user._id);
     }
     try {
       const data = await this.model.insertOne(doc);
@@ -123,7 +149,17 @@ export class Controller {
   }
 
   async delete(req: Request, res: Response) {
-    const _id = req.params.id;
+		const _id = req.params.id;
+		const user = res.locals.user;
+		if (!hasRole(user, ROLE.SUPER)) {
+			const existing = await this.model.findOne({ _id, merchantId: new ObjectId(user._id) });
+			if (!existing) {
+				return res.json({
+					code: Code.FAIL,
+					message: 'model does not exist or does not belong to user'
+				});
+			}
+		}
     try {
       await this.model.deleteById(_id);
       return res.json({
