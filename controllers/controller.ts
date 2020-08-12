@@ -28,7 +28,7 @@ export class Controller {
     return res.locals.user;
   }
 
-  async list(req: Request, res: Response): Promise<void> {
+  async list(req: Request, res: Response): Promise<any> {
     const where: any = req.query.where;
     const options: any = req.query.options;
     let data: any[] = [];
@@ -64,7 +64,7 @@ export class Controller {
     }
   }
 
-  async get(req: Request, res: Response): Promise<void> {
+  async get(req: Request, res: Response): Promise<any> {
     const id = req.params.id;
     const options: any = (req.query && req.query.options) || {};
     const data = await this.model.getById(id, options);
@@ -82,7 +82,7 @@ export class Controller {
     return;
   }
 
-  async updateOne(req: Request, res: Response) {
+  async updateOne(req: Request, res: Response): Promise<any> {
     const _id = req.params.id;
     let updates;
     try {
