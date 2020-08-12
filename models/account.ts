@@ -30,7 +30,6 @@ export const AccountType = {
   TEMP: "tmp",
 };
 
-
 export interface IAccountAttribute {
   _id?: string;
   code: string; //   I: INDOOR, G: GARDENING, R: ROOFING, O: OFFICE, P: PLAZA, H: HOUSE, C: CONDO
@@ -146,6 +145,7 @@ export class Account extends Model {
         message: "No such account",
       };
     }
+    console.log(account);
     if (!account.password) {
       return {
         data: null,
@@ -828,7 +828,7 @@ export class Account extends Model {
       delete doc._id;
     }
     const collection = await this.getCollection();
-    ["username", "balance", "roles"].forEach((key) => {
+    ["username", "balance"].forEach((key) => {
       if (doc[key] === undefined) {
         throw new Error(`${key.toUpperCase()} field is required`);
       }
@@ -868,6 +868,9 @@ export class Account extends Model {
       }
       doc.password = await bcrypt.hash(doc.passwordRaw, saltRounds);
       delete doc.passwordRaw;
+    }
+    if (!doc.roles) {
+      doc.roles = [];
     }
     return doc;
   }

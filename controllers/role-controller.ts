@@ -19,7 +19,6 @@ export class RoleController extends Controller {
     this.model = model;
   }
   
-  @hasRole(ROLE.SUPER)
   async show(req: Request, res: Response) {
     let role;
     try {

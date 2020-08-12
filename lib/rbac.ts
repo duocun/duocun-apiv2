@@ -25,6 +25,7 @@ export function hasRole(required?: RequiredPermissionType) {
           originalMethod.apply(this, [req, res]);
         }
       };
+      return descriptor;
     };
   }
   return function (
@@ -41,6 +42,31 @@ export function hasRole(required?: RequiredPermissionType) {
         originalMethod.apply(this, [req, res]);
       }
     };
+    return descriptor;
+  };
+}
+
+export function hasRoleForController(required: RequiredPermissionType) {
+  return function (target: Function) {
+    for (const key of [
+      // CRUD operators defined in Controller
+      "list",
+      "get",
+      "updateOne",
+      "update",
+      "save",
+      "delete",
+      "create",
+    ]) {
+      let descriptor = Object.getOwnPropertyDescriptor(
+        target.prototype,
+        key
+      );
+      if (descriptor) {
+        descriptor = hasRole(required)(target, key, descriptor);
+        Object.defineProperty(target.prototype, key, descriptor);
+      }
+    }
   };
 }
 
