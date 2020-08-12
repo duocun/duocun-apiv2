@@ -1,6 +1,17 @@
 import { Request, Response } from "express";
 import { ROLE, RESOURCES, PERMISSIONS, RBAC_DATA_TYPE } from "../models/role";
 import cache from "../lib/cache";
+import _ from "lodash";
+
+const REST_METHODS = {
+  list: PERMISSIONS.READ,
+  get: PERMISSIONS.READ,
+  updateOne: PERMISSIONS.UPDATE,
+  update: PERMISSIONS.UPDATE,
+  create: PERMISSIONS.CREATE,
+  save: undefined,
+  delete: PERMISSIONS.DELETE,
+};
 
 type RequiredPermissionType =
   | ROLE
@@ -46,22 +57,41 @@ export function hasRole(required?: RequiredPermissionType) {
   };
 }
 
+export function resource(required: RESOURCES) {
+  return function (target: Function) {
+    _.mapKeys(REST_METHODS, (perm, method) => {
+      if (!perm) {
+        return;
+      }
+      let descriptor = getMethodDescriptor(target, method);
+      if (descriptor) {
+        descriptor = hasRole({ resource: required, permission: perm })(
+          target,
+          method,
+          descriptor
+        );
+        Object.defineProperty(target.prototype, method, descriptor);
+      }
+    });
+  };
+}
+
+const getMethodDescriptor = (target: Function, propertyName: string) => {
+  if (target.prototype.hasOwnProperty(propertyName)) {
+    return Object.getOwnPropertyDescriptor(target.prototype, propertyName);
+  }
+  return {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    value: target.prototype[propertyName],
+  };
+};
+
 export function hasRoleForController(required: RequiredPermissionType) {
   return function (target: Function) {
-    for (const key of [
-      // CRUD operators defined in Controller
-      "list",
-      "get",
-      "updateOne",
-      "update",
-      "save",
-      "delete",
-      "create",
-    ]) {
-      let descriptor = Object.getOwnPropertyDescriptor(
-        target.prototype,
-        key
-      );
+    for (const key of Object.keys(REST_METHODS)) {
+      let descriptor = getMethodDescriptor(target, key);
       if (descriptor) {
         descriptor = hasRole(required)(target, key, descriptor);
         Object.defineProperty(target.prototype, key, descriptor);

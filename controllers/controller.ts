@@ -7,6 +7,7 @@ import { IAccount } from "../models/account";
 import { hasRole } from "../models/role";
 import { ROLE } from "../models/role";
 import { ObjectID, ObjectId } from "mongodb";
+import { join } from "lodash";
 
 const logger = getLogger(path.basename(__filename));
 
@@ -120,7 +121,7 @@ export class Controller {
   async create(req: Request, res: Response): Promise<any> {
     let doc;
     try {
-      doc = this.model.validate(req.body.data, "create");
+      doc = await this.model.validate(req.body.data, "create");
     } catch (e) {
       return res.json({
         code: Code.FAIL,

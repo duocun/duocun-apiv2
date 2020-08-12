@@ -17,13 +17,7 @@ export function CategoryRouter(db: DB){
   router.get('/', [parseQuery], (req: Request, res: Response) => { controller.list(req, res); });
   router.get('/category-tree', (req: Request, res: Response) => { controller.getCategoryTree(req, res) });
   router.get('/:id', (req, res) => { controller.get(req, res); });
-
-  // old api
-  // router.get('/', (req, res) => { model.list(req, res); });
-  router.post('/', (req, res) => { model.create(req, res); });
-  router.put('/', (req, res) => { model.replace(req, res); });
-  router.patch('/', (req, res) => { model.update(req, res); });
-  router.delete('/', (req, res) => { model.remove(req, res); });
-
+  router.post('/:id', (req, res) => { controller.save(req, res); });
+  router.delete('/:id', (req, res) => { controller.delete(req, res); });
   return router;
 };
