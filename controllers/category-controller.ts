@@ -4,7 +4,7 @@ import { Category, CategoryInterface } from "../models/category";
 import { Controller, Code } from "./controller";
 import { treefy } from "../helpers/category-helper";
 import { resource } from "../lib/rbac";
-import { RESOURCES } from "../models/role";
+import { RESOURCES, hasRole, ROLE } from "../models/role";
 
 @resource(RESOURCES.CATEGORY)
 export class CategoryController extends Controller {
@@ -45,13 +45,16 @@ export class CategoryController extends Controller {
   }
 
   getCategoryTree(req: Request, res: Response) {
-    this.model
-      .find({ status: "A" })
-      .then((categories: Array<CategoryInterface>) => {
-        res.json({
-          code: Code.SUCCESS,
-          data: treefy(categories),
-        });
+    const where: any = { status: "A" };
+    const { user } = res.locals;
+    if (!hasRole(user, ROLE.SUPER)) {
+      where.merchantId = user._id;
+    }
+    this.model.find(where).then((categories: Array<CategoryInterface>) => {
+      res.json({
+        code: Code.SUCCESS,
+        data: treefy(categories),
       });
+    });
   }
 }

@@ -9,14 +9,13 @@ import { ObjectID, Collection } from "mongodb";
 import { Request, Response } from "express";
 import { Account, IAccount } from "./account";
 import { Code } from "../controllers/controller";
-
-
+import _ from "lodash";
 
 export enum ProductStatus {
   ACTIVE = "A",
   INACTIVE = "I",
   NEW = "N",
-  PROMOTE = "P"
+  PROMOTE = "P",
 }
 
 export interface ICategory {
@@ -59,7 +58,7 @@ export interface IProduct {
     warningThreshold: number;
     outofstockMessage: string;
     outofstockMessageEN: string;
-  },
+  };
   merchant?: IMerchant;
   category?: ICategory;
   merchantAccount?: IAccount; // join account table from find()
@@ -70,18 +69,18 @@ export class Product extends Model {
   accountModel: Account;
   merchantModel: Merchant;
   constructor(dbo: DB) {
-    super(dbo, 'products');
+    super(dbo, "products");
     this.categoryModel = new Category(dbo);
     this.accountModel = new Account(dbo);
     this.merchantModel = new Merchant(dbo);
   }
 
   uploadPicture(req: Request, res: Response) {
-    const fname = req.body.fname + '.' + req.body.ext;
+    const fname = req.body.fname + "." + req.body.ext;
     if (fname) {
       res.send(JSON.stringify({ fname: fname, url: fname }, null, 3));
     } else {
-      res.send(JSON.stringify(null, null, 3))
+      res.send(JSON.stringify(null, null, 3));
     }
   }
 
@@ -92,21 +91,34 @@ export class Product extends Model {
     const r = await this.find_v2(query, options);
     const ps: IProduct[] = r.data;
     ps.forEach((p: IProduct) => {
-      p.category = cs.find((c: any) => c._id && p.categoryId && c._id.toString() === p.categoryId.toString());
-      p.merchant = ms.find((m: any) => m._id && p.merchantId && m._id.toString() === p.merchantId.toString());
+      p.category = cs.find(
+        (c: any) =>
+          c._id && p.categoryId && c._id.toString() === p.categoryId.toString()
+      );
+      p.merchant = ms.find(
+        (m: any) =>
+          m._id && p.merchantId && m._id.toString() === p.merchantId.toString()
+      );
     });
-    return {count: r.count, data: ps};
+    return { count: r.count, data: ps };
   }
 
   categorize(req: Request, res: Response) {
     let query = {};
     let lang: any = req.headers.lang;
-    if (req.headers && req.headers.filter && typeof req.headers.filter === 'string') {
-      query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
+    if (
+      req.headers &&
+      req.headers.filter &&
+      typeof req.headers.filter === "string"
+    ) {
+      query =
+        req.headers && req.headers.filter
+          ? JSON.parse(req.headers.filter)
+          : null;
     }
 
-    this.doCategorize(query, lang).then(cats => {
-      res.setHeader('Content-Type', 'application/json');
+    this.doCategorize(query, lang).then((cats) => {
+      res.setHeader("Content-Type", "application/json");
       res.send(JSON.stringify(cats, null, 3));
     });
   }
@@ -116,7 +128,7 @@ export class Product extends Model {
     const ps = r.data;
 
     ps.forEach((p: IProduct) => {
-      if(lang === 'en'){
+      if (lang === "en") {
         p.name = p.nameEN;
       }
     });
@@ -130,9 +142,11 @@ export class Product extends Model {
   groupByCategory(products: IProduct[], lang: string) {
     const cats: any[] = [];
 
-    products.map(p => {
+    products.map((p) => {
       if (p && p.categoryId) {
-        const cat = cats.find(c => c.categoryId.toString() === p.categoryId.toString());
+        const cat = cats.find(
+          (c) => c.categoryId.toString() === p.categoryId.toString()
+        );
         const category: any = p.category;
         if (cat) {
           cat.items.push({ product: p, quanlity: 0 });
@@ -140,23 +154,24 @@ export class Product extends Model {
           if (category) {
             cats.push({
               categoryId: p.categoryId,
-              categoryName: lang === 'zh' ? category.name : category.nameEN,
+              categoryName: lang === "zh" ? category.name : category.nameEN,
               order: category.order,
-              items: [{ product: p, quanlity: 0 }]
+              items: [{ product: p, quanlity: 0 }],
             });
-          } else { // shouldn't happen
+          } else {
+            // shouldn't happen
             cats.push({
               categoryId: p.categoryId,
-              categoryName: lang === 'zh' ? category.name : category.nameEN,
+              categoryName: lang === "zh" ? category.name : category.nameEN,
               order: 0,
-              items: [{ product: p, quanlity: 0 }]
+              items: [{ product: p, quanlity: 0 }],
             });
           }
         }
       }
     });
 
-    cats.map(c => {
+    cats.map((c) => {
       c.items = c.items.sort((a: any, b: any) => {
         if (a.product.order < b.product.order) {
           return -1;
@@ -174,7 +189,6 @@ export class Product extends Model {
       }
     });
   }
-
 
   // tools
   // clearImage(req: Request, res: Response) {
@@ -200,4 +214,48 @@ export class Product extends Model {
   //     });
   //   });
   // }
+  async validate(doc: any, scope: "create" | "update") {
+    const model: any = _.pick(doc, [
+      "name",
+      "nameEN",
+      "description",
+      "descriptionEN",
+      "price",
+      "cost",
+      "rank",
+      "taxRate",
+      "dow",
+      "pictures",
+      "order",  
+      "rank",
+      "merchantId",
+      "categoryId",
+      "stock",
+      "attributes",
+      "combinations",
+      "status",
+    ]);
+    ["name", "price", "cost", "stock"].forEach((key) => {
+      if (model[key] === undefined) {
+        throw new Error(`${key} field is required`);
+      }
+    });
+    model.attributes = model.attributes || [];
+    model.combinations = model.combinations || [];
+    model.type = "G";
+    if (
+      ![
+        ProductStatus.ACTIVE,
+        ProductStatus.INACTIVE,
+        ProductStatus.NEW,
+        ProductStatus.PROMOTE,
+      ].includes(model.status)
+    ) {
+      model.status = ProductStatus.INACTIVE;
+    }
+    if (scope === "create") {
+      delete model._id;
+    }
+    return model;
+  }
 }

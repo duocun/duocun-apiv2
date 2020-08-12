@@ -19,9 +19,9 @@ export class Category extends Model {
   constructor(dbo: DB) {
     super(dbo, "categories");
   }
-  
+
   async validate(doc: any, scope: "create" | "update") {
-    console.log('category validate');
+    console.log("category validate");
     doc = _.pick(doc, [
       "_id",
       "name",
@@ -29,6 +29,7 @@ export class Category extends Model {
       "description",
       "descriptionEN",
       "order",
+      "merchantId",
     ]);
     if (scope === "create") {
       delete doc._id;
