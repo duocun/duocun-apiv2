@@ -42,6 +42,8 @@ export function AccountRouter(db: DB) {
     controller.wechatLoginByCode(req, res);
   });
 
+  router.put("/toggle-status", (req, res) => controller.toggleStatus(req, res));
+
   router.put("/:id", (req, res) => {
     controller.updateOne(req, res);
   });
@@ -61,6 +63,8 @@ export function AccountRouter(db: DB) {
     model.update(req, res);
   }); // driver
   
+
+
   router.post("/sendClientMsg", (req, res) => {
     controller.sendClientMsg(req, res);
   });

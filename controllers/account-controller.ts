@@ -111,6 +111,24 @@ export class AccountController extends Controller {
     await super.get(req, res);
   }
 
+  @hasRole(ROLE.SUPER)
+  async toggleStatus(req: Request, res: Response) {
+    let { id } = req.body;
+    const account = await this.model.findOne({ _id: id });
+    if (!account) {
+      res.json({
+        code: Code.FAIL,
+        message: "Account not found"
+      })
+    }
+    account.verified = !account.verified;
+    await this.model.updateOne({ _id: id }, account);
+    return res.json({
+      code: Code.SUCCESS,
+      data: account
+    });
+  }
+
   //Keep Old API //////////////////////////////
 
   loginByPhone(req: Request, res: Response) {
