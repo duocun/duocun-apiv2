@@ -68,12 +68,23 @@ export class Controller {
     const id = req.params.id;
     const options: any = (req.query && req.query.options) || {};
     const data = await this.model.getById(id, options);
+    
     if (!data) {
       res.json({
         code: Code.FAIL,
         message: "not found",
       });
       return;
+    }
+    const { user } = res.locals;
+    if (!hasRole(user, ROLE.SUPER)) {
+      if (!data.merchantId || String(data.merchantId) !== user._id.toString()) {
+        res.status(403).json({
+          code: Code.FAIL,
+          message: 'authorization_failed'
+        });
+        return;
+      }
     }
     res.json({
       code: Code.SUCCESS,
