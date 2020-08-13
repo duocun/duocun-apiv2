@@ -8,11 +8,12 @@ import { getLogger } from "../lib/logger";
 import { ObjectId } from "mongodb";
 import { Order } from "../models/order";
 import moment from "moment-timezone";
-import { hasRole } from "../lib/rbac";
-import { RESOURCES, PERMISSIONS } from "../models/role";
+import { hasRole, resource } from "../lib/rbac";
+import { RESOURCES, PERMISSIONS, hasRole as isRole, ROLE } from "../models/role";
 
 const logger = getLogger(path.basename(__filename));
 
+@resource(RESOURCES.STOCK)
 export class StockController extends Controller {
   model: Product;
   orderModel: Order;
@@ -25,7 +26,11 @@ export class StockController extends Controller {
 
 	@hasRole({ resource: RESOURCES.STOCK, permission: PERMISSIONS.READ })
   async list(req: Request, res: Response) {
+    const { user } = res.locals;
     const where: any = req.query.where || {};
+    if (!isRole(user, ROLE.SUPER)) {
+      where.merchantId = user._id;
+    }
     const today = moment().tz("America/Toronto").format("YYYY-MM-DD");
     const startDate = where.startDate || moment().tz("America/Toronto").format("YYYY-MM-DD");
     delete(where.startDate);
@@ -48,9 +53,14 @@ export class StockController extends Controller {
 	@hasRole({ resource: RESOURCES.STOCK, permission: PERMISSIONS.UPDATE })
   async toggleStockEnabled(req: Request, res: Response) {
     let productId = req.params.id;
+    const { user } = res.locals;
+    const where: any = { _id: productId }
+    if (!isRole(user, ROLE.SUPER)) {
+      where.merchantId = user._id;
+    }
     let product: IProduct;
     try {
-      product = await this.model.findOne({ _id: productId })
+      product = await this.model.findOne(where)
     } catch (e) {
       return res.json({
         code: Code.FAIL,
@@ -91,9 +101,14 @@ export class StockController extends Controller {
 	@hasRole({ resource: RESOURCES.STOCK, permission: PERMISSIONS.UPDATE })
   async toggleAllowNegative(req: Request, res: Response) {
     let productId = req.params.id;
+    const { user } = res.locals;
+    const where: any = { _id: productId };
+    if (!isRole(user, ROLE.SUPER)) {
+      where.merchantId = user._id;
+    }
     let product: IProduct;
     try {
-      product = await this.model.findOne({ _id: productId })
+      product = await this.model.findOne(where);
     } catch (e) {
       return res.json({
         code: Code.FAIL,
@@ -129,9 +144,14 @@ export class StockController extends Controller {
 	@hasRole({ resource: RESOURCES.STOCK, permission: PERMISSIONS.UPDATE })
   async setQuantity(req: Request, res: Response) {
     let productId = req.params.id;
+    const { user } = res.locals;
+    const where: any = { _id: productId };
+    if (!isRole(user, ROLE.SUPER)) {
+      where.merchantId = user._id;
+    }
     let product: IProduct;
     try {
-      product = await this.model.findOne({ _id: productId });
+      product = await this.model.findOne(where);
     } catch (e) {
       return res.json({
         code: Code.FAIL,
