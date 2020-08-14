@@ -228,7 +228,6 @@ export class Product extends Model {
       "pictures",
       "order",  
       "rank",
-      "merchantId",
       "categoryId",
       "stock",
       "attributes",
@@ -255,6 +254,9 @@ export class Product extends Model {
     }
     if (scope === "create") {
       delete model._id;
+    }
+    if (model.categoryId) {
+      model.categoryId = new ObjectID(model.categoryId);
     }
     return model;
   }
