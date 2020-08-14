@@ -31,6 +31,7 @@ export class Category extends Model {
       "order",
       "merchantId",
     ]);
+    doc.type = "G";
     if (scope === "create") {
       delete doc._id;
     }
