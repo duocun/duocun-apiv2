@@ -804,31 +804,40 @@ export class Account extends Model {
     }
   }
 
-  async validate(doc: any, scope: "create" | "update"): Promise<any> {
-    doc = _.pick(doc, [
-      "_id",
-      "username",
-      "email",
-      "passwordRaw",
-      "imageurl",
-      "realm",
-      "balance",
-      "sex",
-      "openId",
-      "roles",
-      "sex",
-      "attributes",
-      "phone",
-      "verified",
-      "secondPHone",
-      "roles",
-      "type",
-    ]);
+  async validate(doc: any, scope: "create" | "update" | "profile"): Promise<any> {
+    if (scope === "profile") {
+      doc = _.pick(doc, [
+        "username",
+        "email",
+        "passwordRaw",
+        "phone"
+      ])
+    } else {
+      doc = _.pick(doc, [
+        "_id",
+        "username",
+        "email",
+        "passwordRaw",
+        "imageurl",
+        "realm",
+        "balance",
+        "sex",
+        "openId",
+        "roles",
+        "sex",
+        "attributes",
+        "phone",
+        "verified",
+        "secondPHone",
+        "roles",
+        "type",
+      ]);
+    }
     if (scope === "create") {
       delete doc._id;
     }
     const collection = await this.getCollection();
-    ["username", "balance"].forEach((key) => {
+    ["username"].forEach((key) => {
       if (doc[key] === undefined) {
         throw new Error(`${key.toUpperCase()} field is required`);
       }

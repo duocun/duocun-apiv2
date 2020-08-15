@@ -20,12 +20,24 @@ export function AccountRouter(db: DB) {
   router.post("/login", (req: Request, res: Response) => {
     controller.login(req, res);
   });
+
+  router.post("/forgot-password", (req: Request, res: Response) => {
+    controller.sendOtpToEmail(req, res);
+  });
+
+  router.post("/login-by-otp", (req: Request, res: Response) => {
+    controller.verifyOtp(req, res);
+  });
+
   router.get("/", [parseQuery], async (req: Request, res: Response) => {
     await controller.list(req, res);
   });
   router.get("/:id", async (req: Request, res: Response) => {
     await controller.get(req, res);
   });
+  router.post("/save-profile", async (req: Request, res: Response) => {
+    await controller.saveProfile(req, res);
+  })
   router.post(
     "/:id",
     async (req: Request, res, Response) => await controller.save(req, res)
@@ -47,6 +59,7 @@ export function AccountRouter(db: DB) {
   router.put("/:id", (req, res) => {
     controller.updateOne(req, res);
   });
+
   // v1
   // router.get('/attributes', (req, res) => { this.attrModel.quickFind(req, res); });
 

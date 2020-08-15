@@ -73,6 +73,14 @@ export interface IAwsS3 {
 export interface IMedia{
   TEMP_PATH: string;
 }
+
+export type Mailer = {
+  SERVICE: string;
+  USER: string;
+  PASSWORD: string;
+  FROM: string;
+}
+
 export class Config {
   private cfg: any;
   public JWT: IJWT;
@@ -90,6 +98,7 @@ export class Config {
   public SNAPPAY: ISnappay;
   public MONERIS: IMoneris;
   public AWS_S3: IAwsS3;
+  public MAILER: Mailer;
 
   constructor() {
     this.cfg = JSON.parse(fs.readFileSync('../duocun.cfg.json', 'utf-8'));
@@ -117,6 +126,7 @@ export class Config {
     this.SNAPPAY = this.cfg.SNAPPAY;
     this.MONERIS = this.cfg.MONERIS;
     this.AWS_S3 = this.cfg.AWS_S3;
+    this.MAILER = this.cfg.MAILER;
   }
 
 }

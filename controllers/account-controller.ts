@@ -9,6 +9,9 @@ import path from "path";
 import { getLogger } from "../lib/logger";
 import { hasRole } from "../lib/rbac";
 import { ROLE } from "../models/role";
+import mailer from "../lib/mailer";
+import cache from "../lib/cache";
+import jwt from "jsonwebtoken";
 
 const logger = getLogger(path.basename(__filename));
 
@@ -112,20 +115,44 @@ export class AccountController extends Controller {
   }
 
   @hasRole(ROLE.SUPER)
+  async updateOne(req: Request, res: Response) {
+    super.updateOne(req, res);
+  }
+
+  async saveProfile(req: Request, res: Response) {
+    const { user } = res.locals;
+    const param = { ...req.body.data, _id: user._id.toString() };
+    let updates;
+    try {
+      updates = await this.model.validate(param, "profile");
+    } catch (e) {
+      return res.json({
+        code: Code.FAIL,
+        message: e.toString(),
+      });
+    }
+    await this.model.updateOne({ _id: user._id }, updates);
+    return res.json({
+      code: Code.SUCCESS,
+      data: await this.model.findOne({ _id: user._id }),
+    });
+  }
+
+  @hasRole(ROLE.SUPER)
   async toggleStatus(req: Request, res: Response) {
     let { id } = req.body;
     const account = await this.model.findOne({ _id: id });
     if (!account) {
       res.json({
         code: Code.FAIL,
-        message: "Account not found"
-      })
+        message: "Account not found",
+      });
     }
     account.verified = !account.verified;
     await this.model.updateOne({ _id: id }, account);
     return res.json({
       code: Code.SUCCESS,
-      data: account
+      data: account,
     });
   }
 
@@ -310,6 +337,80 @@ export class AccountController extends Controller {
           data: account,
         })
       );
+    });
+  }
+
+  async sendOtpToEmail(req: Request, res: Response) {
+    const { email } = req.body;
+    if (!email) {
+      return res.json({
+        code: Code.FAIL,
+        message: "Email field is required",
+      });
+    }
+    const user = await this.model.findOne({ email });
+    if (!user) {
+      return res.json({
+        code: Code.FAIL,
+        message: "No such user",
+      });
+    }
+    const code = this.model.getRandomCode();
+    let message = {
+      from: this.cfg.MAILER.FROM,
+      to: `${user.username} <${user.email}>`,
+      subject: "Forgot Password",
+      text: `Code number is ${code}`,
+    };
+    console.log(message);
+    cache.set(`user:${user._id}:otp`, code, 3600 * 6);
+    try {
+      await mailer.sendMail(message);
+    } catch (e) {
+      return res.json({
+        code: Code.FAIL,
+        message: e.toString(),
+      });
+    }
+    console.log("Message sent successfully");
+    return res.json({
+      code: Code.SUCCESS,
+    });
+  }
+
+  async verifyOtp(req: Request, res: Response) {
+    const { email, code } = req.body;
+    if (!email) {
+      return res.json({
+        code: Code.FAIL,
+        message: "Email field is required",
+      });
+    }
+    if (!code) {
+      return res.json({
+        code: Code.FAIL,
+        message: "Code field is required",
+      });
+    }
+    const user = await this.model.findOne({ email });
+    if (!user) {
+      return res.json({
+        code: Code.FAIL,
+        message: "No such user",
+      });
+    }
+    const otpCode = cache.take(`user:${user._id}:otp`);
+    if (otpCode !== code) {
+      return res.json({
+        code: Code.FAIL,
+        message: "Code is not correct",
+      });
+    }
+    const token = jwt.sign(user._id.toString(), this.cfg.JWT.SECRET);
+    return res.json({
+      code: Code.SUCCESS,
+      token,
+      data: user,
     });
   }
 }

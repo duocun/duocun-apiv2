@@ -317,7 +317,7 @@ export class Model extends Entity {
     return s;
   }
 
-  async validate(data: any, scope: "create"|"update"): Promise<any> {
+  async validate(data: any, scope: string): Promise<any> {
     return data;
   }
 }

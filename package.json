@@ -18,6 +18,7 @@
     "prod": "npm run build && npm run start"
   },
   "dependencies": {
+    "@types/nodemailer": "^6.4.0",
     "aws-sdk": "^2.709.0",
     "axios": "^0.19.2",
     "babel": "^6.23.0",
@@ -42,6 +43,7 @@
     "node-cache": "^5.1.2",
     "node-cron": "^2.0.3",
     "node-rsa": "^1.0.5",
+    "nodemailer": "^6.4.11",
     "passport-facebook": "^2.1.1",
     "passport-google-oauth20": "^1.0.0",
     "prompt": "^1.0.0",
