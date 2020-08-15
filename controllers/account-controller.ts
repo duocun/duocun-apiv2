@@ -362,7 +362,6 @@ export class AccountController extends Controller {
       subject: "Forgot Password",
       text: `Code number is ${code}`,
     };
-    console.log(message);
     cache.set(`user:${user._id}:otp`, code, 3600 * 6);
     try {
       await mailer.sendMail(message);
@@ -372,7 +371,6 @@ export class AccountController extends Controller {
         message: e.toString(),
       });
     }
-    console.log("Message sent successfully");
     return res.json({
       code: Code.SUCCESS,
     });

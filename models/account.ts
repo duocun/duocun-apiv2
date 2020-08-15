@@ -145,7 +145,6 @@ export class Account extends Model {
         message: "No such account",
       };
     }
-    console.log(account);
     if (!account.password) {
       return {
         data: null,
