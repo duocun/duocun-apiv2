@@ -1,5 +1,10 @@
 
 import fs from 'fs';
+import dotenv from 'dotenv';
+
+dotenv.config();
+const cfg = process.env;
+const DB_NAME: any = process.env.DB_NAME;
 
 export interface IJWT {
   EXPIRY: string;   // eg. '365 days'
@@ -21,12 +26,12 @@ export interface IDatabase {
   //   "USERNAME":"x",
   //   "PASSWORD":"x"
   // },
-  HOST: string;
-  NAME: string;
+  HOST: string | undefined;
+  NAME: string | undefined;
   PORT: number;
   POOL_SIZE: number;
-  USERNAME: string;
-  PASSWORD: string;
+  USERNAME: string | undefined;
+  PASSWORD: string | undefined;
 }
 
 export interface ISmsProvider {
@@ -96,7 +101,16 @@ export class Config {
     this.MEDIA = this.cfg.MEDIA;
     this.API_SERVER = this.cfg.API_SERVER;
     this.APIV2_SERVER = this.cfg.APIV2_SERVER;
-    this.DATABASE = this.cfg.DATABASE;
+
+    this.DATABASE = {
+      HOST: cfg.DB_HOST,
+      NAME: DB_NAME,
+      PORT: 27017,
+      POOL_SIZE: 10,
+      USERNAME: cfg.DB_USERNAME,
+      PASSWORD: cfg.DB_PASSWORD
+    };
+    
     this.TWILIO = this.cfg.TWILIO;
     this.WECHAT = this.cfg.WECHAT;
     this.STRIPE = this.cfg.STRIPE;
