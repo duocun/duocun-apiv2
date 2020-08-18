@@ -5,14 +5,19 @@ import { Account } from "./models/account";
 import { DB } from "./db";
 import { dbo } from "./server";
 
+const cfg = new Config();
+
 const excepts = [
-  "/api/admin/accounts/login",
-  "api/admin/accounts/current",
-  "api/admin/accounts/forgot-password",
-  "api/admin/accounts/login-by-otp",
+  `${cfg.API_SERVER.ROUTE_PREFIX}/accounts/login`,
+  `${cfg.API_SERVER.ROUTE_PREFIX}/accounts/current`,
+  `${cfg.API_SERVER.ROUTE_PREFIX}/accounts/forgot-password`,
+  `${cfg.API_SERVER.ROUTE_PREFIX}/accounts/login-by-otp`,
 ];
+
 export class ApiMiddleWare {
-  constructor() {}
+  constructor() {
+
+  }
 
   async auth(req: Request, res: Response, next: any) {
     let token: any = req.get("Authorization") || req.query.token || "";

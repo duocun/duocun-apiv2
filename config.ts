@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 const cfg = process.env;
 const DB_NAME: any = process.env.DB_NAME;
+const ROUTE_PREFIX: any = process.env.ROUTE_PREFIX;
 
 export interface IJWT {
   EXPIRY: string;   // eg. '365 days'
@@ -90,7 +91,6 @@ export class Config {
   public GOOGLE_DISTANCE_KEY: string = '';
   public MEDIA: IMedia;
   public API_SERVER: IApiServer;
-  public APIV2_SERVER: IApiServer;
   public DATABASE: IDatabase;
   public TWILIO: ISmsProvider;
   public WECHAT: ISNS;
@@ -108,8 +108,7 @@ export class Config {
     this.GOOGLE_MAP_KEY = this.cfg.GOOGLE_MAP_KEY;
     this.GOOGLE_DISTANCE_KEY = this.cfg.GOOGLE_DISTANCE.KEY;
     this.MEDIA = this.cfg.MEDIA;
-    this.API_SERVER = this.cfg.API_SERVER;
-    this.APIV2_SERVER = this.cfg.APIV2_SERVER;
+    this.API_SERVER = this.cfg.APIV2_SERVER;
 
     this.DATABASE = {
       HOST: cfg.DB_HOST,
@@ -127,6 +126,8 @@ export class Config {
     this.MONERIS = this.cfg.MONERIS;
     this.AWS_S3 = this.cfg.AWS_S3;
     this.MAILER = this.cfg.MAILER;
+
+    this.API_SERVER.ROUTE_PREFIX = ROUTE_PREFIX;
   }
 
 }
