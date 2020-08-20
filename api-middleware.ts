@@ -8,10 +8,10 @@ import { dbo } from "./server";
 const cfg = new Config();
 
 const excepts = [
-  `${cfg.SERVER.ROUTE_PREFIX}/accounts/login`,
-  `${cfg.SERVER.ROUTE_PREFIX}/accounts/current`,
-  `${cfg.SERVER.ROUTE_PREFIX}/accounts/forgot-password`,
-  `${cfg.SERVER.ROUTE_PREFIX}/accounts/login-by-otp`,
+  `${cfg.SERVER.SVC_PATH}/accounts/login`,
+  `${cfg.SERVER.SVC_PATH}/accounts/current`,
+  `${cfg.SERVER.SVC_PATH}/accounts/forgot-password`,
+  `${cfg.SERVER.SVC_PATH}/accounts/login-by-otp`,
 ];
 
 export class ApiMiddleWare {

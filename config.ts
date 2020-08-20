@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const PORT: any = process.env.PORT;
-const ROUTE_PREFIX: any = process.env.ROUTE_PREFIX;
+const SVC_PATH: any = process.env.SVC_PATH;
 const DB_HOST: any = process.env.DB_HOST;
 const DB_NAME: any = process.env.DB_NAME;
 const DB_USERNAME: any = process.env.DB_USERNAME;
@@ -19,7 +19,7 @@ export interface IJWT {
 
 export interface IApiServer {
   PORT: number; //8000,
-  ROUTE_PREFIX: string; // "api"
+  SVC_PATH: string; // "api"
 }
 
 export interface IDatabase {
@@ -129,7 +129,7 @@ export class Config {
       USERNAME: DB_USERNAME,
       PASSWORD: DB_PASSWORD
     };
-    this.SERVER = {PORT, ROUTE_PREFIX};
+    this.SERVER = {PORT, SVC_PATH};
   }
 
 }

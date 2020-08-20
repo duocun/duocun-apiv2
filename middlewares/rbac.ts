@@ -38,7 +38,7 @@ const getRequiredPermission = (
   url: string,
   method: string
 ): RequiredPermReturnType => {
-  url = String(url).replace(`${process.env.ROUTE_PREFIX}`, "").split("?")[0];
+  url = String(url).replace(`${process.env.SVC_PATH}`, "").split("?")[0];
   if (url === "accounts/login" || url === "/accounts/login") {
     return undefined;
   }
