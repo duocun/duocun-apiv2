@@ -66,7 +66,7 @@ function startCellOrderTask(dbo: any) {
 
 const utils = new Utils();
 const cfg = new Config();
-const SERVER = cfg.API_SERVER;
+const SERVER = cfg.SERVER;
 const { ROUTE_PREFIX } = process.env; // SERVER.ROUTE_PREFIX;
 
 const app = express();
