@@ -155,7 +155,7 @@ dbo.init(cfg.DATABASE).then(async (dbClient) => {
   app.use(SVC_PATH + "/CellApplications", CellApplicationRouter(dbo));
 
   app.use(express.static(path.join(__dirname, "/../uploads")));
-  app.set("port", process.env.PORT || SERVER.PORT);
+  app.set("port", process.env.SVC_PORT || cfg.SERVER.PORT);
 
   const server = app.listen(app.get("port"), () => {
     console.log(SVC_PATH);
