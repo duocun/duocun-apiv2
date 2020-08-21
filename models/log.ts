@@ -1,12 +1,11 @@
 import { DB } from "../db";
 import { Model } from "./model";
-import { ObjectID } from "mongodb";
 import { Request, Response } from "express";
 import { IOrder } from "../models/order";
 import { Account, IAccount } from "./account";
 import moment from "moment";
-import { resolve } from "url";
-
+import { cfg } from "../config";
+import https from "https";
 
 export enum Action {
   LOGIN = 1,
@@ -36,10 +35,51 @@ export interface ILog {
 
 
 export class Log extends Model {
-  accountModel : Account;
+  accountModel: Account;
   constructor(dbo: DB) {
     super(dbo, 'logs');
     this.accountModel = new Account(dbo);
+  }
+
+
+
+  static save(data: any) {
+    return new Promise((resolve, reject) => {
+
+      const options = {
+        hostname: cfg.LOG_SVC_HOST,
+        path: cfg.LOG_SVC_PATH,
+        port: 443,
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json", // 'Content-Length': Buffer.byteLength(data)
+        },
+      };
+
+      const post_req = https.request(options, res => {
+        let s = "";
+        res.on("data", (d) => {
+          s += d;
+        });
+
+        res.on("end", () => {
+          if (s) {
+            const ret = JSON.parse(s);
+            resolve({ status: 'success', data: ret, msg: '' });
+          } else {
+            resolve({ status: 'failed', data: '', msg: '' });
+          }
+        });
+      });
+
+      post_req.on("error", (error) => {
+        const msg = JSON.stringify(error);
+        resolve({ status: 'failed', data: '', msg });
+      });
+
+      post_req.write(JSON.stringify(data));
+      post_req.end();
+    });
   }
 
   list(req: Request, res: Response) {
@@ -48,7 +88,7 @@ export class Log extends Model {
       query = (req.headers && req.headers.filter) ? JSON.parse(req.headers.filter) : null;
     }
 
-    
+
     this.joinFind(query).then((rs: any) => {
       res.setHeader('Content-Type', 'application/json');
       if (rs) {
@@ -75,20 +115,20 @@ export class Log extends Model {
   //   });
   // }
 
-  getLatest(logs: any[]){
-    if(logs && logs.length > 0){
-      if(logs.length > 1){
+  getLatest(logs: any[]) {
+    if (logs && logs.length > 0) {
+      if (logs.length > 1) {
         let tmp = logs[0];
-        for(let i=1; i<logs.length; i++){
-          if(moment(tmp.created).isBefore(moment(logs[i].created))){
+        for (let i = 1; i < logs.length; i++) {
+          if (moment(tmp.created).isBefore(moment(logs[i].created))) {
             tmp = logs[i];
           }
         }
         return tmp;
-      }else{
+      } else {
         return logs[0];
       }
-    }else{
+    } else {
       return null;
     }
   }
@@ -109,24 +149,24 @@ export class Log extends Model {
     return groups;
   }
 
-  getLatestByAccount(actionId: number, accountType: number, delivered: string): Promise<any[]>{
+  getLatestByAccount(actionId: number, accountType: number, delivered: string): Promise<any[]> {
     const range = { $gte: moment(delivered).startOf('day').toISOString(), $lte: moment(delivered).endOf('day').toISOString() };
     const query = { created: range, action: actionId, type: accountType };
 
     return new Promise((resolve, reject) => {
       this.joinFind(query).then(logs => {
         let groups: any = {};
-        if(accountType === AccountType.MERCHANT){
+        if (accountType === AccountType.MERCHANT) {
           groups = this.groupBy(logs, 'merchantAccountId');
-        }else{
+        } else {
           groups = this.groupBy(logs, 'accountId');
         }
-  
+
         const rs: any[] = [];
         Object.keys(groups).map(id => {
           const ds = groups[id];
           const latest = this.getLatest(ds);
-          if(latest){
+          if (latest) {
             rs.push(latest);
           }
         });
@@ -142,10 +182,10 @@ export class Log extends Model {
       this.accountModel.find({}).then(accounts => {
         this.find(q).then((rs: any) => {
           rs.map((r: any) => {
-            if(r.accountId){
+            if (r.accountId) {
               const account = accounts.find((a: any) => a._id.toString() === r.accountId.toString());
-              if(account){
-                if(account.password){
+              if (account) {
+                if (account.password) {
                   delete account.password;
                 }
                 r.account = account;

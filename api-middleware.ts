@@ -5,13 +5,12 @@ import { Account } from "./models/account";
 import { DB } from "./db";
 import { dbo } from "./server";
 
-const cfg = new Config();
-
+const SVC_PATH = process.env.ENV === 'local' ? process.env.SVC_PATH : '';
 const excepts = [
-  `${cfg.API_SERVER.ROUTE_PREFIX}/accounts/login`,
-  `${cfg.API_SERVER.ROUTE_PREFIX}/accounts/current`,
-  `${cfg.API_SERVER.ROUTE_PREFIX}/accounts/forgot-password`,
-  `${cfg.API_SERVER.ROUTE_PREFIX}/accounts/login-by-otp`,
+  `${SVC_PATH}/accounts/login`,
+  `${SVC_PATH}/accounts/current`,
+  `${SVC_PATH}/accounts/forgot-password`,
+  `${SVC_PATH}/accounts/login-by-otp`,
 ];
 
 export class ApiMiddleWare {

@@ -3,9 +3,13 @@ import fs from 'fs';
 import dotenv from 'dotenv';
 
 dotenv.config();
-const cfg = process.env;
+
+const PORT: any = process.env.PORT;
+const SVC_PATH: any = process.env.SVC_PATH;
+const DB_HOST: any = process.env.DB_HOST;
 const DB_NAME: any = process.env.DB_NAME;
-const ROUTE_PREFIX: any = process.env.ROUTE_PREFIX;
+const DB_USERNAME: any = process.env.DB_USERNAME;
+const DB_PASSWORD: any = process.env.DB_PASSWORD;
 
 export interface IJWT {
   EXPIRY: string;   // eg. '365 days'
@@ -15,7 +19,7 @@ export interface IJWT {
 
 export interface IApiServer {
   PORT: number; //8000,
-  ROUTE_PREFIX: string; // "api"
+  SVC_PATH: string; // "api"
 }
 
 export interface IDatabase {
@@ -90,7 +94,7 @@ export class Config {
   public GOOGLE_MAP_KEY: string = '';
   public GOOGLE_DISTANCE_KEY: string = '';
   public MEDIA: IMedia;
-  public API_SERVER: IApiServer;
+  public SERVER: IApiServer;
   public DATABASE: IDatabase;
   public TWILIO: ISmsProvider;
   public WECHAT: ISNS;
@@ -108,17 +112,7 @@ export class Config {
     this.GOOGLE_MAP_KEY = this.cfg.GOOGLE_MAP_KEY;
     this.GOOGLE_DISTANCE_KEY = this.cfg.GOOGLE_DISTANCE.KEY;
     this.MEDIA = this.cfg.MEDIA;
-    this.API_SERVER = this.cfg.APIV2_SERVER;
 
-    this.DATABASE = {
-      HOST: cfg.DB_HOST,
-      NAME: DB_NAME,
-      PORT: 27017,
-      POOL_SIZE: 10,
-      USERNAME: cfg.DB_USERNAME,
-      PASSWORD: cfg.DB_PASSWORD
-    };
-    
     this.TWILIO = this.cfg.TWILIO;
     this.WECHAT = this.cfg.WECHAT;
     this.STRIPE = this.cfg.STRIPE;
@@ -127,9 +121,21 @@ export class Config {
     this.AWS_S3 = this.cfg.AWS_S3;
     this.MAILER = this.cfg.MAILER;
 
-    this.API_SERVER.ROUTE_PREFIX = ROUTE_PREFIX;
+    this.DATABASE = {
+      HOST: DB_HOST,
+      NAME: DB_NAME,
+      PORT: 27017,
+      POOL_SIZE: 10,
+      USERNAME: DB_USERNAME,
+      PASSWORD: DB_PASSWORD
+    };
+    this.SERVER = {PORT, SVC_PATH};
   }
-
 }
-  
+
+export const cfg = {
+  LOG_SVC_HOST: process.env.LOG_SVC_HOST,
+  LOG_SVC_PATH: process.env.LOG_SVC_PATH,
+}
+
 export default new Config();

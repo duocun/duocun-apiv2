@@ -3,9 +3,32 @@
 duocun-api is a delivery service server
 
 # Dependencies
+
 Nodejs
-Express
-Mongodb
+
+  You need to install node.js version 10.16.3 on your local machine. You can use nvm to install nodejs on your mac:
+  `brew install nvm`
+  `nvm install v10.16.3`
+  
+  If you don't have nvm, try:
+  
+    `brew update`
+    `brew install nvm`
+    `mkdir ~/.nvm`
+
+  after in your ~/.zshrc or in .bash_profile if your use bash shell: 
+
+    `export NVM_DIR=~/.nvm`
+    `source $(brew --prefix nvm)/nvm.sh`
+    
+Express.js
+
+Mongodb community server
+  To install mongo db server use following command
+ `brew install mongodb-community@4.2`
+
+Mongo compass (optional)
+You can use mongo compass to view your database
 
 # Install
 

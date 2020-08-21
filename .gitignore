@@ -14,7 +14,7 @@
 *-audit.json
 .DS_Store
 .idea
-.env
+
 .project
 .strong-pm
 coverage
@@ -24,3 +24,8 @@ npm-debug.log
 /dist
 /package-lock.json
 /uploads/*
+
+.env
+.env.local
+.env.development
+.env.production

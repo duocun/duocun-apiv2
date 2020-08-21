@@ -41,8 +41,13 @@ export class AccountController extends Controller {
   }
 
   async login(req: Request, res: Response): Promise<void> {
-    const { email, password } = req.body;
-    const result = await this.model.loginByEmail(email, password);
+    const { username, email, password } = req.body;
+    let result: any;
+    if(username){
+      result = await this.model.loginByUsername(username, password);
+    }else{
+      result = await this.model.loginByEmail(email, password);
+    }
     if (result.data && result.token) {
       const account = { ...result.data };
       delete account.password;
@@ -59,31 +64,31 @@ export class AccountController extends Controller {
     }
   }
 
-  async loginByUsername(req: Request, res: Response): Promise<void> {
-    const username: any = req.body.username;
-    const password: any = req.body.password;
-    let data: any = null;
-    let code = Code.FAIL;
-    try {
-      const tokenId = await this.model.doLogin(username, password);
-      if (tokenId) {
-        code = Code.SUCCESS;
-        data = tokenId;
-      } else {
-        code = Code.FAIL;
-      }
-    } catch (error) {
-      logger.error(`list error: ${error}`);
-    } finally {
-      res.setHeader("Content-Type", "application/json");
-      res.send(
-        JSON.stringify({
-          code: code,
-          data: data,
-        })
-      );
-    }
-  }
+  // async loginByUsername(req: Request, res: Response): Promise<void> {
+  //   const username: any = req.body.username;
+  //   const password: any = req.body.password;
+  //   let data: any = null;
+  //   let code = Code.FAIL;
+  //   try {
+  //     const tokenId = await this.model.loginByUsername(username, password);
+  //     if (tokenId) {
+  //       code = Code.SUCCESS;
+  //       data = tokenId;
+  //     } else {
+  //       code = Code.FAIL;
+  //     }
+  //   } catch (error) {
+  //     logger.error(`list error: ${error}`);
+  //   } finally {
+  //     res.setHeader("Content-Type", "application/json");
+  //     res.send(
+  //       JSON.stringify({
+  //         code: code,
+  //         data: data,
+  //       })
+  //     );
+  //   }
+  // }
 
   /**
    * list accounts (override controller's list to hide sensitive information)
