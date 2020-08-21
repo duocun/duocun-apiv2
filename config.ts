@@ -131,7 +131,11 @@ export class Config {
     };
     this.SERVER = {PORT, SVC_PATH};
   }
-
 }
-  
+
+export const cfg = {
+  LOG_SVC_HOST: process.env.LOG_SVC_HOST,
+  LOG_SVC_PATH: process.env.LOG_SVC_PATH,
+}
+
 export default new Config();

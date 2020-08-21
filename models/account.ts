@@ -12,6 +12,8 @@ import path from "path";
 import { getLogger } from "../lib/logger";
 import _ from "lodash";
 
+import { Log } from "./log"; // database logger
+
 const logger = getLogger(path.basename(__filename));
 
 const saltRounds = 10;
@@ -104,8 +106,7 @@ export class Account extends Model {
   // wechat, google or facebook can not use this request to login
   // username --- optional, can be null, unique  username
   // password --- mandadory field
-  async doLogin(username: string, password: string) {
-    // console.log(await bcrypt.hash("111111", saltRounds));
+  async loginByUsername(username: string, password: string) {
     if (username) {
       const account: IAccount = await this.findOne({ username });
       if (account && account.password) {
@@ -116,21 +117,26 @@ export class Account extends Model {
           );
           if (matched) {
             account.password = "";
-            return jwt.sign(account._id.toString(), cfg.JWT.SECRET); // SHA256
+            const token = jwt.sign(account._id.toString(), cfg.JWT.SECRET); // SHA256
+            return {data: account, token };
           } else {
-            return;
+            const message = 'username and password does not match';
+            return {data:'', token: '', message};
           }
         } catch (e) {
-          logger.error(`login sign token exception ${e}`);
-          return;
+          const message = `login sign token exception ${e}`;
+          Log.save(message);
+          return {data:'', token: '', message};
         }
       } else {
-        logger.error(`login error: cannot find the user: ${username}`);
-        return;
+        const message = `login error: cannot find the user: ${username}`;
+        Log.save(message);
+        return {data:'', token: '', message};
       }
     } else {
-      logger.error(`login error: username is empty`);
-      return;
+      const message = `login error: username is empty`
+      Log.save(message);
+      return {data:'', token: '', message};
     }
   }
 
