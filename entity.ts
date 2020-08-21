@@ -292,7 +292,7 @@ export class Entity {
       } else if (typeof body === "string" && ObjectId.isValid(body)) {
         doc[fieldName] = new ObjectID(body);
       }
-    } 
+    }
 
     return doc;
   }
@@ -317,7 +317,7 @@ export class Entity {
     doc = this.convertIdField(doc, 'fromId');
     doc = this.convertIdField(doc, 'toId');
     doc = this.convertIdField(doc, 'items.productId');
-    
+
 
     if (doc && doc.hasOwnProperty('$or')) {
       const items: any[] = [];

@@ -44,6 +44,7 @@ import { MessageRouter } from "./routers/message-route";
 import { CellApplicationRouter } from "./routers/cell-application-route";
 import { AreaRouter } from "./routers/area-route";
 import { RoleRouter } from "./routers/role-route";
+import { ScheduleRouter } from "./routers/schedule-route";
 import { ApiMiddleWare } from "./api-middleware";
 import { schedule } from "node-cron";
 import { Order } from "./models/order";
@@ -118,6 +119,7 @@ dbo.init(cfg.DATABASE).then(async (dbClient) => {
   app.use(ROUTE_PREFIX + "/merchants", MerchantRouter(dbo));
   app.use(ROUTE_PREFIX + "/orders", OrderRouter(dbo));
   app.use(ROUTE_PREFIX + "/roles", RoleRouter(dbo));
+  app.use(ROUTE_PREFIX + "/schedules", ScheduleRouter(dbo));
   app.use(ROUTE_PREFIX + "/Assignments", AssignmentRouter(dbo));
   app.use(ROUTE_PREFIX + "/categories", CategoryRouter(dbo));
   app.use(ROUTE_PREFIX + "/products", ProductRouter(dbo));

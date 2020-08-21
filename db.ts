@@ -10,7 +10,10 @@ export class DB {
   }
 
   init(cfg: any): Promise<MongoClient>{
-    const connectionStr = `mongodb://${cfg.USERNAME}:${cfg.PASSWORD}@${cfg.HOST}:${cfg.PORT}/${cfg.NAME}?authSource=admin`;
+    const connectionStr = (cfg.USERNAME && cfg.PASSWORD)
+      ? `mongodb://${cfg.USERNAME}:${cfg.PASSWORD}@${cfg.HOST}:${cfg.PORT}/${cfg.NAME}?authSource=admin`
+      : 'mongodb://'+ cfg.HOST + ':' + cfg.PORT + '/' + cfg.NAME;
+    console.log(connectionStr);
     const options = {
       poolSize: cfg.POOL_SIZE,
       useNewUrlParser: true,
@@ -68,15 +71,15 @@ export class DB {
 // 		getDatabase: function(){
 // 			return _db;
 //     },
-    
+
 // 		getCollection: function(name: string){
 // 			return _db.collection(name);
 //     },
-    
+
 // 		genObjectId: function(){
 // 			return null; // new Mongojs.ObjectId();
 //     },
-    
+
 // 		toObjectId: function(id: string){
 // 			return null; // new Mongojs.ObjectId(sId);
 // 		}
