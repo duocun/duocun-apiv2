@@ -18,4 +18,4 @@ os: linux
 #   may cause associated deployments to fail.
 files:
  - source: ./
-   destination: /home/ubuntu/duocun-apiv2
+   destination: /home/ubuntu/duocun-apiv2-dev
