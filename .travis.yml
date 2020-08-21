@@ -16,7 +16,7 @@ deploy:
    region: us-east-1
    on: &2
        repo: duocun/duocun-apiv2
-       branch: master
+       branch: develop
  
  - provider: codedeploy
    access_key_id: $AWS_ACCESS_KEY_ID
