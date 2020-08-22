@@ -35,7 +35,7 @@ export class Controller {
     let count: number = 0;
     let code = Code.FAIL;
     const user = this.getCurrentUser(res) as IAccount;
-    if (!hasRole(user, ROLE.SUPER)) {
+    if (!hasRole(user, ROLE.SUPER) && !hasRole(user, ROLE.DRIVER)) {
       where.merchantId = new ObjectID(user._id);
     }
     try {
@@ -77,7 +77,7 @@ export class Controller {
       return;
     }
     const { user } = res.locals;
-    if (!hasRole(user, ROLE.SUPER)) {
+    if (!hasRole(user, ROLE.SUPER) && !hasRole(user, ROLE.DRIVER)) {
       if (!data.merchantId || String(data.merchantId) !== user._id.toString()) {
         res.status(403).json({
           code: Code.FAIL,
@@ -106,7 +106,7 @@ export class Controller {
 		}
 		const where: any = { _id };
 		const user = res.locals.user;
-		if (!hasRole(user, ROLE.SUPER)) {
+		if (!hasRole(user, ROLE.SUPER) && !hasRole(user, ROLE.DRIVER)) {
 			where.merchantId = new ObjectID(user._id);
 		}
 		const exists = await this.model.findOne(where);
@@ -140,7 +140,7 @@ export class Controller {
       });
 		}
 		const user = res.locals.user;
-		if (!hasRole(user, ROLE.SUPER) && hasRole(user, ROLE.MERCHANT_ADMIN)) {
+		if (!hasRole(user, ROLE.SUPER)  && !hasRole(user, ROLE.DRIVER) && hasRole(user, ROLE.MERCHANT_ADMIN)) {
 			//@ts-ignore
       doc.merchantId = new ObjectID(user._id);
     }
@@ -163,7 +163,7 @@ export class Controller {
   async delete(req: Request, res: Response) {
 		const _id = req.params.id;
 		const user = res.locals.user;
-		if (!hasRole(user, ROLE.SUPER)) {
+		if (!hasRole(user, ROLE.SUPER) && !hasRole(user, ROLE.DRIVER)) {
 			const existing = await this.model.findOne({ _id, merchantId: new ObjectId(user._id) });
 			if (!existing) {
 				return res.json({
