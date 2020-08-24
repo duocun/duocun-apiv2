@@ -25,11 +25,10 @@ export function PageRouter(db: DB) {
       default: `${baseUrl}/${req.fileInfo.filename}`
     };
 
-    const pictureModel = new Picture(db);
     // @ts-ignore
     const defaultFilename =`${req.fileInfo.filename}`;
     const defaultPath = `${cfg.MEDIA.TEMP_PATH}/${defaultFilename}`;
-    await pictureModel.uploadToAws(defaultFilename, defaultPath);
+    await Picture.uploadToAws(defaultFilename, defaultPath);
 
     for (const width of [480, 720, 960]) {
       // @ts-ignore
@@ -39,7 +38,7 @@ export function PageRouter(db: DB) {
       await sharp(`uploads/${req.fileInfo.filename}`).resize(width).toFile(`uploads/${newFilename}`);
       urls[`${width}`] = `${baseUrl}/${newFilename}`;
 
-      await pictureModel.uploadToAws(newFilename, fpath);
+      await Picture.uploadToAws(newFilename, fpath);
     }
     res.status(201);
     res.json({

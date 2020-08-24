@@ -17,7 +17,7 @@ import {
   CellApplicationStatus,
   ICellApplication,
 } from "./cell-application";
-import { Log, Action, AccountType } from "./log";
+import { Log } from "./log";
 
 import { createObjectCsvWriter } from 'csv-writer';
 import { ObjectID, Collection, BulkWriteOpResultObject, ObjectId } from "mongodb";
@@ -146,8 +146,6 @@ export class Order extends Model {
   private merchantModel: Merchant;
   private accountModel: Account;
   private transactionModel: Transaction;
-  private cellApplicationModel: CellApplication;
-  private logModel: Log;
   clientCreditModel: ClientCredit;
   eventLogModel: EventLog;
   locationModel: Location;
@@ -160,8 +158,7 @@ export class Order extends Model {
     this.merchantModel = new Merchant(dbo);
     this.accountModel = new Account(dbo);
     this.transactionModel = new Transaction(dbo);
-    this.cellApplicationModel = new CellApplication(dbo);
-    this.logModel = new Log(dbo);
+    // this.cellApplicationModel = new CellApplication(dbo);
     this.clientCreditModel = new ClientCredit(dbo);
     this.eventLogModel = new EventLog(dbo);
     this.locationModel = new Location(dbo);
@@ -1662,58 +1659,58 @@ export class Order extends Model {
     };
 
     return new Promise((resolve, reject) => {
-      this.find(query).then((orders: any) => {
-        this.logModel
-          .getLatestByAccount(
-            Action.VIEW_ORDER,
-            AccountType.MERCHANT,
-            delivered
-          )
-          .then((logs: any[]) => {
-            let rs: any[] = [];
-            if (logs && logs.length > 0) {
-              const accountIds: string[] = [];
-              logs.map((log: any) => {
-                // each log has only one merchant
-                const merchantAccountId = log.merchantAccountId
-                  ? log.merchantAccountId.toString()
-                  : null;
-                if (merchantAccountId) {
-                  accountIds.push(merchantAccountId);
-                }
-              });
+      // this.find(query).then((orders: any) => {
+      //   this.logModel
+      //     .getLatestByAccount(
+      //       Action.VIEW_ORDER,
+      //       AccountType.MERCHANT,
+      //       delivered
+      //     )
+      //     .then((logs: any[]) => {
+      //       let rs: any[] = [];
+      //       if (logs && logs.length > 0) {
+      //         const accountIds: string[] = [];
+      //         logs.map((log: any) => {
+      //           // each log has only one merchant
+      //           const merchantAccountId = log.merchantAccountId
+      //             ? log.merchantAccountId.toString()
+      //             : null;
+      //           if (merchantAccountId) {
+      //             accountIds.push(merchantAccountId);
+      //           }
+      //         });
 
-              this.accountModel
-                .find({ _id: { $in: accountIds } })
-                .then((accounts) => {
-                  if (accounts && accounts.length > 0) {
-                    accounts.map((a: IAccount) => {
-                      const log = logs.find(
-                        (l) =>
-                          l.merchantAccountId.toString() === a._id.toString()
-                      );
-                      const dt = moment(log.created);
-                      const merchants: any = a.merchants;
-                      if (merchants && merchants.length > 0) {
-                        const its = orders.filter(
-                          (order: IOrder) =>
-                            merchants.indexOf(order.merchantId.toString()) !==
-                            -1 && moment(order.modified).isSameOrBefore(dt)
-                        );
+      //         this.accountModel
+      //           .find({ _id: { $in: accountIds } })
+      //           .then((accounts) => {
+      //             if (accounts && accounts.length > 0) {
+      //               accounts.map((a: IAccount) => {
+      //                 const log = logs.find(
+      //                   (l) =>
+      //                     l.merchantAccountId.toString() === a._id.toString()
+      //                 );
+      //                 const dt = moment(log.created);
+      //                 const merchants: any = a.merchants;
+      //                 if (merchants && merchants.length > 0) {
+      //                   const its = orders.filter(
+      //                     (order: IOrder) =>
+      //                       merchants.indexOf(order.merchantId.toString()) !==
+      //                       -1 && moment(order.modified).isSameOrBefore(dt)
+      //                   );
 
-                        if (its && its.length > 0) {
-                          rs = rs.concat(its);
-                        }
-                      }
-                    });
-                  }
-                  resolve(rs);
-                });
-            } else {
-              resolve([]);
-            }
-          });
-      });
+      //                   if (its && its.length > 0) {
+      //                     rs = rs.concat(its);
+      //                   }
+      //                 }
+      //               });
+      //             }
+      //             resolve(rs);
+      //           });
+      //       } else {
+      //         resolve([]);
+      //       }
+      //     });
+      // });
     });
   }
   // tools

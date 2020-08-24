@@ -27,14 +27,12 @@ export class ProductController extends Controller {
   model: Product;
   orderModel: Order;
   merchantModel: Merchant;
-  pictureModel: Picture;
 
   constructor(model: Product, db: DB) {
     super(model, db);
     this.model = model;
     this.orderModel = new Order(db);
     this.merchantModel = new Merchant(db);
-    this.pictureModel = new Picture(db);
   }
 
   async list(req: Request, res: Response) {
@@ -387,7 +385,7 @@ export class ProductController extends Controller {
     // @ts-ignore
     const defaultFilename = `${req.fileInfo.filename}`;
     const defaultPath = `${cfg.MEDIA.TEMP_PATH}/${defaultFilename}`;
-    await this.pictureModel.uploadToAws(defaultFilename, defaultPath);
+    await Picture.uploadToAws(defaultFilename, defaultPath);
 
     for (const width of [480, 720, 960]) {
       // @ts-ignore
@@ -399,7 +397,7 @@ export class ProductController extends Controller {
         .toFile(fpath);
       urls[`${width}`] = `${baseUrl}/${newFilename}`;
 
-      await this.pictureModel.uploadToAws(newFilename, fpath);
+      await Picture.uploadToAws(newFilename, fpath);
     }
 
     const picture = {

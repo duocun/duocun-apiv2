@@ -32,6 +32,7 @@ export function ProductRouter(db: DB) {
   router.put("/batchPrice", async (req, res) => {
     await controller.batchPrice(req, res);
   });
+
   router.post("/imageUpload", MulterUploader.single("upload"), (req, res) => {
     controller.uploadImage(req, res);
   });

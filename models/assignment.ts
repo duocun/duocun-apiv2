@@ -1,7 +1,7 @@
 
 import { DB } from "../db";
 import { Pickup } from "./pickup";
-import { Log, Action, AccountType } from "./log";
+import { Log } from "./log";
 import { EventLog } from "./event-log";
 
 import { UNASSIGNED_DRIVER_ID, UNASSIGNED_DRIVER_NAME } from "./driver";
@@ -27,13 +27,11 @@ export interface IAssignment {
 export class Assignment {
   private pickupModel: Pickup;
   private orderModel: Order;
-  private logModel: Log;
   eventLogModel: EventLog;
 
   constructor(dbo: DB) {
     this.pickupModel = new Pickup(dbo);
     this.orderModel = new Order(dbo);
-    this.logModel = new Log(dbo);
     this.eventLogModel = new EventLog(dbo);
   }
 
