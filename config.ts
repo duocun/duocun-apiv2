@@ -103,6 +103,8 @@ export class Config {
   public MONERIS: IMoneris;
   public AWS_S3: IAwsS3;
   public MAILER: Mailer;
+  public MEDIA_FOLDER: string;
+  public MEDIA_HOST: string;
 
   constructor() {
     this.cfg = JSON.parse(fs.readFileSync('../duocun.cfg.json', 'utf-8'));
@@ -130,12 +132,11 @@ export class Config {
       PASSWORD: DB_PASSWORD
     };
     this.SERVER = {PORT, SVC_PATH};
+
+    this.MEDIA_HOST = 'api.duocun.ca';
+    this.MEDIA_FOLDER = 'uploads';
   }
 }
 
-export const cfg = {
-  LOG_SVC_HOST: process.env.LOG_SVC_HOST,
-  LOG_SVC_PATH: process.env.LOG_SVC_PATH,
-}
 
 export default new Config();

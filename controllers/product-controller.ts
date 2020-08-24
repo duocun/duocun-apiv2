@@ -375,30 +375,32 @@ export class ProductController extends Controller {
   async uploadImage(req: Request, res: Response) {
     const cfg = new Config();
     const productId = req.query.productId;
-    const product = await this.orderModel.findOne({ _id: productId });
+    const product = await this.model.findOne({ _id: productId });
 
-    const baseUrl = "https://duocun.com.cn/media";
-    const urls: any = {
-      // @ts-ignore
-      default: `${baseUrl}/${req.fileInfo.filename}`,
-    };
     // @ts-ignore
     const defaultFilename = `${req.fileInfo.filename}`;
-    const defaultPath = `${cfg.MEDIA.TEMP_PATH}/${defaultFilename}`;
-    await Picture.uploadToAws(defaultFilename, defaultPath);
+    const projectPath = process.cwd();
+    const srcPath = `${projectPath}/${cfg.MEDIA_FOLDER}/${defaultFilename}`;
+    await Picture.uploadToAws(defaultFilename, srcPath);
 
-    for (const width of [480, 720, 960]) {
-      // @ts-ignore
-      const newFilename = `${req.fileInfo.name}_${width}.${req.fileInfo.extension}`;
-      const fpath = `${cfg.MEDIA.TEMP_PATH}/${newFilename}`;
-      // @ts-ignore
-      await sharp(`${cfg.MEDIA.TEMP_PATH}/${req.fileInfo.filename}`)
-        .resize(width)
-        .toFile(fpath);
-      urls[`${width}`] = `${baseUrl}/${newFilename}`;
 
-      await Picture.uploadToAws(newFilename, fpath);
-    }
+    // const baseUrl = "https://${MEDIA_HOST}/media";
+    // const urls: any = {
+    //   // @ts-ignore
+    //   default: `${baseUrl}/${req.fileInfo.filename}`,
+    // };
+    // for (const width of [480, 720, 960]) {
+    //   // @ts-ignore
+    //   const newFilename = `${req.fileInfo.name}_${width}.${req.fileInfo.extension}`;
+    //   const fpath = `${cfg.MEDIA.TEMP_PATH}/${newFilename}`;
+    //   // @ts-ignore
+    //   await sharp(`${cfg.MEDIA.TEMP_PATH}/${req.fileInfo.filename}`)
+    //     .resize(width)
+    //     .toFile(fpath);
+    //   urls[`${width}`] = `${baseUrl}/${newFilename}`;
+
+    //   await Picture.uploadToAws(newFilename, fpath);
+    // }
 
     const picture = {
       // @ts-ignore

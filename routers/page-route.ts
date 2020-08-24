@@ -19,27 +19,27 @@ export function PageRouter(db: DB) {
   router.get('/:id', (req, res) => { controller.get(req, res);});
   router.post('/imageUpload', MulterUploader.single("upload"), async (req, res) => {
     const cfg = new Config();
-    const baseUrl = "https://duocun.com.cn/media";
+    // @ts-ignore
+    const defaultFilename =`${req.fileInfo.filename}`;
+    const projectPath = process.cwd();
+    const srcPath = `${projectPath}/${cfg.MEDIA_FOLDER}/${defaultFilename}`;
+    await Picture.uploadToAws(defaultFilename, srcPath);
+
+    const baseUrl = `https://${cfg.MEDIA_HOST}/media`;
     const urls: any = {
       // @ts-ignore
       default: `${baseUrl}/${req.fileInfo.filename}`
     };
+    // for (const width of [480, 720, 960]) {
+    //   // @ts-ignore
+    //   const newFilename = `${ req.fileInfo.name}_${width}.${req.fileInfo.extension}`;
+    //   const fpath = `${cfg.MEDIA.TEMP_PATH}/${newFilename}`;
+    //   // @ts-ignore
+    //   await sharp(`uploads/${req.fileInfo.filename}`).resize(width).toFile(`uploads/${newFilename}`);
+    //   urls[`${width}`] = `${baseUrl}/${newFilename}`;
 
-    // @ts-ignore
-    const defaultFilename =`${req.fileInfo.filename}`;
-    const defaultPath = `${cfg.MEDIA.TEMP_PATH}/${defaultFilename}`;
-    await Picture.uploadToAws(defaultFilename, defaultPath);
-
-    for (const width of [480, 720, 960]) {
-      // @ts-ignore
-      const newFilename = `${ req.fileInfo.name}_${width}.${req.fileInfo.extension}`;
-      const fpath = `${cfg.MEDIA.TEMP_PATH}/${newFilename}`;
-      // @ts-ignore
-      await sharp(`uploads/${req.fileInfo.filename}`).resize(width).toFile(`uploads/${newFilename}`);
-      urls[`${width}`] = `${baseUrl}/${newFilename}`;
-
-      await Picture.uploadToAws(newFilename, fpath);
-    }
+    //   await Picture.uploadToAws(newFilename, fpath);
+    // }
     res.status(201);
     res.json({
       urls
