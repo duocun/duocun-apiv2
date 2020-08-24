@@ -417,7 +417,7 @@ export class ProductController extends Controller {
       product.pictures.push(picture);
 
       try {
-        await this.orderModel.updateOne({ _id: product._id }, product);
+        await this.model.updateOne({ _id: product._id }, product);
       } catch (e) {
         console.error(e);
         return res.json({
