@@ -43,6 +43,7 @@ export class AssignmentController {
     let data = '';
     try {
       if (deliverDate && assignments && assignments.length>0) {
+        await this.model.updateOrders(assignments);
         await this.model.updateAssignments(deliverDate, assignments);
         code = Code.SUCCESS;
         data = 'done';

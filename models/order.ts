@@ -442,7 +442,7 @@ export class Order extends Model {
       //   }
       // }
 
-      if (order.driverId) {
+      if (order.driverId && order.driverId !== UNASSIGNED_DRIVER_ID) {
         const driver = driverAccounts.find(
           (a: IAccount) => a._id.toString() === order.driverId.toString()
         );

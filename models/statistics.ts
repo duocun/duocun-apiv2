@@ -5,18 +5,26 @@ import { Pickup, PickupStatus } from "./pickup";
 import { TransactionAction, Transaction, ITransaction } from "./transaction";
 import { Account } from "./account";
 import { DateTime } from "./date-time";
+import { Assignment } from "./assignment";
+import { UNASSIGNED_DRIVER_ID } from "./driver";
+import { Product, ProductStatus } from "./product";
 
 export class Statistics extends Model{
   orderModel: Order;
   pickupModel: Pickup;
   transactionModel: Transaction;
   accountModel: Account;
+  assignmentModel: Assignment;
+  productModel: Product;
+
   constructor(db: DB) {
     super(db, 'statistics');
     this.orderModel = new Order(db);
     this.pickupModel = new Pickup(db);
     this.transactionModel = new Transaction(db);
     this.accountModel = new Account(db);
+    this.assignmentModel = new Assignment(db);
+    this.productModel = new Product(db);
   }
   async getById(id: string){
     return;
@@ -141,7 +149,7 @@ export class Statistics extends Model{
   }
   
   // return [{productName, quantity}...]
-  groupByProduct(orders: any[], pickups: any[], type: string = OrderType.GROCERY) {
+  groupByProduct(driverId: string, orders: any[], pickups: any[], type: string = OrderType.GROCERY) {
     const productMap: any = {};
     const rs = orders.filter(order => order.type === type);
     rs.forEach(r => {
@@ -159,15 +167,24 @@ export class Statistics extends Model{
       });
     });
 
-    if (pickups && pickups.length > 0) {
-      pickups.forEach((pickup: any) => {
-        const productId = pickup.productId.toString();
+    Object.keys(productMap).forEach(productId => {
+      const pickup = pickups.find(p => p.driverId.toString() === driverId && p.productId.toString() === productId);
+      if(pickup){
         if (productMap.hasOwnProperty(productId)) {
-          productMap[productId]._id = pickup._id;
+          productMap[productId].pickupId = pickup._id;
           productMap[productId].status = pickup.status;
         }
-      });
-    }
+      }
+    })
+    // if (pickups && pickups.length > 0) {
+    //   pickups.forEach((pickup: any) => {
+    //     const productId = pickup.productId.toString();
+    //     if (productMap.hasOwnProperty(productId)) {
+    //       productMap[productId]._id = pickup._id;
+    //       productMap[productId].status = pickup.status;
+    //     }
+    //   });
+    // }
 
     return Object.keys(productMap).map(pId => productMap[pId]);
   }
@@ -204,36 +221,34 @@ export class Statistics extends Model{
         $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
       },
     };
-    const drivers = await this.accountModel.find({type: 'driver'});
     const dataSet = await this.orderModel.joinFindV2(q);
     const orders = dataSet.data;
-    const driverMap: any = {'all': {driverId: 'all', driverName:'All', orders:[]}};
-    orders.forEach((order: any) => {
-      const driverId = order.driverId ? order.driverId.toString() : null;
-      const driver = drivers.find(d => d._id.toString() === driverId);
-      const driverName = driver ? driver.username : 'Unassign';
-      driverMap[driverId] = {driverId, driverName, orders:[]};
-    });
-
-    orders.forEach((order: any) => {
-      const driverId = order.driverId? order.driverId.toString() : null;
-      driverMap[driverId].orders.push(order);
-      driverMap['all'].orders.push(order); // push all
-    });
-
     const delivered = deliverDate + 'T15:00:00.000Z';
     const pickups = await this.pickupModel.find({delivered});
+
+    const driverMap: any = {'all': {driverId: 'all', driverName:'All', orders: []}};
+    pickups.forEach(p => {
+      const driverId = p.driverId.toString();
+      driverMap[driverId] = {driverId, driverName: p.driverName, orders: []}
+    });
+
+    orders.forEach((order: IOrder) => {
+      const driverId = order.driverId? order.driverId.toString() : UNASSIGNED_DRIVER_ID;
+      driverMap[driverId].orders.push(order);
+      driverMap['all'].orders.push(order);
+    });
+
 
     Object.keys(driverMap).forEach(driverId => {
       driverMap[driverId].merchants = this.groupByMerchant(driverMap[driverId].orders).map(group => ({
         merchantName: group.merchantName,
-        items: this.groupByProduct(group.orders, pickups)
+        items: this.groupByProduct(driverId, group.orders, pickups)
       }));
       delete driverMap[driverId].orders;
     });
+
     return driverMap;
   }
-
 
   // return [{productName, quantity}...]
   async getSalaryStatistics(){

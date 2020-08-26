@@ -7,6 +7,7 @@ import { EventLog } from "./event-log";
 import { UNASSIGNED_DRIVER_ID, UNASSIGNED_DRIVER_NAME } from "./driver";
 import { IPickup, IPickupMap, PickupStatus } from "./pickup";
 import { Order, IOrder, IOrderItem, OrderStatus } from "../models/order";
+import { Account } from "./account";
 
 export const AssignmentStatus = {
   ASSIGNED: 'A',
@@ -22,16 +23,19 @@ export interface IAssignment {
     type: string;
     status: string; // OrderStatus
   }
-  
+
 
 export class Assignment {
   private pickupModel: Pickup;
   private orderModel: Order;
+  private accountModel: Account;
+
   eventLogModel: EventLog;
 
   constructor(dbo: DB) {
     this.pickupModel = new Pickup(dbo);
     this.orderModel = new Order(dbo);
+    this.accountModel = new Account(dbo);
     this.eventLogModel = new EventLog(dbo);
   }
 
@@ -60,40 +64,7 @@ export class Assignment {
 
     return assignments;
   }
-  /** 
-   *  input 
-   *    assignments --- IAssignment[]
-   *
-   *  return
-   *    IPickupMap
-   */
-   async getPickupMapFromAssignments(assignments: IAssignment[]) : Promise<IPickupMap> {
-    const pickupMap: IPickupMap = {};
-    const orderIds = assignments.map((a: IAssignment) => a.orderId);
-    const r = await this.orderModel.joinFindV2({_id: {$in: orderIds}});
-    
-    r.data.forEach((r: IOrder) => {
-      const driverId = r.driverId ? r.driverId : UNASSIGNED_DRIVER_ID;
-      const delivered = r.delivered;
-      r.items.forEach((it: IOrderItem) => {
-        const productId = it.productId;
-        const productName: any = it.productName;
-        const id = `${driverId}-${productId}`;
-        pickupMap[id] = { driverId, delivered, productId, productName, quantity: 0, status: PickupStatus.UNPICK_UP };
-      });
-    });
 
-    r.data.forEach((r: IOrder) => {
-      const driverId = r.driverId;
-      r.items.forEach((it: IOrderItem) => {
-        const productId = it.productId;
-        const id = `${driverId}-${productId}`;
-        pickupMap[id].quantity += it.quantity;
-      });
-    });
-
-    return pickupMap;
-  }
 
   async updateOrders(assignments: IAssignment[]){
     const orderIds: string[] = [];
@@ -117,13 +88,14 @@ export class Assignment {
             });
           }
         }else{
-          updates.push({
-            query: { _id: orderId },
-            data: {
-              driverId: UNASSIGNED_DRIVER_ID,
-              driverName: UNASSIGNED_DRIVER_NAME
-            }
-          });
+          // no change
+          // updates.push({
+          //   query: { _id: orderId },
+          //   data: {
+          //     driverId: UNASSIGNED_DRIVER_ID,
+          //     driverName: UNASSIGNED_DRIVER_NAME
+          //   }
+          // });
         }
     });
     await this.orderModel.bulkUpdate(updates);
@@ -137,64 +109,192 @@ export class Assignment {
    *  return
    *    [{ orderId, lat, lng, type, status, driverId, driverName, clientName }]
    */
-  async updateAssignments(deliverDate: string,  assignments: IAssignment[]) {
+  // async updateAssignments(deliverDate: string,  assignments: IAssignment[]) {
 
-    await this.updateOrders(assignments);
+  //   await this.updateOrders(assignments);
     
-    const newPickupMap = await this.getPickupMapFromAssignments(assignments);
+  //   const newPickupMap = await this.getPickupMapFromAssignments(assignments);
     
-    // update all the pickups for today
-    const pickupUpdates = [];
-    const toDelIds = [];
-    const pickupMap: any = {};
-    const delivered = `${deliverDate}T15:00:00.000Z`;
-    const pickups = await this.pickupModel.find({delivered});
+  //   // update all the pickups for today
+  //   const pickupUpdates = [];
+  //   const toDelIds = [];
+  //   const pickupMap: any = {};
+  //   const delivered = `${deliverDate}T15:00:00.000Z`;
+  //   const pickups = await this.pickupModel.find({delivered});
 
-    for(let i=0; i<pickups.length; i++){
-      const r = pickups[i];
-      const driverId = r.driverId;
-      const productId = r.productId;
-      const id = `${driverId}-${productId}`;
-      pickupMap[id] = true;
+  //   for(let i=0; i<pickups.length; i++){
+  //     const r = pickups[i];
+  //     const driverId = r.driverId.toString();
+  //     const productId = r.productId.toString();
 
-      const existingPickup = newPickupMap[id];
-      if(existingPickup){
-        if(existingPickup.quantity !== r.quantity){
-          pickupUpdates.push({
-            query: { _id: r._id },
-            data: { quantity: r.quantity }
-          });
-        }else{
-          // skip update
-        }
-      }else{ // to be removed 
-        toDelIds.push(r._id);
-      }
-    }
+  //     const id = `${driverId}-${productId}`;
+  //     pickupMap[id] = true;
 
-    if(pickupUpdates && pickupUpdates.length > 0){
-      await this.pickupModel.bulkUpdate(pickupUpdates);
-    }
+  //     const existingPickup = newPickupMap[id];
+  //     if(existingPickup){
+  //       if(existingPickup.quantity !== r.quantity){
+  //         pickupUpdates.push({
+  //           query: { _id: r._id },
+  //           data: { quantity: r.quantity }
+  //         });
+  //       }else{
+  //         // skip update
+  //       }
+  //     }else{ // to be removed 
+  //       toDelIds.push(r._id);
+  //     }
+  //   }
 
-    if(toDelIds && toDelIds.length > 0){
-      await this.pickupModel.deleteMany({_id: {$in: toDelIds}});
-    }
+  //   if(pickupUpdates && pickupUpdates.length > 0){
+  //     await this.pickupModel.bulkUpdate(pickupUpdates);
+  //   }
 
-    const toAdd: any[] = [];
-    Object.keys(newPickupMap).forEach(id => {
-      const r = newPickupMap[id];
-      if(r){
-        // pass processed
-      }else{ // new
-        const r = newPickupMap[id];
-        toAdd.push({ ...r });
-      }
+  //   if(toDelIds && toDelIds.length > 0){
+  //     await this.pickupModel.deleteMany({_id: {$in: toDelIds}});
+  //   }
+
+  //   const toAdd: any[] = [];
+  //   Object.keys(newPickupMap).forEach(key => {
+  //     const r = newPickupMap[key];
+  //     if(r){
+  //       // pass processed
+  //     }else{ // new
+  //       const r = newPickupMap[key];
+  //       toAdd.push({ ...r });
+  //     }
+  //   });
+  //   if(toAdd.length >0 ){
+  //     await this.pickupModel.insertMany(toAdd);
+  //   }
+
+  //   // is it possible remove order / change date after assigned? --- out of stock
+  //   return;
+  // }
+
+  getProductMapFromOrderList(orders: IOrder[]){
+    const productMap: any = {};
+    orders.forEach((r: IOrder) => {
+      r.items.forEach((it: IOrderItem) => {
+        const productId = it.productId.toString();
+        productMap[productId] = { productId, productName: it.productName };
+      });
     });
-    if(toAdd.length >0 ){
-      await this.pickupModel.insertMany(toAdd);
-    }
+    return productMap;
+  }
 
-    // is it possible remove order / change date after assigned? --- out of stock
+  async getDriverMap(orders: IOrder[]){
+    const drivers = await this.accountModel.getActiveDrivers();
+    const driverMap: any = {};
+
+    driverMap[UNASSIGNED_DRIVER_ID] = { driverId: UNASSIGNED_DRIVER_ID, driverName: UNASSIGNED_DRIVER_NAME };
+
+    orders.forEach((r: IOrder) => {
+      const driverId = (r.driverId && r.driverId !== UNASSIGNED_DRIVER_ID) ? r.driverId.toString() : UNASSIGNED_DRIVER_ID;
+      const driverName = (r.driverId && r.driverId !== UNASSIGNED_DRIVER_ID) ? r.driverName : UNASSIGNED_DRIVER_NAME;
+      driverMap[driverId] = { driverId, driverName };
+    });
+
+    drivers.forEach((r: any) => {
+      const driverId = r._id.toString();
+      const driverName = r.username;
+      driverMap[driverId] = { driverId, driverName };
+    });
+
+    return driverMap;
+  }
+
+  /** 
+   *  input 
+   *    assignments: IAssignment[]
+   *
+   *  return
+   *    IPickupMap
+   */
+   async initPickupMap(delivered: string, assignments: IAssignment[]) : Promise<IPickupMap> {
+    const orderIds = assignments.map((a: IAssignment) => a.orderId);
+    const r = await this.orderModel.joinFindV2({_id: {$in: orderIds}});
+    const orders = r.data;
+    const pickupMap: IPickupMap = {};
+    const productMap = this.getProductMapFromOrderList(orders);
+    const driverMap = await this.getDriverMap(orders);
+
+    Object.keys(driverMap).forEach((driverId: string) => {
+      Object.keys(productMap).forEach((productId: string) => {
+        const key = `${driverId}-${productId}`;
+        const productName = productMap[productId].productName;
+        pickupMap[key] = { ...driverMap[driverId], quantity: 0, productId, productName, delivered, status: PickupStatus.UNPICK_UP};
+      })
+    });
+
+    // update quantity
+    orders.forEach((r: IOrder) => {
+      const driverId = r.driverId && r.driverId !== UNASSIGNED_DRIVER_ID ? r.driverId.toString() : UNASSIGNED_DRIVER_ID;
+      r.items.forEach((it: IOrderItem) => {
+        const productId = it.productId.toString();
+        const key = `${driverId}-${productId}`;
+        pickupMap[key].quantity += it.quantity;
+      });
+    });
+
+    return pickupMap;
+  }
+
+
+  /** Note: this function must be called after await this.updateOrders(assignments);
+   *  input 
+   *    assignments: array, eg. [{ orderId, lat, lng, type, status, driverId, driverName, clientName }]
+   *    orderIdMap: 
+   *  return
+   *    [{ orderId, lat, lng, type, status, driverId, driverName, clientName }]
+   */
+  async updateAssignments(deliverDate: string, assignments: IAssignment[]){
+    
+    const delivered = `${deliverDate}T15:00:00.000Z`;
+    const compareMap: IPickupMap = await this.initPickupMap(delivered, assignments);
+
+    const originMap: any = {};
+    const pickups = await this.pickupModel.find({delivered});
+    pickups.forEach((r: IPickup) => {
+      const driverId = r.driverId && r.driverId !== UNASSIGNED_DRIVER_ID ? r.driverId.toString() : UNASSIGNED_DRIVER_ID;
+      const productId = r.productId.toString();
+      const key = `${driverId}-${productId}`;
+      originMap[key] = r;
+    });
+
+    const keys = Object.keys(compareMap);
+    for(let i=0; i<keys.length; i++) {
+      const key = keys[i];
+      const curr = compareMap[key];
+      const origin = originMap[key];
+
+      if(curr.driverId !== UNASSIGNED_DRIVER_ID){
+        if(origin && origin.status !== PickupStatus.DELETED){
+          if(curr.quantity === 0){
+            await this.pickupModel.updateOne({_id: origin._id}, {status: PickupStatus.DELETED});
+          } else if(curr.quantity !== origin.quantity){
+            const status = (origin.status === PickupStatus.PICKED_UP || origin.status === PickupStatus.PICKED_UP_BUT_CHANGED) ? PickupStatus.PICKED_UP_BUT_CHANGED : origin.status;
+            await this.pickupModel.updateOne({_id: origin._id}, {quantity: curr.quantity, status});
+          } else {
+            // skip
+          }
+        }else if(origin && origin.status === PickupStatus.DELETED){
+          if(curr.quantity > 0){
+            await this.pickupModel.updateOne({_id: origin._id}, {quantity: curr.quantity, status: PickupStatus.UNPICK_UP});
+          }else{
+            // skip
+          }
+        }else{
+          if(curr.quantity > 0){
+            const p: IPickup = {...curr  }
+            await this.pickupModel.insertOne(p);
+          }else{
+            // skip
+          }
+        }
+      }else{
+        // skip
+      }
+    }
     return;
   }
 

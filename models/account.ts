@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
 import { DB } from "../db";
-import { Model } from "./model";
+import { Model, Status } from "./model";
 import { ROLE } from "./role";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -30,6 +30,7 @@ export const VerificationError = {
 
 export const AccountType = {
   TEMP: "tmp",
+  DRIVER: "driver"
 };
 
 export interface IAccountAttribute {
@@ -887,5 +888,13 @@ export class Account extends Model {
       doc.roles = [];
     }
     return doc;
+  }
+
+  async getActiveDrivers(){
+    const accounts = await this.find({type: AccountType.DRIVER, status: Status.ACTIVE});
+    const rs = accounts.map(a =>{
+      return {_id: a._id, username: a.username, phone: a.phone};
+    });
+    return rs;
   }
 }

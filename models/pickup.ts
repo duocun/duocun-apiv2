@@ -3,12 +3,15 @@ import { Model } from "./model";
 
 export const PickupStatus = {
   UNPICK_UP: 'U',
-  PICKED_UP: 'P'
+  PICKED_UP: 'P',
+  DELETED: 'D',
+  PICKED_UP_BUT_CHANGED: 'PC',
 };
 
 export interface IPickup {
   _id?: string;
   driverId: string;
+  driverName: string;
   productId: string;
   productName: string;
   quantity: number;
