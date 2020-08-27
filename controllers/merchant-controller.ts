@@ -182,7 +182,7 @@ export class MerchantController extends Controller {
       }
     }
 
-    this.model.find(query, null, fields).then((xs: any[]) => {
+    this.model.find(query, null).then((xs: any[]) => {
       res.setHeader("Content-Type", "application/json");
       res.send(JSON.stringify(xs, null, 3));
     });

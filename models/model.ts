@@ -159,7 +159,7 @@ export class Model extends Entity {
       }
     }
 
-    this.find(query, null, fields).then((xs: any[]) => {
+    this.find(query, null).then((xs: any[]) => {
       res.setHeader('Content-Type', 'application/json');
       res.send(JSON.stringify(xs, null, 3));
     });

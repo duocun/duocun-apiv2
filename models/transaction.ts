@@ -952,7 +952,7 @@ export class Transaction extends Model {
 
   updateBalances(req: Request, res: Response) {
     const self = this;
-    this.accountModel.find({}, null, ['_id']).then(accounts => {
+    this.accountModel.find({}, null).then(accounts => {
       const accountIds = accounts.map(account => account._id.toString());
       this.updateBalanceList(accountIds).then(n => {
         res.setHeader('Content-Type', 'application/json');
