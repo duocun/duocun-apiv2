@@ -6,7 +6,7 @@ import { TransactionAction, Transaction, ITransaction } from "./transaction";
 import { Account } from "./account";
 import { DateTime } from "./date-time";
 import { Assignment } from "./assignment";
-import { UNASSIGNED_DRIVER_ID } from "./driver";
+import { UNASSIGNED_DRIVER_ID, UNASSIGNED_DRIVER_NAME } from "./driver";
 import { Product, ProductStatus } from "./product";
 
 export class Statistics extends Model{
@@ -148,7 +148,7 @@ export class Statistics extends Model{
     return productArray;
   }
   
-  // return [{productName, quantity}...]
+  // return [{productId, productName, quantity, pickupId, status}, ...]
   groupByProduct(driverId: string, orders: any[], pickups: any[], type: string = OrderType.GROCERY) {
     const productMap: any = {};
     const rs = orders.filter(order => order.type === type);
@@ -227,6 +227,8 @@ export class Statistics extends Model{
     const pickups = await this.pickupModel.find({delivered});
 
     const driverMap: any = {'all': {driverId: 'all', driverName:'All', orders: []}};
+
+    // when checking a future date, the pickups is posible to be empty
     pickups.forEach(p => {
       const driverId = p.driverId.toString();
       driverMap[driverId] = {driverId, driverName: p.driverName, orders: []}
@@ -234,10 +236,15 @@ export class Statistics extends Model{
 
     orders.forEach((order: IOrder) => {
       const driverId = order.driverId? order.driverId.toString() : UNASSIGNED_DRIVER_ID;
+      const driverName = order.driverId? order.driverName : UNASSIGNED_DRIVER_NAME;
+      driverMap[driverId] = {driverId, driverName, orders: []};
+    });
+
+    orders.forEach((order: IOrder) => {
+      const driverId = order.driverId? order.driverId.toString() : UNASSIGNED_DRIVER_ID;
       driverMap[driverId].orders.push(order);
       driverMap['all'].orders.push(order);
     });
-
 
     Object.keys(driverMap).forEach(driverId => {
       driverMap[driverId].merchants = this.groupByMerchant(driverMap[driverId].orders).map(group => ({
