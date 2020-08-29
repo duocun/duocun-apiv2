@@ -229,6 +229,7 @@ export class Product extends Model {
       "order",
       "rank",
       "categoryId",
+      "merchantId",
       "stock",
       "attributes",
       "combinations",
@@ -258,6 +259,9 @@ export class Product extends Model {
     }
     if (model.categoryId) {
       model.categoryId = new ObjectID(model.categoryId);
+    }
+    if (model.merchantId) {
+      model.merchantId = new ObjectID(model.merchantId);
     }
     return model;
   }
