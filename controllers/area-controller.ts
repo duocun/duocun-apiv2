@@ -58,7 +58,7 @@ export class AreaController extends Controller{
       fields = JSON.parse(req.headers.fields);
     }
 
-    this.model.find(query, null, fields).then((x: any) => {
+    this.model.find(query, null).then((x: any) => {
       res.setHeader('Content-Type', 'application/json');
       res.send(JSON.stringify(x, null, 3));
     });

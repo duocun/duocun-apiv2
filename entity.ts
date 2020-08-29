@@ -35,13 +35,12 @@ export class Entity {
     this.collectionName = name;
   }
 
-  async find(query: any, options?: any, fields?: any) {
+  async find(query: any, options?: any) {
     const self = this;
     query = this.convertIdFields(query);
 
     const c = await self.getCollection();
     const docs = await c.find(query, options).toArray();
-    // const rs = this.filterArray(docs, fields);
     return docs;
   }
 

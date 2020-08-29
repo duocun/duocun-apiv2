@@ -35,7 +35,6 @@ import { PickupRouter } from "./routers/pickup-route";
 import { DriverRouter } from "./routers/driver-route";
 import { DriverShiftRouter } from "./routers/driver-shift-route";
 import { DriverScheduleRouter } from "./routers/driver-schedule-route";
-import { LogRouter } from "./routers/log-route";
 import { EventLogRouter } from "./routers/event-log-route";
 import { StatisticsRouter } from "./routers/statistics-route";
 import { ToolRouter } from "./routers/tool-route";
@@ -46,6 +45,8 @@ import { AreaRouter } from "./routers/area-route";
 import { RoleRouter } from "./routers/role-route";
 import { ScheduleRouter } from "./routers/schedule-route";
 import { SettingRouter } from "./routers/setting-route";
+import { FileRouter } from "./routers/file-route";
+
 import { ApiMiddleWare } from "./api-middleware";
 import { schedule } from "node-cron";
 import { Order } from "./models/order";
@@ -95,7 +96,7 @@ dbo.init(cfg.DATABASE).then(async (dbClient) => {
   app.use(bodyParser.json({ limit: "1mb" }));
 
   const staticPath = path.resolve("uploads");
-  console.log(staticPath + "/n/r");
+  console.log(`upload path: ${staticPath}`);
   app.use(express.static(staticPath));
 
   app.get("/wx", (req, res) => {
@@ -152,11 +153,13 @@ dbo.init(cfg.DATABASE).then(async (dbClient) => {
   app.use(SVC_PATH + "/DriverHours", DriverHourRouter(dbo));
   app.use(SVC_PATH + "/DriverShifts", DriverShiftRouter(dbo));
   app.use(SVC_PATH + "/DriverSchedules", DriverScheduleRouter(dbo));
-  app.use(SVC_PATH + "/Logs", LogRouter(dbo));
   app.use(SVC_PATH + "/EventLogs", EventLogRouter(dbo));
   app.use(SVC_PATH + "/Messages", MessageRouter(dbo));
 
   app.use(SVC_PATH + "/CellApplications", CellApplicationRouter(dbo));
+
+  app.use(SVC_PATH + "/Files", FileRouter());
+
 
   app.use(express.static(path.join(__dirname, "/../uploads")));
   app.set("port", process.env.SVC_PORT || cfg.SERVER.PORT);

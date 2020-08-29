@@ -8,14 +8,9 @@ import { IOrderItem, PaymentMethod } from "./order";
 import { EventLog } from "./event-log";
 import { ResponseStatus } from "./client-payment";
 
-import fs from 'fs';
-import { AccountType } from "./log";
 
 import path from 'path';
 import { getLogger } from '../lib/logger';
-import { DateTime } from "./date-time";
-
-import { createObjectCsvWriter } from 'csv-writer';
 
 const logger = getLogger(path.basename(__filename));
 
@@ -957,7 +952,7 @@ export class Transaction extends Model {
 
   updateBalances(req: Request, res: Response) {
     const self = this;
-    this.accountModel.find({}, null, ['_id']).then(accounts => {
+    this.accountModel.find({}, null).then(accounts => {
       const accountIds = accounts.map(account => account._id.toString());
       this.updateBalanceList(accountIds).then(n => {
         res.setHeader('Content-Type', 'application/json');

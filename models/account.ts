@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
 import { DB } from "../db";
-import { Model } from "./model";
+import { Model, Status } from "./model";
 import { ROLE } from "./role";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -12,7 +12,7 @@ import path from "path";
 import { getLogger } from "../lib/logger";
 import _ from "lodash";
 
-import { Log } from "./log"; // database logger
+import { Log, AppId } from "./log"; // database logger
 
 const logger = getLogger(path.basename(__filename));
 
@@ -30,6 +30,7 @@ export const VerificationError = {
 
 export const AccountType = {
   TEMP: "tmp",
+  DRIVER: "driver"
 };
 
 export interface IAccountAttribute {
@@ -125,17 +126,17 @@ export class Account extends Model {
           }
         } catch (e) {
           const message = `login sign token exception ${e}`;
-          Log.save(message);
+          Log.save({appId: AppId.API_V2, msg: message}).then(() => { });
           return {data:'', token: '', message};
         }
       } else {
         const message = `login error: cannot find the user: ${username}`;
-        Log.save(message);
+        Log.save({appId: AppId.API_V2, msg: message}).then(() => { });
         return {data:'', token: '', message};
       }
     } else {
       const message = `login error: username is empty`
-      Log.save(message);
+      Log.save({appId: AppId.API_V2, msg: message}).then(() => { });
       return {data:'', token: '', message};
     }
   }
@@ -887,5 +888,13 @@ export class Account extends Model {
       doc.roles = [];
     }
     return doc;
+  }
+
+  async getActiveDrivers(){
+    const accounts = await this.find({type: AccountType.DRIVER, status: Status.ACTIVE});
+    const rs = accounts.map(a =>{
+      return {_id: a._id, username: a.username, phone: a.phone};
+    });
+    return rs;
   }
 }

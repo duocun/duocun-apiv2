@@ -70,17 +70,21 @@ export class Model extends Entity {
 
   // return BulkWriteOpResultObject
   async bulkUpdate(items: IUpdateItem[], options?: any): Promise<any> {
-    const c: Collection = await this.getCollection();
-    const clonedArray: any[] = [...items];
-    const a: any[] = [];
+    if(items && items.length > 0){
+      const c: Collection = await this.getCollection();
+      const clonedArray: any[] = [...items];
+      const a: any[] = [];
 
-    clonedArray.map(({query, data}) => {
-      const q = this.convertIdFields(query);
-      const doc = this.convertIdFields(data);
-      a.push({ updateOne: { filter: q, update: { $set: doc }, upsert: true } });
-    });
+      clonedArray.map(({query, data}) => {
+        const q = this.convertIdFields(query);
+        const doc = this.convertIdFields(data);
+        a.push({ updateOne: { filter: q, update: { $set: doc }, upsert: true } });
+      });
 
-    return await c.bulkWrite(a, options);
+      return await c.bulkWrite(a, options);
+    } else {
+      return;
+    }
   }
 
   async getFailedWechatPay(){
@@ -155,7 +159,7 @@ export class Model extends Entity {
       }
     }
 
-    this.find(query, null, fields).then((xs: any[]) => {
+    this.find(query, null).then((xs: any[]) => {
       res.setHeader('Content-Type', 'application/json');
       res.send(JSON.stringify(xs, null, 3));
     });

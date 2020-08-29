@@ -6,19 +6,19 @@ import { DB } from "../db";
 import { Config } from "../config";
 import AWS from 'aws-sdk';
 
-export class Picture extends Model {
-  constructor(dbo: DB) {
-    super(dbo, 'products');
-  }
+export const Picture = {
+  // constructor(dbo: DB) {
+  //   super(dbo, 'products');
+  // }
 
 
-  get(req: Request, res: Response){
-    const id = req.params.id;
-    const dir = path.join(__dirname, '../uploads');
-    fs.readdir(dir, (err, fnames) => {
-      res.send(JSON.stringify(fnames, null, 3));
-    });
-  }
+  // get(req: Request, res: Response){
+  //   const id = req.params.id;
+  //   const dir = path.join(__dirname, '../uploads');
+  //   fs.readdir(dir, (err, fnames) => {
+  //     res.send(JSON.stringify(fnames, null, 3));
+  //   });
+  // }
 
   // fname --- name with extension
   uploadToAws(fname: string, fpath: string) {
@@ -49,5 +49,5 @@ export class Picture extends Model {
         console.log(`File uploaded to AWS S3 successfully. ${data.Location}`);
       });
     });
-  };
+  }
 }

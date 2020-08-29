@@ -8,8 +8,7 @@ import { Config } from "../config";
 export const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const cfg = new Config();
-    const url = cfg.MEDIA.TEMP_PATH;
-    cb(null, `${url}/`);
+    cb(null, `${cfg.MEDIA_FOLDER}/`);
   },
   filename: function (req: any, file, cb) {
     const name = Math.random().toString(36).substring(2) + "_" + Date.now();
