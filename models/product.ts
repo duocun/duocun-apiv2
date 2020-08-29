@@ -226,7 +226,7 @@ export class Product extends Model {
       "taxRate",
       "dow",
       "pictures",
-      "order",  
+      "order",
       "rank",
       "categoryId",
       "stock",
@@ -239,6 +239,7 @@ export class Product extends Model {
         throw new Error(`${key} field is required`);
       }
     });
+    model.rank = Number(model.rank);
     model.attributes = model.attributes || [];
     model.combinations = model.combinations || [];
     model.type = "G";
