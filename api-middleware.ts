@@ -11,6 +11,7 @@ const excepts = [
   `${SVC_PATH}/accounts/current`,
   `${SVC_PATH}/accounts/forgot-password`,
   `${SVC_PATH}/accounts/login-by-otp`,
+  `${SVC_PATH}/roles`,
 ];
 
 export class ApiMiddleWare {
