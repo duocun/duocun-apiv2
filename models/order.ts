@@ -481,6 +481,7 @@ export class Order extends Model {
       price: r.price,
       cost: r.cost,
       total: r.total,
+      paymentId: r.paymentId,
       paymentMethod: r.paymentMethod,
       paymentStatus: r.paymentStatus,
       status: r.status,
