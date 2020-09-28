@@ -44,6 +44,7 @@ import { CellApplicationRouter } from "./routers/cell-application-route";
 import { AreaRouter } from "./routers/area-route";
 import { RoleRouter } from "./routers/role-route";
 import { ScheduleRouter } from "./routers/schedule-route";
+import { SettingRouter } from "./routers/setting-route";
 import { FileRouter } from "./routers/file-route";
 
 import { ApiMiddleWare } from "./api-middleware";
@@ -125,6 +126,7 @@ dbo.init(cfg.DATABASE).then(async (dbClient) => {
   app.use(SVC_PATH + "/categories", CategoryRouter(dbo));
   app.use(SVC_PATH + "/products", ProductRouter(dbo));
   app.use(SVC_PATH + "/pages", PageRouter(dbo));
+  app.use(SVC_PATH + "/setting", SettingRouter(dbo));
   app.use(SVC_PATH + "/productStock", StockRouter(dbo));
   app.use(SVC_PATH + "/statistics", StatisticsRouter(dbo));
   app.use(SVC_PATH + "/Restaurants", MerchantRouter(dbo)); // deprecated
@@ -155,7 +157,7 @@ dbo.init(cfg.DATABASE).then(async (dbClient) => {
   app.use(SVC_PATH + "/Messages", MessageRouter(dbo));
 
   app.use(SVC_PATH + "/CellApplications", CellApplicationRouter(dbo));
-  
+
   app.use(SVC_PATH + "/Files", FileRouter());
 
 

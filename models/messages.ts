@@ -43,6 +43,7 @@ export class ChatMessage extends Model{
             senderImg: 1,
             createdAt: 1,
             message: 1,
+            category: 1,
             userNo: 1,
             isRead: {
               $cond: [ { $eq: [ "$read", false ] }, 1, 0 ]
@@ -58,6 +59,7 @@ export class ChatMessage extends Model{
             "createdAt": { $first: "$createdAt"}, 
             "userNo": { $first: "$userNo"},
             "message": { $first: "$message"},
+            "category": { $first: "$category"},
             unread: {
               $sum: "$isRead"
             }
