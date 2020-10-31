@@ -18,10 +18,9 @@ export class ToolController {
 
   exportRevenue(req: Request, res: Response) {
     const path = './uploads/revenue.csv';
-    const startCreatedDate: any = req.query.startCreatedDate;
-    const endCreatedDate: any = req.query.endCreatedDate;
+    const startCreatedDate: any = req.query.startCreatedDate; // '2019-09-02'
+    const endCreatedDate: any = req.query.endCreatedDate; // '2020-06-30'
     this.model.getRevenueCSV(path, startCreatedDate, endCreatedDate).then(() => {
-      // res.download(path, () => {});
       res.setHeader("Content-Type", "application/json");
       res.send({
         code: Code.SUCCESS,
