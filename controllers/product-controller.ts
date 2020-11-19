@@ -9,6 +9,7 @@ import { ObjectId } from "mongodb";
 import moment from "moment";
 import { Order, OrderStatus, IOrder } from "../models/order";
 import { Merchant } from "../models/merchant";
+import { Schedule } from '../models/schedule';
 import { Picture } from "../models/picture";
 import { hasRole, resource } from "../lib/rbac";
 import {
@@ -27,12 +28,14 @@ export class ProductController extends Controller {
   model: Product;
   orderModel: Order;
   merchantModel: Merchant;
+  scheduleModel: Schedule;
 
   constructor(model: Product, db: DB) {
     super(model, db);
     this.model = model;
     this.orderModel = new Order(db);
     this.merchantModel = new Merchant(db);
+    this.scheduleModel = new Schedule(db);
   }
 
   async list(req: Request, res: Response) {
@@ -182,6 +185,9 @@ export class ProductController extends Controller {
       const merchants = await this.merchantModel.find(
         isAdmin ? {} : { merchantId: user._id }
       );
+      const schedules = await this.scheduleModel.find(
+        isAdmin ? { status: 'A' } : { marchantId: user._id, status: 'A' }
+      );
       if (id !== "new" && data.stock) {
         data.stock.quantityReal = data.stock.quantityReal;
         data.stock.quantity = data.stock.quantity || 0;
@@ -198,6 +204,7 @@ export class ProductController extends Controller {
         data: data,
         meta: {
           merchants,
+          schedules,
         },
       });
     } catch (error) {
