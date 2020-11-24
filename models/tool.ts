@@ -68,7 +68,6 @@ export class Tool {
     });
   }
 
-
   getRevenueDetail(order: any) {
     const a: any = [];
     let priceHasHst = 0;
@@ -78,7 +77,7 @@ export class Tool {
     // const total = Math.round(order.total * 100) / 100;
 
     order.items.forEach((it: any) => {
-      const taxRate = it.taxRate ? it.taxRate : 0;
+      const taxRate = it.taxRate ? parseInt(it.taxRate) : 0;
       const name = it.productNameEN ? it.productNameEN : it.productName;
       a.push(`${name} x ${it.quantity}`);
       
@@ -109,7 +108,9 @@ export class Tool {
       paymentMethod: {
         $in: [
           PaymentMethod.WECHAT,
-          PaymentMethod.CREDIT_CARD
+          PaymentMethod.CREDIT_CARD,
+          PaymentMethod.CASH,
+          null
         ]
       },
       status: {
@@ -125,6 +126,7 @@ export class Tool {
     const {data, count} = await this.orderModel.joinFindV2(q);
     let i = 1;
     const list: any[] = [];
+    
     data.forEach((order: any) => {
       const date = dt.getMomentFromUtc(order.created).format('YYYY-MM-DD');
       if ((+order.total) >= 1 && date) {
