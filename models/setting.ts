@@ -4,14 +4,14 @@ import { EventLog } from "./event-log";
 import { DB } from "../db";
 import _ from "lodash";
 
-export enum PAYMENT_METHOD {
+export enum PAYMENT_GATEWAY_VENDOR {
   ALPHAPAY = "alphapay",
   SNAPPAY = "snappay",
 }
 
 export type SettingType = {
   _id: string | ObjectId;
-  payment_method: PAYMENT_METHOD;
+  paymentGatewayVendor: PAYMENT_GATEWAY_VENDOR;
 };
 
 export class Setting extends Model {
@@ -24,7 +24,7 @@ export class Setting extends Model {
   async findOne() {
     let setting = await super.findOne({});
     if (!setting) {
-      setting = DEFAULT_MODEL;
+      setting = DEFAULT_PAYMENT_GATEWAY_VENDOR;
       await this.insertOne(setting);
       setting = await super.findOne({});
     }
@@ -33,15 +33,15 @@ export class Setting extends Model {
 
   async validate(doc: any, scope: "create" | "update") {
     const model: any = _.pick(doc, [
-      "payment_method"
+      "paymentGatewayVendor"
     ]);
-    if (!model.payment_method) {
-      throw new Error("payment_method field is required");
+    if (!model.paymentGatewayVendor) {
+      throw new Error("paymentGatewayVendor field is required");
     }
     return model;
   }
 }
 
-export const DEFAULT_MODEL = {
-  payment_method: PAYMENT_METHOD.SNAPPAY
+export const DEFAULT_PAYMENT_GATEWAY_VENDOR = {
+  paymentGatewayVendor: PAYMENT_GATEWAY_VENDOR.SNAPPAY
 };
