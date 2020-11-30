@@ -18,10 +18,9 @@ export class ToolController {
 
   exportRevenue(req: Request, res: Response) {
     const path = './uploads/revenue.csv';
-    const startCreatedDate: any = req.query.startCreatedDate;
-    const endCreatedDate: any = req.query.endCreatedDate;
+    const startCreatedDate: any = req.query.startCreatedDate; // '2019-09-02'
+    const endCreatedDate: any = req.query.endCreatedDate; // '2020-06-30'
     this.model.getRevenueCSV(path, startCreatedDate, endCreatedDate).then(() => {
-      // res.download(path, () => {});
       res.setHeader("Content-Type", "application/json");
       res.send({
         code: Code.SUCCESS,
@@ -36,5 +35,16 @@ export class ToolController {
     //   res.setHeader('Content-Type', 'application/json');
     //   res.send(JSON.stringify(r, null, 3));
     // });
+  }
+
+  resetOrderStatus(req: Request, res: Response) {
+    const merchantId = req.params.id; // merchantId
+    this.model.resetOrderStatus(merchantId).then(() => {
+      res.setHeader("Content-Type", "application/json");
+      res.send({
+        code: Code.SUCCESS,
+        data: 1
+      });
+    })
   }
 }

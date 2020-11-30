@@ -15,6 +15,8 @@ export function ToolRouter(db: DB) {
 
   // v2
   router.get('/revenue', (req: Request, res: Response) => { controller.exportRevenue(req, res); });
+
+  router.put('/resetOrderStatusByMerchantId/:id', (req, res) => { controller.resetOrderStatus(req, res); });
   // router.get('/updateBalances', (req, res) => { controller.updateBalances(req, res); });
   return router;
 }

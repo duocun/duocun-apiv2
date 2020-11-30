@@ -68,11 +68,43 @@ export class Tool {
     });
   }
 
+
+  getRevenueDetail(order: any) {
+    const a: any = [];
+    let priceHasHst = 0;
+    let priceNoHst = 0;
+    let hst = 0;
+    let total = 0;
+    // const total = Math.round(order.total * 100) / 100;
+
+    order.items.forEach((it: any) => {
+      const taxRate = it.taxRate ? it.taxRate : 0;
+      const name = it.productNameEN ? it.productNameEN : it.productName;
+      a.push(`${name} x ${it.quantity}`);
+      
+      if(taxRate === 0){
+        const base = Math.round(it.price * 100 ) / 100;
+        priceNoHst += base;
+        total += base;
+      }else{
+        const base = Math.round(it.price / (100 + taxRate) * 10000 ) / 100;
+        const tax = Math.round(it.price / (100 + taxRate) * taxRate * 100 ) / 100;
+        priceHasHst += base;
+        hst += tax;
+        total += Math.round(it.price * 100) / 100;
+      }
+    })
+
+    const items = a.join(', ');
+    return {description: `${order.clientName} buy ${items}`, priceNoHst, priceHasHst, hst, total };
+  }
+
   // path --- csv saved path '../a.csv';
   async getRevenueCSV(path: string, startCreatedDate: string, endCreatedDate: string) {
     const dt = new DateTime();
     const start = dt.getMomentFromUtc(`${startCreatedDate}T00:00:00.000Z`).toISOString();
     const end = dt.getMomentFromUtc(`${endCreatedDate}T00:00:00.000Z`).toISOString();
+
     const q = {
       paymentMethod: {
         $in: [
@@ -90,19 +122,16 @@ export class Tool {
       created: {$gte: start, $lte: end}
     };
 
-    const orders = await this.orderModel.find(q);
+    const {data, count} = await this.orderModel.joinFindV2(q);
     let i = 1;
-    const data: any[] = [];
-    orders.forEach(order => {
+    const list: any[] = [];
+    data.forEach((order: any) => {
       const date = dt.getMomentFromUtc(order.created).format('YYYY-MM-DD');
       if ((+order.total) >= 1 && date) {
         const id = 'RT000' + i;
         i++;
-        const total = Math.round(order.total * 100) / 100;
-        const description = `${order.clientName}` + (order.type === 'F' ? ' buy Food' : ' buy Grocery');
-        const revenue = Math.round(order.total / 1.13 * 100) / 100;
-        const hst = Math.round(revenue * 13) / 100;
-        data.push({ date, id, description, revenue, hst, total });
+        const detail = this.getRevenueDetail(order);
+        list.push({ date, id, ...detail });
       }
     });
 
@@ -112,15 +141,31 @@ export class Tool {
         { id: 'date', title: 'Invoice Date' },
         { id: 'id', title: 'Invoice #' },
         { id: 'description', title: 'Description' },
-        { id: 'revenue', title: 'Revenue' },
+        { id: 'priceNoHst', title: 'Sale no Hst' },
+        { id: 'priceHasHst', title: 'Sale has Hst' },
         { id: 'hst', title: 'Hst' },
         { id: 'total', title: 'Total' },
       ]
     });
 
-    if (data) {
-      await cw.writeRecords(data);
+    if (list) {
+      await cw.writeRecords(list);
     }
     return data;
+  }
+
+  async resetOrderStatus(merchantId: string) {
+    const orders = await this.orderModel.find({ merchantId, status: OrderStatus.DONE });
+
+    const datas: any[] = [];
+    orders.forEach((order: any) => {
+      datas.push({
+        query: { _id: order._id },
+        data: { status: OrderStatus.NEW }
+      });
+    });
+
+    await this.orderModel.bulkUpdate(datas);
+    return;
   }
 }

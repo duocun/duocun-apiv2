@@ -230,6 +230,7 @@ export class Product extends Model {
       "rank",
       "categoryId",
       "merchantId",
+      "scheduleId",
       "stock",
       "attributes",
       "combinations",

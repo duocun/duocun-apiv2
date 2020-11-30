@@ -76,7 +76,7 @@ export const PaymentStatus = {
 export interface IOrderItem {
   productId: string;
   productName?: string;
-  // merchantName?: string;
+  productNameEN?: string;
   price: number;
   cost: number;
   quantity: number;
@@ -424,24 +424,6 @@ export class Order extends Model {
         order.clientInfo = client.info;
       }
 
-      // if (order.merchantId) {
-      //   const m = merchants.find(
-      //     (m: any) => m._id.toString() === order.merchantId.toString()
-      //   );
-      //   order.merchant = { _id: m._id.toString(), name: m.name, accountId: m.accountId };
-      // }
-
-      // if (order.merchant && order.merchant.accountId) {
-      //   const merchantAccount = merchantAccounts.find(
-      //     (a: any) =>
-      //       a && a._id.toString() === order.merchant.accountId.toString()
-      //   );
-      //   if (merchantAccount) {
-      //     const m = merchantAccount;
-      //     order.merchantAccount = { _id: m._id.toString(), name: m.name };
-      //   }
-      // }
-
       if (order.driverId && order.driverId !== UNASSIGNED_DRIVER_ID) {
         const driver = driverAccounts.find(
           (a: IAccount) => a._id.toString() === order.driverId.toString()
@@ -460,11 +442,10 @@ export class Order extends Model {
 
       if (order.items) {
         order.items.forEach((it: IOrderItem) => {
-          const product = ps.find(
-            (p: any) => p && p._id.toString() === it.productId.toString()
-          );
+          const productId = it.productId.toString();
+          const product = ps.find((p: any) => p && p._id.toString() === productId);
           if (product) {
-            items.push({ ...it, productName: product.name });
+            items.push({ ...it, productName: product.name, productNameEN: product.nameEN, taxRate: product.taxRate });
           }
         });
         order.items = items;
