@@ -36,4 +36,15 @@ export class ToolController {
     //   res.send(JSON.stringify(r, null, 3));
     // });
   }
+
+  resetOrderStatus(req: Request, res: Response) {
+    const merchantId = req.params.id; // merchantId
+    this.model.resetOrderStatus(merchantId).then(() => {
+      res.setHeader("Content-Type", "application/json");
+      res.send({
+        code: Code.SUCCESS,
+        data: 1
+      });
+    })
+  }
 }
