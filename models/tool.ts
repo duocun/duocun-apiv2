@@ -153,4 +153,19 @@ export class Tool {
     }
     return data;
   }
+
+  async resetOrderStatus(merchantId: string) {
+    const orders = await this.orderModel.find({ merchantId, status: OrderStatus.DONE });
+
+    const datas: any[] = [];
+    orders.forEach((order: any) => {
+      datas.push({
+        query: { _id: order._id },
+        data: { status: OrderStatus.NEW }
+      });
+    });
+
+    await this.orderModel.bulkUpdate(datas);
+    return;
+  }
 }
