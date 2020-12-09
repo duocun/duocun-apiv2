@@ -19,6 +19,10 @@ export const ScheduleRouter = (db: DB) => {
     await controller.save(req, res);
   });
 
+  router.delete("/:id", async (req, res) => {
+    await controller.delete(req, res);
+  });
+
   router.get("/", [parseQuery], async (req: Request, res: Response) => {
     await controller.list(req, res);
   });

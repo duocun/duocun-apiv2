@@ -49,6 +49,7 @@ export class Schedule extends Model {
     const model: any = _.pick(doc, [
       "title",
       "description",
+      "isSpecial",
       "areas",
       "endTimeMargin",
       "startDate",
