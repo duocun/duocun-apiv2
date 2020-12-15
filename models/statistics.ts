@@ -2,6 +2,7 @@ import { DB } from "../db";
 import { Model } from "./model";
 import { Order, IOrder, OrderStatus, OrderType } from "../models/order";
 import { Pickup, PickupStatus } from "./pickup";
+import { PickupByOrder } from "./pickup-by-order";
 import { TransactionAction, Transaction, ITransaction } from "./transaction";
 import { Account } from "./account";
 import { DateTime } from "./date-time";
@@ -12,6 +13,7 @@ import { Product, ProductStatus } from "./product";
 export class Statistics extends Model{
   orderModel: Order;
   pickupModel: Pickup;
+  pickupByOrderModel: PickupByOrder;
   transactionModel: Transaction;
   accountModel: Account;
   assignmentModel: Assignment;
@@ -21,6 +23,7 @@ export class Statistics extends Model{
     super(db, 'statistics');
     this.orderModel = new Order(db);
     this.pickupModel = new Pickup(db);
+    this.pickupByOrderModel = new PickupByOrder(db);
     this.transactionModel = new Transaction(db);
     this.accountModel = new Account(db);
     this.assignmentModel = new Assignment(db);
@@ -252,6 +255,26 @@ export class Statistics extends Model{
         items: this.groupByProduct(driverId, group.orders, pickups)
       }));
       delete driverMap[driverId].orders;
+    });
+
+    return driverMap;
+  }
+
+  async getDriverStatisticsByOrder(deliverDate: string){
+    const delivered = deliverDate + 'T15:00:00.000Z';
+    const pickups = await this.pickupByOrderModel.find({delivered});
+
+    const driverMap: any = {};
+
+    // when checking a future date, the pickups is posible to be empty
+    pickups.forEach(p => {
+      const driverId = p.driverId.toString();
+      driverMap[driverId] = {driverId, driverName: p.driverName, pickups: []};
+    });
+
+    pickups.forEach(p => {
+      const driverId = p.driverId.toString();
+      driverMap[driverId].pickups = driverMap[driverId].pickups.concat(p);
     });
 
     return driverMap;

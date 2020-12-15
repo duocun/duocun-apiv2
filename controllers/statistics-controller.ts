@@ -91,6 +91,29 @@ export class StatisticsController extends Controller {
   }
 
   @hasRole({ resource: RESOURCES.STATISTICS, permission: PERMISSIONS.READ })
+  async getDriverStatisticsByOrder(req: Request, res: Response) {
+    const deliverDate: any = req.query.deliverDate;
+    let data: any[] = [];
+    let code = Code.FAIL;
+    try {
+      if (deliverDate) {
+        code = Code.SUCCESS;
+        data = await this.model.getDriverStatisticsByOrder(deliverDate);
+      }
+    } catch (error) {
+      logger.error(`get driver statistic error: ${error}`);
+    } finally {
+      res.setHeader("Content-Type", "application/json");
+      res.send(
+        JSON.stringify({
+          code: code,
+          data: data,
+        })
+      );
+    }
+  }
+
+  @hasRole({ resource: RESOURCES.STATISTICS, permission: PERMISSIONS.READ })
   async getProductStatistics(req: Request, res: Response) {
     const deliverDate: any = req.query.deliverDate;
     let data: any[] = [];
