@@ -203,9 +203,9 @@ export class Assignment {
     orders.forEach((r: IOrder) => {
       const paymentId = r.paymentId?.toString() ?? '';
       if (paymentMap[paymentId]) {
-        paymentMap[paymentId] = paymentMap[paymentId].concat({ merchantId: r.merchantId, merchantName: r.merchantName, clientName: r.clientName, products: r.items, code: r.code });
+        paymentMap[paymentId] = paymentMap[paymentId].concat({ merchantId: r.merchantId, merchantName: r.merchantName, clientName: r.clientName, orderId: r._id, products: r.items, code: r.code });
       } else {
-        paymentMap[paymentId] = [{ merchantId: r.merchantId, merchantName: r.merchantName, clientName: r.clientName, products: r.items, code: r.code }];
+        paymentMap[paymentId] = [{ merchantId: r.merchantId, merchantName: r.merchantName, clientName: r.clientName, orderId: r._id, products: r.items, code: r.code }];
       }
     });
     return paymentMap;

@@ -12,6 +12,7 @@ export interface IPickupByOrder {
     merchantId: string;
     merchantName: string;
     clientName: string;
+    orderId: string;
     code: string;
     products: IOrderItem[];
   }[];
