@@ -10,7 +10,7 @@ import { Assignment } from "./assignment";
 import { UNASSIGNED_DRIVER_ID, UNASSIGNED_DRIVER_NAME } from "./driver";
 import { Product, ProductStatus } from "./product";
 
-export class Statistics extends Model{
+export class Statistics extends Model {
   orderModel: Order;
   pickupModel: Pickup;
   pickupByOrderModel: PickupByOrder;
@@ -29,7 +29,7 @@ export class Statistics extends Model{
     this.assignmentModel = new Assignment(db);
     this.productModel = new Product(db);
   }
-  async getById(id: string){
+  async getById(id: string) {
     return;
   }
 
@@ -38,23 +38,23 @@ export class Statistics extends Model{
    * date: 'YYYY-MM-DD'
    * dateType: 'Delivery Date', 'Order Date'
    */
-  async getSalesMap(date: string, dateType: string){
+  async getSalesMap(date: string, dateType: string) {
     const dt = new DateTime();
     const created = dt.getMomentFromLocal(`${date}T00:00:00`).toISOString();
     const query = dateType === 'Order Date' ? {
       status: {
         $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
       },
-      created: {$gte: created}
+      created: { $gte: created }
     } : {
-      status: {
-        $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
-      },
-      deliverDate: {$gte: date}
-    };
+        status: {
+          $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
+        },
+        deliverDate: { $gte: date }
+      };
 
     const orders = await this.orderModel.find(query);
-    return this.orderModel.getSalesMap(orders, dateType === 'Order Date' ? "created": "delivered");
+    return this.orderModel.getSalesMap(orders, dateType === 'Order Date' ? "created" : "delivered");
   }
 
   //return [{merchantId,merchantName,nOrders,totalPrice,totalCost}]
@@ -150,7 +150,7 @@ export class Statistics extends Model{
     }
     return productArray;
   }
-  
+
   // return [{productId, productName, quantity, pickupId, status}, ...]
   groupByProduct(driverId: string, orders: any[], pickups: any[], type: string = OrderType.GROCERY) {
     const productMap: any = {};
@@ -159,7 +159,7 @@ export class Statistics extends Model{
       r.items.forEach((it: any) => {
         const productId = it.productId.toString();
         const productName = it.productName;
-        productMap[productId] = { productId, productName, quantity: 0, status: PickupStatus.UNPICK_UP  };
+        productMap[productId] = { productId, productName, quantity: 0, status: PickupStatus.UNPICK_UP };
       });
     });
 
@@ -172,7 +172,7 @@ export class Statistics extends Model{
 
     Object.keys(productMap).forEach(productId => {
       const pickup = pickups.find(p => p.driverId.toString() === driverId && p.productId.toString() === productId);
-      if(pickup){
+      if (pickup) {
         if (productMap.hasOwnProperty(productId)) {
           productMap[productId].pickupId = pickup._id;
           productMap[productId].status = pickup.status;
@@ -200,7 +200,7 @@ export class Statistics extends Model{
     rs.forEach(r => {
       const merchantName = r.merchantName;
       const merchantId = r.merchantId.toString();
-      merchantMap[merchantId] = { merchantId, merchantName, orders:[] };
+      merchantMap[merchantId] = { merchantId, merchantName, orders: [] };
     });
 
     rs.forEach(r => {
@@ -215,9 +215,9 @@ export class Statistics extends Model{
   isPicked(order: IOrder) {
     return order.status === OrderStatus.LOADED || order.status === OrderStatus.DONE;
   }
-  
+
   // return [{productName, quantity}...]
-  async getDriverStatistics(deliverDate: string){
+  async getDriverStatistics(deliverDate: string) {
     const q = {
       deliverDate,
       status: {
@@ -227,24 +227,24 @@ export class Statistics extends Model{
     const dataSet = await this.orderModel.joinFindV2(q);
     const orders = dataSet.data;
     const delivered = deliverDate + 'T15:00:00.000Z';
-    const pickups = await this.pickupModel.find({delivered});
+    const pickups = await this.pickupModel.find({ delivered });
 
-    const driverMap: any = {'all': {driverId: 'all', driverName:'All', orders: []}};
+    const driverMap: any = { 'all': { driverId: 'all', driverName: 'All', orders: [] } };
 
     // when checking a future date, the pickups is posible to be empty
     pickups.forEach(p => {
       const driverId = p.driverId.toString();
-      driverMap[driverId] = {driverId, driverName: p.driverName, orders: []}
+      driverMap[driverId] = { driverId, driverName: p.driverName, orders: [] }
     });
 
     orders.forEach((order: IOrder) => {
-      const driverId = order.driverId? order.driverId.toString() : UNASSIGNED_DRIVER_ID;
-      const driverName = order.driverId? order.driverName : UNASSIGNED_DRIVER_NAME;
-      driverMap[driverId] = {driverId, driverName, orders: []};
+      const driverId = order.driverId ? order.driverId.toString() : UNASSIGNED_DRIVER_ID;
+      const driverName = order.driverId ? order.driverName : UNASSIGNED_DRIVER_NAME;
+      driverMap[driverId] = { driverId, driverName, orders: [] };
     });
 
     orders.forEach((order: IOrder) => {
-      const driverId = order.driverId? order.driverId.toString() : UNASSIGNED_DRIVER_ID;
+      const driverId = order.driverId ? order.driverId.toString() : UNASSIGNED_DRIVER_ID;
       driverMap[driverId].orders.push(order);
       driverMap['all'].orders.push(order);
     });
@@ -260,29 +260,46 @@ export class Statistics extends Model{
     return driverMap;
   }
 
-  async getDriverStatisticsByOrder(deliverDate: string){
+  async getDriverStatisticsByOrder(deliverDate: string) {
+    const q = {
+      deliverDate,
+      status: {
+        $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
+      },
+    };
+    const dataSet = await this.orderModel.joinFindV2(q);
+    const orders = dataSet.data;
     const delivered = deliverDate + 'T15:00:00.000Z';
-    const pickups = await this.pickupByOrderModel.find({delivered});
+    const pickups = await this.pickupByOrderModel.find({ delivered });
 
     const driverMap: any = {};
 
     // when checking a future date, the pickups is posible to be empty
     pickups.forEach(p => {
       const driverId = p.driverId.toString();
-      driverMap[driverId] = {driverId, driverName: p.driverName, pickups: []};
+      driverMap[driverId] = { driverId, driverName: p.driverName, pickups: [] };
     });
 
     pickups.forEach(p => {
       const driverId = p.driverId.toString();
-      driverMap[driverId].pickups = driverMap[driverId].pickups.concat(p);
+      const orderId = p.items[0].orderId.toString();
+      if (orders.findIndex((o: IOrder) => o._id?.toString() === orderId && o.driverId.toString() === driverId) > -1) {
+        driverMap[driverId].pickups = driverMap[driverId].pickups.concat(p);
+      }
+    });
+
+    Object.keys(driverMap).map((driverId) => {
+      if (driverMap[driverId].pickups.length === 0) {
+        delete driverMap[driverId];
+      }
     });
 
     return driverMap;
   }
 
   // return [{productName, quantity}...]
-  async getSalaryStatistics(){
-    const ts = await this.transactionModel.find({actionCode: 'PS'});
+  async getSalaryStatistics() {
+    const ts = await this.transactionModel.find({ actionCode: 'PS' });
     const driverMap = this.getSalaryDriverMap(ts);
     Object.keys(driverMap).forEach(driverId => {
       const monthMap = this.getSalaryMonthMap(driverMap[driverId].transactions);
@@ -313,13 +330,13 @@ export class Statistics extends Model{
     // return monthMap;
   }
 
-  getSalaryMonthMap(transactions: ITransaction[]){
+  getSalaryMonthMap(transactions: ITransaction[]) {
     const monthMap: any = {}
     transactions.forEach((t: ITransaction) => {
       const date: any = t.created;
       const [y, m, d] = date.split('T')[0].split('-');
       const ym = `${y}-${m}`;
-      monthMap[ym] = {amount: 0, ym};
+      monthMap[ym] = { amount: 0, ym };
     });
 
     transactions.forEach((t: ITransaction) => {
@@ -331,10 +348,10 @@ export class Statistics extends Model{
     return monthMap;
   }
 
-  getSalaryDriverMap(transactions: ITransaction[]){
+  getSalaryDriverMap(transactions: ITransaction[]) {
     const driverMap: any = {};
     transactions.forEach((t: any) => {
-      driverMap[t.staffId] = {staffId: t.staffId, staffName: t.staffName, amount: 0, transactions:[]};
+      driverMap[t.staffId] = { staffId: t.staffId, staffName: t.staffName, amount: 0, transactions: [] };
     });
     transactions.forEach((t: any) => {
       driverMap[t.staffId].transactions.push(t);
@@ -388,11 +405,11 @@ export class Statistics extends Model{
     const priceMap: any = {};
 
     orders.forEach((order: any) => {
-      priceMap[order.total] = 0; 
+      priceMap[order.total] = 0;
     });
 
     orders.forEach((order: any) => {
-      priceMap[order.total]++; 
+      priceMap[order.total]++;
     });
 
     return priceMap;
@@ -412,13 +429,13 @@ export class Statistics extends Model{
 
     orders.forEach((order: any) => {
       order.items.forEach((it: any) => {
-        productMap[it.productId.toString()] = {name: it.productName, count: 0, price: it.price, cost: it.cost}; 
+        productMap[it.productId.toString()] = { name: it.productName, count: 0, price: it.price, cost: it.cost };
       });
     });
 
     orders.forEach((order: any) => {
       order.items.forEach((it: any) => {
-        productMap[it.productId.toString()].count++; 
+        productMap[it.productId.toString()].count++;
       });
     });
 
@@ -432,27 +449,28 @@ export class Statistics extends Model{
         $nin: [OrderStatus.BAD, OrderStatus.DELETED, OrderStatus.TEMP],
       },
     };
-    
+
     const orders = await this.orderModel.find(q);
 
     const driverMap: any = {};
 
     orders.forEach((order: any) => {
-      if(order.driverId){
-        driverMap[order.driverId.toString()] = {driverName: order.driverName, nOrders:0, salary:0};
+      if (order.driverId) {
+        driverMap[order.driverId.toString()] = { driverName: order.driverName, nOrders: 0, salary: 0 };
       }
     });
 
     orders.forEach((order: any) => {
-      if(order.driverId){
+      if (order.driverId) {
         driverMap[order.driverId.toString()].nOrders++;
       }
     });
 
     const qTr = {
-      created: { 
-        $gte: startDate+'T04:00:00.000Z',
-        $lte: endDate+'T04:00:00.000Z' },
+      created: {
+        $gte: startDate + 'T04:00:00.000Z',
+        $lte: endDate + 'T04:00:00.000Z'
+      },
       actionCode: TransactionAction.PAY_SALARY.code
     }
     const trs = await this.transactionModel.find(qTr);
@@ -462,9 +480,9 @@ export class Statistics extends Model{
       ts.forEach(t => {
         cost += t.amount;
       });
-      driverMap[driverId].salary = Math.round(cost * 100)/100;
+      driverMap[driverId].salary = Math.round(cost * 100) / 100;
       const nOrders = driverMap[driverId].nOrders;
-      driverMap[driverId].costPerOrder = Math.round(cost / nOrders * 100)/100;
+      driverMap[driverId].costPerOrder = Math.round(cost / nOrders * 100) / 100;
     });
 
     return driverMap;
