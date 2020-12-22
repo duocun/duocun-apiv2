@@ -11,6 +11,7 @@ export function StatisticsRouter(db: DB) {
 
     router.get('/summary', (req, res) => { controller.getStatistics(req, res); });
     router.get('/driver', (req, res) => { controller.getDriverStatistics(req, res); });
+    router.get('/driver-by-order', (req, res) => { controller.getDriverStatisticsByOrder(req, res); });
     router.get('/merchant', (req, res) => { controller.getMerchantStatistics(req, res); });
     router.get('/product', (req, res) => { controller.getProductStatistics(req, res); });
     router.get('/salary', (req, res) => { controller.getSalaryStatistics(req, res); });

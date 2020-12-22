@@ -1,11 +1,13 @@
 
 import { DB } from "../db";
 import { Pickup } from "./pickup";
+import { PickupByOrder } from './pickup-by-order';
 import { Log } from "./log";
 import { EventLog } from "./event-log";
 
 import { UNASSIGNED_DRIVER_ID, UNASSIGNED_DRIVER_NAME } from "./driver";
 import { IPickup, IPickupMap, PickupStatus } from "./pickup";
+import { IPickupByOrder, IPickupByOrderMap } from './pickup-by-order';
 import { Order, IOrder, IOrderItem, OrderStatus } from "../models/order";
 import { Account } from "./account";
 
@@ -27,6 +29,7 @@ export interface IAssignment {
 
 export class Assignment {
   private pickupModel: Pickup;
+  private pickupByOrderModel: PickupByOrder;
   private orderModel: Order;
   private accountModel: Account;
 
@@ -34,6 +37,7 @@ export class Assignment {
 
   constructor(dbo: DB) {
     this.pickupModel = new Pickup(dbo);
+    this.pickupByOrderModel = new PickupByOrder(dbo);
     this.orderModel = new Order(dbo);
     this.accountModel = new Account(dbo);
     this.eventLogModel = new EventLog(dbo);
@@ -194,6 +198,19 @@ export class Assignment {
     return productMap;
   }
 
+  getPaymentMapFromOrderList(orders: IOrder[]) {
+    const paymentMap: any = {};
+    orders.forEach((r: IOrder) => {
+      const paymentId = r.paymentId?.toString() ?? '';
+      if (paymentMap[paymentId]) {
+        paymentMap[paymentId] = paymentMap[paymentId].concat({ merchantId: r.merchantId, merchantName: r.merchantName, clientName: r.clientName, orderId: r._id, products: r.items, code: r.code });
+      } else {
+        paymentMap[paymentId] = [{ merchantId: r.merchantId, merchantName: r.merchantName, clientName: r.clientName, orderId: r._id, products: r.items, code: r.code }];
+      }
+    });
+    return paymentMap;
+  }
+
   async getDriverMap(orders: IOrder[]) {
     const drivers = await this.accountModel.getActiveDrivers();
     const driverMap: any = {};
@@ -251,6 +268,43 @@ export class Assignment {
     return pickupMap;
   }
 
+  /** 
+   *  input 
+   *    assignments: IAssignment[]
+   *
+   *  return
+   *    IPickupByOrderMap
+   */
+  async initPickupByOrderMap(delivered: string, assignments: IAssignment[]): Promise<IPickupByOrderMap> {
+    const orderIds = assignments.map((a: IAssignment) => a.orderId);
+    const r = await this.orderModel.joinFindV2({ _id: { $in: orderIds } });
+    const orders = r.data;
+    const pickupByOrderMap: IPickupByOrderMap = {};
+    const paymentMap = this.getPaymentMapFromOrderList(orders);
+    const driverMap = await this.getDriverMap(orders);
+
+    Object.keys(driverMap).forEach((driverId: string) => {
+      Object.keys(paymentMap).forEach((paymentId: string) => {
+        const key = `${driverId}-${paymentId}`;
+        const clientName = paymentMap[paymentId][0].clientName ?? '';
+        const items = paymentMap[paymentId];
+        const codes: number[] = [];
+        items.forEach((i: any) => {
+          codes.push(i.code);
+        });
+        pickupByOrderMap[key] = { ...driverMap[driverId], clientName, quantity: 0, paymentId, items, codes, delivered, status: PickupStatus.UNPICK_UP };
+      });
+    });
+
+    // update quantity
+    orders.forEach((r: IOrder) => {
+      const driverId = r.driverId && r.driverId !== UNASSIGNED_DRIVER_ID ? r.driverId.toString() : UNASSIGNED_DRIVER_ID;
+      const paymentId = r.paymentId;
+      const key = `${driverId}-${paymentId}`;
+      pickupByOrderMap[key].quantity = 1;
+    });
+    return pickupByOrderMap;
+  }
 
   /** Note: this function must be called after await this.updateOrders(assignments);
    *  input 
@@ -305,6 +359,30 @@ export class Assignment {
         }
       } else {
         // skip
+      }
+    }
+
+    const compareByOrderMap: IPickupByOrderMap = await this.initPickupByOrderMap(delivered, assignments);
+    const originByOrderMap: any = {};
+    const pickupsByOrder = await this.pickupByOrderModel.find({ delivered });
+    pickupsByOrder.forEach((r: IPickupByOrder) => {
+      const driverId = r.driverId && r.driverId !== UNASSIGNED_DRIVER_ID ? r.driverId.toString() : UNASSIGNED_DRIVER_ID;
+      const paymentId = r.paymentId.toString();
+      const key = `${driverId}-${paymentId}`;
+      originByOrderMap[key] = r;
+    });
+    const byOrderKeys = Object.keys(compareByOrderMap);
+    for (let i = 0; i < byOrderKeys.length; i++) {
+      const key = byOrderKeys[i];
+      const curr = compareByOrderMap[key];
+      const origin = originByOrderMap[key];
+      if (curr.driverId !== UNASSIGNED_DRIVER_ID) {
+        if (origin === undefined || curr.paymentId !== origin.paymentId.toString()) {
+          if (curr.quantity > 0) {
+            const p: IPickupByOrder = { ...curr }
+            await this.pickupByOrderModel.insertOne(p);
+          }
+        }
       }
     }
     return;
