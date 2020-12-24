@@ -537,6 +537,7 @@ export class Order extends Model {
   async getRoutes(deliverDate: string, driverId: string){
     // try {
       const data = await this.getOrderMapForDriver(deliverDate, driverId);
+      console.log(data);
       const url = 'https://duocun-route-api.herokuapp.com/routes';
       // const url = 'http://localhost:5002/routes';
       const res = await axios.post(url, data);
