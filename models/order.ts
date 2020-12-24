@@ -30,6 +30,9 @@ import { DbStatus } from "../entity";
 import { Code } from "../controllers/controller";
 import { DateTime } from './date-time';
 import { UNASSIGNED_DRIVER_NAME, UNASSIGNED_DRIVER_ID } from "./driver";
+import path from "path";
+import { getLogger } from "../lib/logger";
+const logger = getLogger(path.basename(__filename));
 
 const CASH_ID = "5c9511bb0851a5096e044d10";
 const CASH_NAME = "Cash";
@@ -537,7 +540,7 @@ export class Order extends Model {
   async getRoutes(deliverDate: string, driverId: string){
     // try {
       const data = await this.getOrderMapForDriver(deliverDate, driverId);
-      console.log(data);
+      logger.error(data);
       const url = 'https://duocun-route-api.herokuapp.com/routes';
       // const url = 'http://localhost:5002/routes';
       const res = await axios.post(url, data);
