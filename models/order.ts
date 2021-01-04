@@ -77,6 +77,7 @@ export interface IOrderItem {
   productId: string;
   productName?: string;
   productNameEN?: string;
+  productIsRed?: boolean;
   price: number;
   cost: number;
   quantity: number;
@@ -445,7 +446,7 @@ export class Order extends Model {
           const productId = it.productId.toString();
           const product = ps.find((p: any) => p && p._id.toString() === productId);
           if (product) {
-            items.push({ ...it, productName: product.name, productNameEN: product.nameEN, taxRate: product.taxRate });
+            items.push({ ...it, productName: product.name, productNameEN: product.nameEN, taxRate: product.taxRate, productIsRed: product.isRed });
           }
         });
         order.items = items;
@@ -537,8 +538,8 @@ export class Order extends Model {
   async getRoutes(deliverDate: string, driverId: string){
     // try {
       const data = await this.getOrderMapForDriver(deliverDate, driverId);
-      // const url = 'https://duocun-route-api.herokuapp.com/routes';
-      const url = 'http://localhost:5002/routes';
+      const url = 'https://duocun-route-api.herokuapp.com/routes';
+      // const url = 'http://localhost:5002/routes';
       const res = await axios.post(url, data);
       return res;
     // } catch (err) {

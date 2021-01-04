@@ -192,7 +192,7 @@ export class Assignment {
     orders.forEach((r: IOrder) => {
       r.items.forEach((it: IOrderItem) => {
         const productId = it.productId.toString();
-        productMap[productId] = { productId, productName: it.productName };
+        productMap[productId] = { productId, productName: it.productName, productIsRed: it.productIsRed };
       });
     });
     return productMap;
@@ -251,7 +251,8 @@ export class Assignment {
       Object.keys(productMap).forEach((productId: string) => {
         const key = `${driverId}-${productId}`;
         const productName = productMap[productId].productName;
-        pickupMap[key] = { ...driverMap[driverId], quantity: 0, productId, productName, delivered, status: PickupStatus.UNPICK_UP };
+        const productIsRed = productMap[productId].productIsRed ? productMap[productId].productIsRed : false;
+        pickupMap[key] = { ...driverMap[driverId], quantity: 0, productId, productName, productIsRed, delivered, status: PickupStatus.UNPICK_UP };
       })
     });
 
@@ -262,6 +263,7 @@ export class Assignment {
         const productId = it.productId.toString();
         const key = `${driverId}-${productId}`;
         pickupMap[key].quantity += it.quantity;
+        pickupMap[key].productIsRed = it.productIsRed;
       });
     });
 

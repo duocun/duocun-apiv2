@@ -14,6 +14,7 @@ export interface IPickup {
   driverName: string;
   productId: string;
   productName: string;
+  productIsRed?: boolean;
   quantity: number;
   status: string;
   delivered: string;

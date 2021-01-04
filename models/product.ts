@@ -48,6 +48,7 @@ export interface IProduct {
   dow?: string[];
   order?: number;
   status?: ProductStatus;
+  isRed?: boolean;
 
   created?: string;
   modified?: string;
@@ -235,6 +236,7 @@ export class Product extends Model {
       "attributes",
       "combinations",
       "status",
+      "isRed"
     ]);
     ["name", "price", "cost", "stock"].forEach((key) => {
       if (model[key] === undefined) {
