@@ -253,7 +253,7 @@ export class Assignment {
         const productName = productMap[productId].productName;
         const productIsRed = productMap[productId].productIsRed ? productMap[productId].productIsRed : false;
         pickupMap[key] = { ...driverMap[driverId], quantity: 0, productId, productName, productIsRed, delivered, status: PickupStatus.UNPICK_UP };
-      })
+      });
     });
 
     // update quantity
@@ -359,6 +359,9 @@ export class Assignment {
             // skip
           }
         }
+        if (origin && origin.productIsRed !== curr.productIsRed) {
+          await this.pickupModel.updateOne({ _id: origin._id }, { productIsRed: curr.productIsRed ? curr.productIsRed : false });
+        }
       } else {
         // skip
       }
@@ -384,6 +387,9 @@ export class Assignment {
             const p: IPickupByOrder = { ...curr }
             await this.pickupByOrderModel.insertOne(p);
           }
+        }
+        if (origin !== undefined) {
+          await this.pickupByOrderModel.updateOne({ _id: origin._id }, { items: curr.items });
         }
       }
     }
