@@ -538,9 +538,26 @@ export class Order extends Model {
   async getRoutes(deliverDate: string, driverId: string){
     // try {
       const data = await this.getOrderMapForDriver(deliverDate, driverId);
+      let unassignedData: any;
+      Object.keys(data).forEach((driverId) => {
+        if (driverId === 'unassigned') {
+          unassignedData = data[driverId];
+          delete data[driverId];
+        }
+      });
       // const url = 'https://duocun-route-api.herokuapp.com/routes';
       const url = 'http://localhost:5002/routes';
       const res = await axios.post(url, data);
+      if (unassignedData) {
+        res.data.routes.push({
+          driverId: 'unassigned',
+          route: [{
+            lat: 43.806047,
+            lng: -79.2379642,
+            orderId: 0
+          }].concat(unassignedData.orders)
+        });
+      }
       return res;
     // } catch (err) {
     //   console.error(err);
