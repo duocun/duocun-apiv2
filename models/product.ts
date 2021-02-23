@@ -37,8 +37,10 @@ export interface IProduct {
   name: string;
   nameEN: string;
   description?: string;
+  descriptionEN?: string;
   price: number;
   cost: number;
+  original_price: number;
   merchantId: string;
   categoryId: string;
 
@@ -223,6 +225,7 @@ export class Product extends Model {
       "descriptionEN",
       "price",
       "cost",
+      "original_price",
       "rank",
       "taxRate",
       "dow",

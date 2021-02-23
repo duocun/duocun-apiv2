@@ -180,8 +180,8 @@ export class ProductController extends Controller {
         id == "new"
           ? {}
           : isAdmin
-          ? await this.model.getById(id)
-          : await this.model.findOne({ _id: id, merchantId: user._id });
+            ? await this.model.getById(id)
+            : await this.model.findOne({ _id: id, merchantId: user._id });
       const merchants = await this.merchantModel.find(
         isAdmin ? {} : { merchantId: user._id }
       );
